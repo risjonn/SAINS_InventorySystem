@@ -1,154 +1,95 @@
-/* Popup Message Styles */
-#popup-message {
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import 'sidebar.css';
+
+/* Popup Message Styling */
+.popup-center {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 1055;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    width: 350px;
-    padding: 20px;
-    background-color: #e9f7ef; /* Light green for success */
-    border: 2px solid #28a745; /* Border color matching success theme */
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    animation: fadeInUp 0.5s ease-out;
+    z-index: 1050;
+    min-width: 300px;
+    max-width: 90%;
+    animation: popIn 0.3s ease-out forwards;
 }
 
-/* Success Icon */
-#popup-message i {
-    font-size: 4rem; /* Bigger icon */
-    margin-bottom: 10px;
-}
-
-/* Success Text */
-#popup-message strong {
-    font-size: 1.25rem;
-    color: #155724; /* Dark green text for success */
-}
-
-/* Close Button */
-#popup-message .btn-close {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
-    color: #155724;
-    font-size: 1.2rem;
-}
-
-/* Close Button Hover Effect */
-#popup-message .btn-close:hover {
-    color: #dc3545; /* Change color on hover for emphasis */
-}
-
-/* Overlay Background */
-#overlay {
+.popup-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent dark overlay */
-    z-index: 1050;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1040;
 }
 
 /* Animations */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translate(-50%, -60%);
-    }
-    to {
-        opacity: 1;
-        transform: translate(-50%, -50%);
-    }
+@keyframes popIn {
+    0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 }
 
+@keyframes tickAnimation {
+    0% { transform: scale(0); }
+    80% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
 
-@keyframes tickBounce {
-    0%, 20%, 50%, 80%, 100% {
-        transform: scale(1);
-    }
-    40% {
-        transform: scale(1.3);
-    }
-    60% {
-        transform: scale(1.1);
-    }
+@keyframes editPulse {
+    0% { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(10deg) scale(1.1); }
+    100% { transform: rotate(0deg) scale(1); }
 }
 
 @keyframes trashShake {
-    0% { transform: rotate(0); }
-    25% { transform: rotate(-15deg); }
-    50% { transform: rotate(15deg); }
-    75% { transform: rotate(-15deg); }
-    100% { transform: rotate(0); }
+    0% { transform: translateX(0); }
+    25% { transform: translateX(5px); }
+    50% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+    100% { transform: translateX(0); }
 }
 
-.trashShake {
-    animation: trashShake 1s ease-in-out;
+.tick-animation { animation: tickAnimation 0.6s ease-out; }
+.edit-animation { animation: editPulse 0.6s ease-in-out; }
+.trashShake { animation: trashShake 0.4s ease-in-out; }
+
+/* Alert Styling */
+.alert-dismissible {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
 }
 
-.tick-animation {
-    animation: tickBounce 1s;
-}
+.alert-success { background: #f8fff8; border: 2px solid #c3e6cb; }
+.alert-primary { background: #f0f8ff; border: 2px solid #b8daff; }
+.alert-danger { background: #fff8f8; border: 2px solid #f5c6cb; }
 
-/* Style the Add New Stock button to be responsive */
-.btn-primary {
-    font-weight: bold;
-}
-
-/* Style the search bar and suggestions */
-#search-box {
-    border-radius: 0.25rem;
-    font-size: 0.9rem;
-}
-
+/* Search suggestions dropdown */
 #search-suggestions {
-    z-index: 1050; /* Ensure it appears above other elements */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    border: 1px solid #ddd;
-    background-color: #fff;
+    position: absolute;
+    width: 100%;
+    z-index: 1000;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    margin-top: 2px;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none; /* Remove !important */
 }
 
-/* Dropdown items styling */
-#search-suggestions .dropdown-item {
-    font-size: 0.9rem;
-    padding: 0.5rem;
+#search-suggestions.show {
+    display: block !important; /* Force visibility */
 }
 
-#search-suggestions .dropdown-item:hover {
+.dropdown-item.cursor-pointer {
+    padding: 8px 12px;
+    transition: background-color 0.2s;
+}
+
+.dropdown-item.cursor-pointer:hover {
     background-color: #f8f9fa;
-    cursor: pointer;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .row.mb-3 {
-        flex-direction: column;
-    }
-
-    .row.mb-3 .col-md-3 {
-        margin-bottom: 1rem;
-    }
-
-    .row.mb-3 form {
-        flex-wrap: wrap;
-    }
-
-    .form-select {
-        width: 100%;
-        margin-bottom: 1rem;
-    }
-
-    #search-box {
-        margin-bottom: 1rem;
-    }
 }

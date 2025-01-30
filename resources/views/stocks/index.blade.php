@@ -36,8 +36,8 @@
                     />
                     <ul
                         id="search-suggestions"
-                        class="dropdown-menu w-100 position-absolute"
-                        style="display: none; max-height: 200px; overflow-y: auto;"
+                        class="dropdown-menu"
+                        style="max-height: 200px; overflow-y: auto;"
                     ></ul>
                 </div>
                 <!-- Hidden input for serial number -->
@@ -161,44 +161,48 @@
             const suggestionsList = document.getElementById('search-suggestions');
             const hiddenInput = document.getElementById('search-hidden');
 
+            // Debounce function to limit API calls
+            let debounceTimer;
+            const debounce = (callback, delay) => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(callback, delay);
+            };
+
             searchBox.addEventListener('input', function () {
                 const query = this.value.trim();
+                suggestionsList.innerHTML = '';
 
-                if (query.length >= 1) {
-                    const url = `{{ route('stocks.search') }}?query=${query}`;
-
-                    fetch(url)
+                debounce(() => {
+                    if (query.length >= 1) {
+                        fetch(`/stocks/search?query=${encodeURIComponent(query)}`, {
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            }
+                        })
                         .then(response => response.json())
                         .then(data => {
-                            suggestionsList.innerHTML = ''; // Clear previous suggestions
                             if (data.length > 0) {
-                                suggestionsList.style.display = 'block';
                                 data.forEach(item => {
                                     const li = document.createElement('li');
-                                    li.className = 'dropdown-item';
+                                    li.className = 'dropdown-item cursor-pointer';
                                     li.textContent = `${item.brand} - ${item.model} (${item.serial_number})`;
-                                    li.addEventListener('click', function () {
-                                        searchBox.value = `${item.brand} - ${item.model} (${item.serial_number})`; // Set the input value
-                                        hiddenInput.value = item.serial_number; // Set the hidden input
-                                        suggestionsList.style.display = 'none'; // Hide suggestions
-                                        document.querySelector('form').submit(); // Submit the form
+                                    li.addEventListener('click', () => {
+                                        searchBox.value = `${item.brand} - ${item.model}`;
+                                        hiddenInput.value = item.serial_number;
+                                        suggestionsList.classList.remove('show');
                                     });
                                     suggestionsList.appendChild(li);
                                 });
+                                suggestionsList.classList.add('show');
                             } else {
-                                suggestionsList.style.display = 'none';
+                                suggestionsList.classList.remove('show');
                             }
-                        })
-                        .catch(error => console.error('Error fetching search suggestions:', error));
-                } else {
-                    suggestionsList.style.display = 'none';
-                }
-            });
-
-            document.addEventListener('click', (e) => {
-                if (!suggestionsList.contains(e.target) && e.target !== searchBox) {
-                    suggestionsList.style.display = 'none';
-                }
+                        });
+                    } else {
+                        suggestionsList.classList.remove('show');
+                        hiddenInput.value = '';
+                    }
+                }, 100); // 100ms delay between keystrokes
             });
         });
     </script>

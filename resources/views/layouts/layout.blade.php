@@ -4,38 +4,144 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title')</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Include Vite Assets -->
-    @vite(['resources/css/app.css'])
-    <!-- FontAwesome for Icons -->
+    <!-- FontAwesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.10.5/dist/cdn.min.js"></script>
+    @vite(['resources/css/app.css'])
 </head>
-<body class="bg-light">
-    <div class="container my-5">
-        <!-- Popup Message -->
-        @if (session('success'))
-            <div id="popup-message" class="alert alert-success alert-dismissible fade show shadow position-fixed" role="alert">
-                <div class="d-flex flex-column align-items-center">
-                    @if (session('action') === 'add')
-                        <i class="fas fa-check-circle fa-3x text-success tick-animation"></i>
-                    @elseif (session('action') === 'edit')
-                        <i class="fas fa-edit fa-3x text-primary tick-animation"></i>
-                    @elseif (session('action') === 'delete')
-                        <i class="fas fa-trash fa-3x text-danger trashShake"></i>
-                    @endif
-                    <br>
-                    <strong>{{ session('success') }}</strong>
-                </div>
-                <button type="button" class="btn-close mt-2" aria-label="Close"></button>
+<body class="bg-light" x-data="{ sidebarOpen: window.innerWidth >= 1024, mobileSidebarOpen: false }" 
+      @resize.window="sidebarOpen = window.innerWidth >= 1024" x-cloak>
+    <!-- Sidebar Backdrop (mobile only) -->
+    <div x-show="mobileSidebarOpen" 
+         @click="mobileSidebarOpen = false" 
+         class="lg:hidden fixed inset-0 bg-black/50 z-30 transition-opacity"
+         x-transition.opacity></div>
+
+    <!-- Sidebar -->
+    <aside class="fixed top-0 left-0 z-40 h-screen bg-white shadow-lg border-r border-gray-100 overflow-hidden"
+           :class="sidebarOpen ? 'w-64' : 'w-20'"
+           style="transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);">
+        <div class="relative">
+            <!-- Sidebar Header -->
+            <div class="p-4 border-b border-gray-100">
+                <h2 class="text-xl font-bold text-gray-700 whitespace-nowrap overflow-hidden" 
+                    x-show="sidebarOpen"
+                    :class="sidebarOpen ? 'opacity-100 max-w-full' : 'opacity-0 max-w-0'">
+                    Stock System
+                </h2>
+                <h2 x-show="!sidebarOpen" class="text-center text-xl text-gray-600">📦</h2>
             </div>
-            <div id="overlay" class="position-fixed top-0 start-0 w-100 h-100 bg-dark opacity-50" style="z-index: 1040;"></div>
-        @endif
+            <nav class="mt-4 px-2 space-y-1">
+                <a href="{{ route('dashboard') }}" 
+                   class="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors 
+                          {{ request()->routeIs('dashboard') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
+                    <div class="w-8 flex-shrink-0 flex justify-center">
+                        <i class="fas fa-home text-lg"></i>
+                    </div>
+                    <span class="sidebar-text ml-3 text-sm font-medium whitespace-nowrap 
+                          transition-all duration-300 origin-left overflow-hidden"
+                          :class="sidebarOpen ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 absolute'">
+                        Dashboard
+                    </span>
+                </a>
+                <a href="{{ route('stocks.index') }}" 
+                   class="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors 
+                          {{ request()->routeIs('stocks.*') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
+                    <div class="w-8 flex-shrink-0 flex justify-center">
+                        <i class="fas fa-boxes text-lg"></i>
+                    </div>
+                    <span class="sidebar-text ml-3 text-sm font-medium whitespace-nowrap 
+                          transition-all duration-300 origin-left overflow-hidden"
+                          :class="sidebarOpen ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 absolute'">
+                        Stock Inventory
+                    </span>
+                </a>
+                <a href="{{ route('profile.edit') }}" 
+                   class="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors 
+                          {{ request()->routeIs('profile.edit') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
+                    <div class="w-8 flex flex-shrink-0 justify-center">
+                        <i class="fas fa-user-cog text-lg"></i>
+                    </div>
+                    <span class="sidebar-text ml-3 text-sm font-medium whitespace-nowrap 
+                          transition-all duration-300 origin-left overflow-hidden"
+                          :class="sidebarOpen ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 absolute'">
+                        Profile Settings
+                    </span>
+                </a>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="w-full flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors text-gray-600">
+                        <div class="w-8 flex-shrink-0 flex justify-center">
+                            <i class="fas fa-sign-out-alt text-lg"></i>
+                        </div>
+                        <span class="sidebar-text ml-3 text-sm font-medium whitespace-nowrap 
+                              transition-all duration-300 origin-left overflow-hidden"
+                              :class="sidebarOpen ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 absolute'">
+                            Logout
+                        </span>
+                    </button>
+                </form>
+            </nav>
+            
+            <!-- Edge Hover Zone -->
+            <div class="absolute right-0 top-0 bottom-0 w-2 cursor-pointer hover:bg-gray-200/50"
+                @click="sidebarOpen = !sidebarOpen"
+                x-show="sidebarOpen">
+            </div>
 
-        @yield('content')
-    </div>
+            <!-- Bottom Toggle -->
+            <div class="mt-auto border-t border-gray-100 p-2">
+                <button @click="sidebarOpen = !sidebarOpen" 
+                        class="w-full flex items-center justify-center p-3 text-gray-600 hover:bg-gray-100 rounded-lg gap-2">
+                    <i class="fas fa-chevron-left text-lg transform transition-transform"
+                        :class="{ 'rotate-180': !sidebarOpen }"></i>
+                    <span x-show="sidebarOpen" class="text-sm">Collapse Menu</span>
+                </button>
+            </div>
+        </div>
+    </aside>
 
-    <!-- Delete Confirmation Modal -->
+    <!-- Main Content -->
+    <main class="min-h-screen transition-[margin] duration-300 ease-in-out"
+          :class="sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'">
+        <!-- Mobile Header -->
+        <header class="lg:hidden bg-white shadow-sm p-4 flex items-center justify-between">
+            <button @click="mobileSidebarOpen = true" class="text-gray-600">
+                <i class="fas fa-bars fa-lg"></i>
+            </button>
+            <h1 class="text-xl font-semibold">@yield('title')</h1>
+        </header>
+
+        <!-- Content Container -->
+        <div class="p-6">
+            @if (session('success'))
+                <div id="popup-message" class="alert alert-success alert-dismissible fade show shadow popup-center" role="alert">
+                    <div class="d-flex flex-column align-items-center p-4">
+                        @if (session('action') === 'add')
+                            <i class="fas fa-check-circle fa-3x text-success tick-animation mb-3"></i>
+                        @elseif (session('action') === 'edit')
+                            <i class="fas fa-edit fa-3x text-primary edit-animation mb-3"></i>
+                        @elseif (session('action') === 'delete')
+                            <i class="fas fa-trash fa-3x text-danger trashShake mb-3"></i>
+                        @endif
+                        <h4 class="mb-0 text-center">
+                            <strong>{{ session('success') }}</strong>
+                        </h4>
+                    </div>
+                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3" aria-label="Close"></button>
+                </div>
+                <div id="overlay" class="popup-overlay"></div>
+            @endif
+
+            @yield('content')
+        </div>
+    </main>
+
+    <!-- Delete Modal -->
     <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -61,12 +167,11 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Include Section for Page-Specific Scripts -->
     @yield('scripts')
 
+    <!-- Scripts -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Handle success popup message locking
             const popupMessage = document.getElementById('popup-message');
             const overlay = document.getElementById('overlay');
             if (popupMessage) {
@@ -77,14 +182,12 @@
                 });
             }
 
-            // Lock the delete confirmation modal to prevent closing via outside clicks or Escape key
             const deleteModalElement = document.getElementById('deleteModal');
             const deleteModal = new bootstrap.Modal(deleteModalElement, {
-                backdrop: 'static', // Prevent closing by clicking outside
-                keyboard: false     // Prevent closing by pressing Escape key
+                backdrop: 'static',
+                keyboard: false
             });
 
-            // Delete confirmation modal logic
             const deleteButtons = document.querySelectorAll('.delete-button');
             const deleteForm = document.getElementById('deleteForm');
 
