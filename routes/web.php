@@ -31,7 +31,7 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
      ->name('dashboard')
      ->middleware(['auth', 'verified']);
 
-// API endpoint for stats (add this)
+// API endpoint for stats
 Route::get('/dashboard/stats', [DashboardController::class, 'getDashboardStats'])
      ->name('dashboard.stats')
      ->middleware(['auth', 'verified']);
