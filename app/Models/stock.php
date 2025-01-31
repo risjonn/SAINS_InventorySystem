@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\StockUpdate;
 
 class Stock extends Model
 {
@@ -23,5 +24,10 @@ class Stock extends Model
 
     public function scopeRecentUpdates ($query) {
         return $query->where('updated_at', '>', now()->subDays(1));
+    }
+
+    public function updates()
+    {
+        return $this->hasMany(StockUpdate::class);
     }
 }

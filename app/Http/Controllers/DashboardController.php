@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Stock;
+use App\Http\Controllers\StockController;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Models\StockUpdate;
 
 class DashboardController extends Controller
 {
@@ -22,7 +24,9 @@ class DashboardController extends Controller
             'totalStocks' => Stock::count(),
             'lowStockItems' => Stock::lowStock()->count(),
             'totalUsers' => User::count(),
-            'recentUpdates' => Stock::recentUpdates()->count()
+            'recentUpdates' => StockUpdate::withTrashed()
+                ->where('created_at', '>', now()->subDay()) // Count updates in the last 24 hours
+                ->count(),
         ];
     }
 }
