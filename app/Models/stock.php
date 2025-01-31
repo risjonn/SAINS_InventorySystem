@@ -16,4 +16,12 @@ class Stock extends Model
         'category',
         'quantity',
     ];
+
+    public function scopeLowStock($query) {
+        return $query->where('quantity', '<', 10);
+    }
+
+    public function scopeRecentUpdates ($query) {
+        return $query->where('updated_at', '>', now()->subDays(1));
+    }
 }

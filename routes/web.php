@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StockController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,6 +25,16 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+// Web route for dashboard
+Route::get('/dashboard', [DashboardController::class, 'index'])
+     ->name('dashboard')
+     ->middleware(['auth', 'verified']);
+
+// API endpoint for stats (add this)
+Route::get('/dashboard/stats', [DashboardController::class, 'getDashboardStats'])
+     ->name('dashboard.stats')
+     ->middleware(['auth', 'verified']);
 
 // Profile routes
 Route::middleware('auth')->group(function () {
