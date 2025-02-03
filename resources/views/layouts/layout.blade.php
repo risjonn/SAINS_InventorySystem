@@ -27,13 +27,23 @@
            style="transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);">
         <div class="relative">
             <!-- Sidebar Header -->
-            <div class="p-4 border-b border-gray-100">
+            <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+                <!-- Text Header: Visible when sidebar is open -->
                 <h2 class="text-xl font-bold text-gray-700 whitespace-nowrap overflow-hidden" 
                     x-show="sidebarOpen"
                     :class="sidebarOpen ? 'opacity-100 max-w-full' : 'opacity-0 max-w-0'">
                     Stock System
                 </h2>
-                <h2 x-show="!sidebarOpen" class="text-center text-xl text-gray-600">📦</h2>
+                
+                <!-- Image: Visible when sidebar is closed -->
+                <img 
+                    x-show="!sidebarOpen" 
+                    src="{{ asset('image/SAINS2.jpeg') }}" 
+                    alt="SAINS Inventory System Logo" 
+                    class="w-10 h-10 mx-auto opacity-100 transition-all duration-300 ease-in-out"
+                    loading="lazy"
+                    onerror="this.onerror=null; this.src='{{ asset('images/fallback.jpeg') }}';"
+                >
             </div>
             <nav class="mt-4 px-2 space-y-1">
                 <a href="{{ route('dashboard') }}" 
@@ -41,6 +51,14 @@
                           {{ request()->routeIs('dashboard') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
                     <div class="w-8 flex-shrink-0 flex justify-center">
                         <i class="fas fa-home text-lg"></i>
+                        <!-- Alternatively, use an image -->
+                        <!--
+                        <img 
+                            src="{{ asset('images/home-icon.png') }}" 
+                            alt="Dashboard Icon" 
+                            class="w-6 h-6"
+                        >
+                        -->
                     </div>
                     <span class="sidebar-text ml-3 text-sm font-medium whitespace-nowrap 
                           transition-all duration-300 origin-left overflow-hidden"
@@ -53,6 +71,14 @@
                           {{ request()->routeIs('stocks.*') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
                     <div class="w-8 flex-shrink-0 flex justify-center">
                         <i class="fas fa-boxes text-lg"></i>
+                        <!-- Alternatively, use an image -->
+                        <!--
+                        <img 
+                            src="{{ asset('images/boxes-icon.png') }}" 
+                            alt="Stock Inventory Icon" 
+                            class="w-6 h-6"
+                        >
+                        -->
                     </div>
                     <span class="sidebar-text ml-3 text-sm font-medium whitespace-nowrap 
                           transition-all duration-300 origin-left overflow-hidden"
@@ -65,6 +91,14 @@
                           {{ request()->routeIs('profile.edit') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
                     <div class="w-8 flex flex-shrink-0 justify-center">
                         <i class="fas fa-user-cog text-lg"></i>
+                        <!-- Alternatively, use an image -->
+                        <!--
+                        <img 
+                            src="{{ asset('images/profile-icon.png') }}" 
+                            alt="Profile Settings Icon" 
+                            class="w-6 h-6"
+                        >
+                        -->
                     </div>
                     <span class="sidebar-text ml-3 text-sm font-medium whitespace-nowrap 
                           transition-all duration-300 origin-left overflow-hidden"
@@ -77,6 +111,14 @@
                     <button type="submit" class="w-full flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors text-gray-600">
                         <div class="w-8 flex-shrink-0 flex justify-center">
                             <i class="fas fa-sign-out-alt text-lg"></i>
+                            <!-- Alternatively, use an image -->
+                            <!--
+                            <img 
+                                src="{{ asset('images/logout-icon.png') }}" 
+                                alt="Logout Icon" 
+                                class="w-6 h-6"
+                            >
+                            -->
                         </div>
                         <span class="sidebar-text ml-3 text-sm font-medium whitespace-nowrap 
                               transition-all duration-300 origin-left overflow-hidden"
