@@ -19,10 +19,19 @@
             </div>
         
             <!-- Low Stock Items Card -->
-            <div class="bg-white p-6 rounded-lg shadow-md relative">
-                <h3 class="text-sm font-semibold text-gray-500">Low Stock Items</h3>
+            <div class="bg-white p-6 rounded-lg shadow-md relative border-l-4 border-yellow-500 low-stock-card">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-semibold text-yellow-600">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>Low Stock Items
+                    </h3>
+                    <span class="text-yellow-500 text-sm" id="low-stock-warning" style="display: none;">
+                        <i class="fas fa-sync-alt fa-spin"></i> Reorder needed
+                    </span>
+                </div>
                 <div class="mt-2 flex items-center justify-between">
-                    <p class="text-3xl font-bold text-blue-600" id="low-stocks" data-stat>{{ $stats['lowStockItems'] }}</p>
+                    <p class="text-3xl font-bold text-yellow-600" id="low-stocks" data-stat>
+                        {{ $stats['lowStockItems'] }}
+                    </p>
                     <div id="low-stocks-loader" class="loader hidden"></div>
                 </div>
             </div>
