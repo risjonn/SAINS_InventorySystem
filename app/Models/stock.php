@@ -10,6 +10,8 @@ class Stock extends Model
 {
     use HasFactory;
 
+    const LOW_STOCK_TRESHOLD = 10;
+
     protected $fillable = [
         'serial_number',
         'brand',
@@ -18,8 +20,12 @@ class Stock extends Model
         'quantity',
     ];
 
+    public function isLowStock() {
+        return $this->quantity < self::LOW_STOCK_TRESHOLD;
+    }
+
     public function scopeLowStock($query) {
-        return $query->where('quantity', '<', 10);
+        return $query->where('quantity', '<', self::LOW_STOCK_TRESHOLD);
     }
 
     public function scopeRecentUpdates ($query) {

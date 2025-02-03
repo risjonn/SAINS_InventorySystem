@@ -49,7 +49,7 @@
         </div>
     </div>    
 
-    <table class="table table-bordered table-striped">
+    <table class="table table-bordered table-striped align-middle">
         <thead class="table-dark">
             <tr>
                 <th>
@@ -127,13 +127,25 @@
         </thead>
         <tbody>
             @forelse ($stocks as $stock)
-                <tr>
+                <tr class="{{ $stock->isLowStock() ? 'low-stock-row' : '' }}">
                     <td>{{ $stock->id }}</td>
-                    <td>{{ $stock->serial_number }}</td>
+                    <td>
+                        {{ $stock->serial_number }}
+                        @if($stock->isLowStock())
+                            <span class="ml-2 text-yellow-700">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </span>
+                        @endif
+                    </td>
                     <td>{{ $stock->brand }}</td>
                     <td>{{ $stock->model }}</td>
                     <td>{{ $stock->category }}</td>
-                    <td>{{ $stock->quantity }}</td>
+                    <td>
+                        {{ $stock->quantity }}
+                        @if($stock->isLowStock())
+                            <span class="text-sm text-yellow-700 ml-1">(low)</span>
+                        @endif
+                    </td>
                     <td>{{ $stock->updated_at ? $stock->updated_at->format('d-m-Y H:i') : 'N/A' }}</td>
                     <td>
                         <a href="{{ route('stocks.show', $stock) }}" class="btn btn-sm btn-info text-white">View</a>
