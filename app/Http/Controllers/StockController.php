@@ -61,6 +61,7 @@ class StockController extends Controller
             'model' => 'required',
             'category' => 'required|in:Router,Switch,Modem,Access Points',
             'quantity' => 'required|integer',
+            'section' => 'required|string'
         ]);
 
         Stock::create($request->all());

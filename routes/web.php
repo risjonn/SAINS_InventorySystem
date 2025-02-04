@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,29 +22,29 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// Dashboard route
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
-
-// Web route for dashboard
+// ✅ Fixed: Single Dashboard Route with Middleware
 Route::get('/dashboard', [DashboardController::class, 'index'])
-     ->name('dashboard')
-     ->middleware(['auth', 'verified']);
+    ->name('dashboard')
+    ->middleware(['auth', 'verified']);
 
-// API endpoint for stats
+// ✅ API endpoint for stats (requires authentication)
 Route::get('/dashboard/stats', [DashboardController::class, 'getDashboardStats'])
-     ->name('dashboard.stats')
-     ->middleware(['auth', 'verified']);
+    ->name('dashboard.stats')
+    ->middleware(['auth', 'verified']);
 
-// Profile routes
+// ✅ API endpoint for fetching stocks by section
+Route::get('/dashboard/stocks', [DashboardController::class, 'getStockData'])
+    ->name('dashboard.stocks')
+    ->middleware(['auth', 'verified']);
+
+// ✅ Profile routes (Only for authenticated users)
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// Admin-only stock management routes
+// ✅ Admin-only stock management routes
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('stocks', [StockController::class, 'store'])->name('stocks.store');
     Route::get('stocks/create', [StockController::class, 'create'])->name('stocks.create');
@@ -52,12 +53,24 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::delete('stocks/{stock}', [StockController::class, 'destroy'])->name('stocks.destroy');
 });
 
-// Stock management routes for authenticated users
+// ✅ General stock routes for authenticated users
 Route::middleware(['auth'])->group(function () {
     Route::get('stocks/search', [StockController::class, 'search'])->name('stocks.search');
     Route::get('stocks', [StockController::class, 'index'])->name('stocks.index');
     Route::get('stocks/{stock}', [StockController::class, 'show'])->name('stocks.show');
 });
+Route::post('/logout', function (Request $request) {
+    // ✅ Clear Laravel session and section selection
+    session()->forget('selectedSection'); // Remove section from Laravel session
+    session()->invalidate(); // Invalidate the session
+    session()->regenerateToken(); // Regenerate CSRF token
+
+    // ✅ Perform Laravel logout
+    Auth::logout();
+
+    // ✅ Redirect to login with a message
+    return redirect('/')->with('status', 'logged-out');
+})->name('logout');
 
 // Auth routes
 require __DIR__.'/auth.php';

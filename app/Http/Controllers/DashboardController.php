@@ -3,30 +3,49 @@
 namespace App\Http\Controllers;
 
 use App\Models\Stock;
-use App\Http\Controllers\StockController;
 use App\Models\User;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
 use App\Models\StockUpdate;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $section = $request->query('section', null); // Get selected section
+
         return view('dashboard', [
-            'stats' => $this->getDashboardStats()
+            'stats' => $this->getDashboardStats($section)
         ]);
     }
 
-    public function getDashboardStats()
+    public function getDashboardStats($section = null)
     {
+        $query = Stock::query();
+
+        if ($section) {
+            $query->where('section', $section); // Filter by section
+        }
+
         return [
-            'totalStocks' => Stock::count(),
-            'lowStockItems' => Stock::lowStock()->count(),
+            'totalStocks' => $query->count(),
+            'lowStockItems' => $query->where('quantity', '<', 10)->count(),
             'totalUsers' => User::count(),
             'recentUpdates' => StockUpdate::withTrashed()
                 ->where('created_at', '>', now()->subDay()) // Count updates in the last 24 hours
                 ->count(),
         ];
+    }
+
+    public function getStockBySection(Request $request)
+    {
+        $section = $request->query('section', null);
+
+        if (!$section) {
+            return response()->json([]); // Return empty if no section selected
+        }
+
+        $stocks = Stock::where('section', $section)->get();
+
+        return response()->json($stocks);
     }
 }

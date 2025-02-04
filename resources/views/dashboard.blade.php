@@ -33,47 +33,42 @@
 
         <!-- Quick Overview Cards (Hidden by Default) -->
         <div id="dashboard-stats" class="hidden grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <!-- Total Stocks Card -->
             <div class="bg-white p-6 rounded-lg shadow-md relative">
                 <h3 class="text-sm font-semibold text-gray-500">Total Stocks</h3>
-                <div class="mt-2 flex items-center justify-between">
-                    <p class="text-3xl font-bold text-blue-600" id="total-stocks">0</p>
-                </div>
+                <p class="text-3xl font-bold text-blue-600" id="total-stocks">0</p>
             </div>
 
-            <!-- Low Stock Items Card -->
             <div class="bg-white p-6 rounded-lg shadow-md relative border-l-4 border-yellow-500 low-stock-card">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-sm font-semibold text-yellow-600">
-                        <i class="fas fa-exclamation-triangle mr-2"></i>Low Stock Items
-                    </h3>
-                    <span class="text-yellow-500 text-sm" id="low-stock-warning" style="display: none;">
-                        <i class="fas fa-sync-alt fa-spin"></i> Reorder needed
-                    </span>
-                </div>
-                <div class="mt-2 flex items-center justify-between">
-                    <p class="text-3xl font-bold text-yellow-600" id="low-stocks" data-stat>
-                        {{ $stats['lowStockItems'] }}
-                    </p>
-                    <div id="low-stocks-loader" class="loader hidden"></div>
-                </div>
+                <h3 class="text-sm font-semibold text-yellow-600">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>Low Stock Items
+                </h3>
+                <p class="text-3xl font-bold text-yellow-600" id="low-stocks">0</p>
             </div>
 
-            <!-- Users Card -->
             <div class="bg-white p-6 rounded-lg shadow-md relative">
                 <h3 class="text-sm font-semibold text-gray-500">Users</h3>
-                <div class="mt-2 flex items-center justify-between">
-                    <p class="text-3xl font-bold text-blue-600" id="total-users">0</p>
-                </div>
+                <p class="text-3xl font-bold text-blue-600" id="total-users">0</p>
             </div>
 
-            <!-- Recent Updates Card -->
             <div class="bg-white p-6 rounded-lg shadow-md relative">
                 <h3 class="text-sm font-semibold text-gray-500">Recent Updates</h3>
-                <div class="mt-2 flex items-center justify-between">
-                    <p class="text-3xl font-bold text-blue-600" id="recent-updates">0</p>
-                </div>
+                <p class="text-3xl font-bold text-blue-600" id="recent-updates">0</p>
             </div>
+        </div>
+
+        <!-- Stock List (Hidden if no data) -->
+        <div id="stock-list" class="hidden mt-8">
+            <h3 class="text-lg font-semibold mb-4">Stock List</h3>
+            <table class="w-full border-collapse border border-gray-300">
+                <thead>
+                    <tr class="bg-gray-100">
+                        <th class="border border-gray-300 px-4 py-2">Item Name</th>
+                        <th class="border border-gray-300 px-4 py-2">Quantity</th>
+                        <th class="border border-gray-300 px-4 py-2">Last Updated</th>
+                    </tr>
+                </thead>
+                <tbody id="stock-data"></tbody>
+            </table>
         </div>
 
         <div class="mt-8 text-sm text-gray-500 hidden" id="last-updated">
@@ -82,69 +77,68 @@
     </div>
 
     @section('scripts')
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                const sectionSelect = document.getElementById("sectionSelect");
-                const statsContainer = document.getElementById("dashboard-stats");
-                const lastUpdated = document.getElementById("last-updated");
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const sectionSelect = document.getElementById("sectionSelect");
+        const statsContainer = document.getElementById("dashboard-stats");
+        const stockList = document.getElementById("stock-list");
+        const lastUpdated = document.getElementById("last-updated");
 
-                // Function to update stats
-                function updateDashboardStats(section) {
-                    if (!section) return;
+        function updateDashboardStats(section) {
+            if (!section) return;
 
-                    // Show dashboard stats
-                    statsContainer.classList.remove("hidden");
-                    lastUpdated.classList.remove("hidden");
+            statsContainer.classList.remove("hidden");
+            lastUpdated.classList.remove("hidden");
 
-                    fetch("{{ route('dashboard.stats') }}?section=" + encodeURIComponent(section), {
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                            'Accept': 'application/json',
-                        },
-                        cache: 'no-store'
-                    })
-                    .then(response => {
-                        if (!response.ok) throw new Error('Network error');
-                        return response.json();
-                    })
-                    .then(data => {
-                        document.getElementById('total-stocks').textContent = data.totalStocks;
-                        document.getElementById('low-stocks').textContent = data.lowStockItems;
-                        document.getElementById('total-users').textContent = data.totalUsers;
-                        document.getElementById('recent-updates').textContent = data.recentUpdates;
-                        document.getElementById('update-time').textContent = new Date().toLocaleTimeString();
-                    })
-                    .catch(console.error);
-                }
-
-                // Check if a section is saved in localStorage
-                const savedSection = localStorage.getItem("selectedSection");
-                if (savedSection) {
-                    sectionSelect.value = savedSection;
-                    updateDashboardStats(savedSection);
-                }
-
-                // Update when a new section is selected
-                sectionSelect.addEventListener("change", function () {
-                    const selectedSection = sectionSelect.value;
-                    localStorage.setItem("selectedSection", selectedSection);
-                    updateDashboardStats(selectedSection);
+            fetch("{{ route('dashboard.stats') }}?section=" + encodeURIComponent(section))
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('total-stocks').textContent = data.totalStocks;
+                    document.getElementById('low-stocks').textContent = data.lowStockItems;
+                    document.getElementById('total-users').textContent = data.totalUsers;
+                    document.getElementById('recent-updates').textContent = data.recentUpdates;
                 });
 
-                // Auto-update every 30 seconds
-                setInterval(() => {
-                    const selectedSection = localStorage.getItem("selectedSection");
-                    if (selectedSection) updateDashboardStats(selectedSection);
-                }, 30000);
+            fetch("{{ route('dashboard.stocks') }}?section=" + encodeURIComponent(section))
+                .then(response => response.json())
+                .then(data => {
+                    let stockTable = document.getElementById("stock-data");
+                    stockTable.innerHTML = "";
 
-                // Clear section selection on logout
-                const logoutButton = document.getElementById("logoutButton");
-                if (logoutButton) {
-                    logoutButton.addEventListener("click", function () {
-                        localStorage.removeItem("selectedSection");
-                    });
-                }
-            });
-        </script>
+                    if (data.length > 0) {
+                        stockList.classList.remove("hidden");
+                        data.forEach(stock => {
+                            stockTable.innerHTML += `<tr>
+                                <td class="border px-4 py-2">${stock.name}</td>
+                                <td class="border px-4 py-2">${stock.quantity}</td>
+                                <td class="border px-4 py-2">${stock.updated_at}</td>
+                            </tr>`;
+                        });
+                    } else {
+                        stockList.classList.add("hidden");
+                    }
+                });
+        }
+
+        // ✅ Ensure section persists across pages
+        const savedSection = sessionStorage.getItem("selectedSection");
+        if (savedSection) {
+            sectionSelect.value = savedSection;
+            updateDashboardStats(savedSection);
+        }
+
+        sectionSelect.addEventListener("change", function () {
+            const selectedSection = this.value;
+            sessionStorage.setItem("selectedSection", selectedSection);
+            updateDashboardStats(selectedSection);
+        });
+
+        // ✅ Clear section on logout by listening for logout button
+        document.querySelector("form[action='{{ route('logout') }}']").addEventListener("submit", function () {
+            sessionStorage.removeItem("selectedSection"); // ✅ Remove section on logout
+        });
+    });
+</script>
+
     @endsection
 @endsection
