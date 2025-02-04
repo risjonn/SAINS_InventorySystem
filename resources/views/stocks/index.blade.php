@@ -14,7 +14,28 @@
         <!-- Filter and Search -->
         <div class="col-md-9">
             <form action="{{ route('stocks.index') }}" method="GET" class="d-flex align-items-center">
-                <!-- Filter by Category -->
+                <!-- 🔹 Section Dropdown for Filtering -->
+                <select name="section" class="form-select me-2" style="max-width: 200px;" onchange="this.form.submit()">
+                    <option value="">All Sections</option>
+                    <optgroup label="Sarawak">
+                        <option value="Kuching" {{ request('section', session('selectedSection')) == 'Kuching' ? 'selected' : '' }}>Kuching</option>
+                        <option value="Sri Aman" {{ request('section', session('selectedSection')) == 'Sri Aman' ? 'selected' : '' }}>Sri Aman</option>
+                        <option value="Betong" {{ request('section', session('selectedSection')) == 'Betong' ? 'selected' : '' }}>Betong</option>
+                        <option value="Sarikei" {{ request('section', session('selectedSection')) == 'Sarikei' ? 'selected' : '' }}>Sarikei</option>
+                        <option value="Sibu" {{ request('section', session('selectedSection')) == 'Sibu' ? 'selected' : '' }}>Sibu</option>
+                        <option value="Mukah" {{ request('section', session('selectedSection')) == 'Mukah' ? 'selected' : '' }}>Mukah</option>
+                        <option value="Kapit" {{ request('section', session('selectedSection')) == 'Kapit' ? 'selected' : '' }}>Kapit</option>
+                        <option value="Bintulu" {{ request('section', session('selectedSection')) == 'Bintulu' ? 'selected' : '' }}>Bintulu</option>
+                        <option value="Miri" {{ request('section', session('selectedSection')) == 'Miri' ? 'selected' : '' }}>Miri</option>
+                        <option value="Limbang" {{ request('section', session('selectedSection')) == 'Limbang' ? 'selected' : '' }}>Limbang</option>
+                    </optgroup>
+                    <optgroup label="Sabah">
+                        <option value="Sandakan" {{ request('section', session('selectedSection')) == 'Sandakan' ? 'selected' : '' }}>Sandakan</option>
+                        <option value="Tawau" {{ request('section', session('selectedSection')) == 'Tawau' ? 'selected' : '' }}>Tawau</option>
+                    </optgroup>
+                </select>
+
+                <!-- 🔹 Category Dropdown -->
                 <select name="category" class="form-select me-2" style="max-width: 200px;" onchange="this.form.submit()">
                     <option value="">All Categories</option>
                     @foreach ($categories as $category)
@@ -34,12 +55,9 @@
                         placeholder="Search stocks... (Serial number, Brand, Model)"
                         autocomplete="off"
                     />
-                    <ul
-                        id="search-suggestions"
-                        class="dropdown-menu"
-                        style="max-height: 200px; overflow-y: auto;"
-                    ></ul>
+                    <ul id="search-suggestions" class="dropdown-menu" style="max-height: 200px; overflow-y: auto;"></ul>
                 </div>
+                
                 <!-- Hidden input for serial number -->
                 <input type="hidden" name="serial_number" id="search-hidden" value="">
 
@@ -52,110 +70,43 @@
     <table class="table table-bordered table-striped align-middle">
         <thead class="table-dark">
             <tr>
-                <th>
-                    ID
-                    <a href="{{ route('stocks.index', array_merge(request()->all(), ['sort_by' => 'id', 'sort_direction' => request('sort_direction') === 'asc' ? 'desc' : 'asc'])) }}">
-                        @if (request('sort_by') === 'id')
-                            <i class="fas fa-sort-{{ request('sort_direction') === 'asc' ? 'up' : 'down' }}"></i>
-                        @else
-                            <i class="fas fa-sort"></i>
-                        @endif
-                    </a>
-                </th>
-                <th>
-                    Serial Number
-                    <a href="{{ route('stocks.index', array_merge(request()->all(), ['sort_by' => 'serial_number', 'sort_direction' => request('sort_direction') === 'asc' ? 'desc' : 'asc'])) }}">
-                        @if (request('sort_by') === 'serial_number')
-                            <i class="fas fa-sort-{{ request('sort_direction') === 'asc' ? 'up' : 'down' }}"></i>
-                        @else
-                            <i class="fas fa-sort"></i>
-                        @endif
-                    </a>
-                </th>
-                <th>
-                    Brand
-                    <a href="{{ route('stocks.index', array_merge(request()->all(), ['sort_by' => 'brand', 'sort_direction' => request('sort_direction') === 'asc' ? 'desc' : 'asc'])) }}">
-                        @if (request('sort_by') === 'brand')
-                            <i class="fas fa-sort-{{ request('sort_direction') === 'asc' ? 'up' : 'down' }}"></i>
-                        @else
-                            <i class="fas fa-sort"></i>
-                        @endif
-                    </a>
-                </th>
-                <th>
-                    Model
-                    <a href="{{ route('stocks.index', array_merge(request()->all(), ['sort_by' => 'model', 'sort_direction' => request('sort_direction') === 'asc' ? 'desc' : 'asc'])) }}">
-                        @if (request('sort_by') === 'model')
-                            <i class="fas fa-sort-{{ request('sort_direction') === 'asc' ? 'up' : 'down' }}"></i>
-                        @else
-                            <i class="fas fa-sort"></i>
-                        @endif
-                    </a>
-                </th>
-                <th>
-                    Category
-                    <a href="{{ route('stocks.index', array_merge(request()->all(), ['sort_by' => 'category', 'sort_direction' => request('sort_direction') === 'asc' ? 'desc' : 'asc'])) }}">
-                        @if (request('sort_by') === 'category')
-                            <i class="fas fa-sort-{{ request('sort_direction') === 'asc' ? 'up' : 'down' }}"></i>
-                        @else
-                            <i class="fas fa-sort"></i>
-                        @endif
-                    </a>
-                </th>
-                <th>
-                    Quantity
-                    <a href="{{ route('stocks.index', array_merge(request()->all(), ['sort_by' => 'quantity', 'sort_direction' => request('sort_direction') === 'asc' ? 'desc' : 'asc'])) }}">
-                        @if (request('sort_by') === 'quantity')
-                            <i class="fas fa-sort-{{ request('sort_direction') === 'asc' ? 'up' : 'down' }}"></i>
-                        @else
-                            <i class="fas fa-sort"></i>
-                        @endif
-                    </a>
-                </th>
-                <th>
-                    Updated At
-                    <a href="{{ route('stocks.index', array_merge(request()->all(), ['sort_by' => 'updated_at', 'sort_direction' => request('sort_direction') === 'asc' ? 'desc' : 'asc'])) }}">
-                        @if (request('sort_by') === 'updated_at')
-                            <i class="fas fa-sort-{{ request('sort_direction') === 'asc' ? 'up' : 'down' }}"></i>
-                        @else
-                            <i class="fas fa-sort"></i>
-                        @endif
-                    </a>
-                </th>
+                <th>ID</th>
+                <th>Serial Number</th>
+                <th>Brand</th>
+                <th>Model</th>
+                <th>Category</th>
+                <th>Quantity</th>
+                <th>Section</th>
+                <th>Updated At</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             @forelse ($stocks as $stock)
-                <tr class="{{ $stock->isLowStock() ? 'low-stock-row' : '' }}">
+                <tr>
                     <td>{{ $stock->id }}</td>
-                    <td>
-                        {{ $stock->serial_number }}
-                        @if($stock->isLowStock())
-                            <span class="ml-2 text-yellow-700">
-                                <i class="fas fa-exclamation-circle"></i>
-                            </span>
-                        @endif
-                    </td>
+                    <td>{{ $stock->serial_number }}</td>
                     <td>{{ $stock->brand }}</td>
                     <td>{{ $stock->model }}</td>
                     <td>{{ $stock->category }}</td>
-                    <td>
-                        {{ $stock->quantity }}
-                        @if($stock->isLowStock())
-                            <span class="text-sm text-yellow-700 ml-1">(low)</span>
-                        @endif
-                    </td>
+                    <td>{{ $stock->quantity }}</td>
+                    <td>{{ $stock->section }}</td>
                     <td>{{ $stock->updated_at ? $stock->updated_at->format('d-m-Y H:i') : 'N/A' }}</td>
                     <td>
                         <a href="{{ route('stocks.show', $stock) }}" class="btn btn-sm btn-info text-white">View</a>
                         <a href="{{ route('stocks.edit', $stock) }}" class="btn btn-sm btn-warning text-white">Edit</a>
-                        <button class="btn btn-sm btn-danger delete-button" data-action="{{ route('stocks.destroy', $stock) }}">Delete</button>
+                        <form action="{{ route('stocks.destroy', $stock) }}" method="POST">
+    @csrf
+    @method('DELETE')
+    <input type="hidden" name="section" value="{{ request('section', session('selectedSection', 'Kuching')) }}">
+    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+</form>
+
                     </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="8" class="text-center">No stocks available.</td>
+                    <td colspan="9" class="text-center">No stocks available for this section.</td>
                 </tr>
             @endforelse
         </tbody>
@@ -164,58 +115,4 @@
     <div class="mt-3">
         {{ $stocks->links() }}
     </div>
-@endsection
-
-@section('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const searchBox = document.getElementById('search-box');
-            const suggestionsList = document.getElementById('search-suggestions');
-            const hiddenInput = document.getElementById('search-hidden');
-
-            // Debounce function to limit API calls
-            let debounceTimer;
-            const debounce = (callback, delay) => {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(callback, delay);
-            };
-
-            searchBox.addEventListener('input', function () {
-                const query = this.value.trim();
-                suggestionsList.innerHTML = '';
-
-                debounce(() => {
-                    if (query.length >= 1) {
-                        fetch(`/stocks/search?query=${encodeURIComponent(query)}`, {
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                            }
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.length > 0) {
-                                data.forEach(item => {
-                                    const li = document.createElement('li');
-                                    li.className = 'dropdown-item cursor-pointer';
-                                    li.textContent = `${item.brand} - ${item.model} (${item.serial_number})`;
-                                    li.addEventListener('click', () => {
-                                        searchBox.value = `${item.brand} - ${item.model}`;
-                                        hiddenInput.value = item.serial_number;
-                                        suggestionsList.classList.remove('show');
-                                    });
-                                    suggestionsList.appendChild(li);
-                                });
-                                suggestionsList.classList.add('show');
-                            } else {
-                                suggestionsList.classList.remove('show');
-                            }
-                        });
-                    } else {
-                        suggestionsList.classList.remove('show');
-                        hiddenInput.value = '';
-                    }
-                }, 100); // 100ms delay between keystrokes
-            });
-        });
-    </script>
 @endsection

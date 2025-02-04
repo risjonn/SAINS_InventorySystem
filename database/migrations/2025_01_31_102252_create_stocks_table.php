@@ -15,6 +15,7 @@ class CreateStocksTable extends Migration
             $table->string('model');
             $table->string('category');
             $table->integer('quantity');
+            $table->string('section');
             $table->timestamps();
         });
     }
