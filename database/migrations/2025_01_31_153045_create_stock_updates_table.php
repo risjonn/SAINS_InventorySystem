@@ -15,12 +15,9 @@ return new class extends Migration
     {
         Schema::create('stock_updates', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('stock_id'); // Foreign key to stocks table
-            $table->string('type'); // 'created', 'updated', 'deleted'
+            $table->unsignedBigInteger('stock_id')->nullable();
+            $table->foreign('stock_id')->references('id')->on('stocks')->onDelete('set null');
             $table->timestamps();
-
-            // Foreign key constraint with ON DELETE CASCADE
-            $table->foreign('stock_id')->references('id')->on('stocks')->onDelete('cascade');
         });
     }
 

@@ -76,69 +76,66 @@
         </div>
     </div>
 
-    @section('scripts')
-    <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const sectionSelect = document.getElementById("sectionSelect");
-        const statsContainer = document.getElementById("dashboard-stats");
-        const stockList = document.getElementById("stock-list");
-        const lastUpdated = document.getElementById("last-updated");
+@section('scripts')
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const sectionSelect = document.getElementById("sectionSelect");
+    const statsContainer = document.getElementById("dashboard-stats");
+    const stockList = document.getElementById("stock-list");
+    const lastUpdated = document.getElementById("last-updated");
 
-        function updateDashboardStats(section) {
-            if (!section) return;
+    function updateDashboardStats(section) {
+        if (!section) return;
 
-            statsContainer.classList.remove("hidden");
-            lastUpdated.classList.remove("hidden");
+        statsContainer.classList.remove("hidden");
+        lastUpdated.classList.remove("hidden");
 
-            fetch("{{ route('dashboard.stats') }}?section=" + encodeURIComponent(section))
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('total-stocks').textContent = data.totalStocks;
-                    document.getElementById('low-stocks').textContent = data.lowStockItems;
-                    document.getElementById('total-users').textContent = data.totalUsers;
-                    document.getElementById('recent-updates').textContent = data.recentUpdates;
-                });
+        fetch("{{ route('dashboard.stats') }}?section=" + encodeURIComponent(section))
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('total-stocks').textContent = data.totalStocks;
+                document.getElementById('low-stocks').textContent = data.lowStockItems;
+                document.getElementById('total-users').textContent = data.totalUsers;
+                document.getElementById('recent-updates').textContent = data.recentUpdates;
+            });
 
-            fetch("{{ route('dashboard.stocks') }}?section=" + encodeURIComponent(section))
-                .then(response => response.json())
-                .then(data => {
-                    let stockTable = document.getElementById("stock-data");
-                    stockTable.innerHTML = "";
+        fetch("{{ route('dashboard.stocks') }}?section=" + encodeURIComponent(section))
+            .then(response => response.json())
+            .then(data => {
+                let stockTable = document.getElementById("stock-data");
+                stockTable.innerHTML = "";
 
-                    if (data.length > 0) {
-                        stockList.classList.remove("hidden");
-                        data.forEach(stock => {
-                            stockTable.innerHTML += `<tr>
-                                <td class="border px-4 py-2">${stock.name}</td>
-                                <td class="border px-4 py-2">${stock.quantity}</td>
-                                <td class="border px-4 py-2">${stock.updated_at}</td>
-                            </tr>`;
-                        });
-                    } else {
-                        stockList.classList.add("hidden");
-                    }
-                });
-        }
+                if (data.length > 0) {
+                    stockList.classList.remove("hidden");
+                    data.forEach(stock => {
+                        stockTable.innerHTML += `<tr>
+                            <td class="border px-4 py-2">${stock.name}</td>
+                            <td class="border px-4 py-2">${stock.quantity}</td>
+                            <td class="border px-4 py-2">${stock.updated_at}</td>
+                        </tr>`;
+                    });
+                } else {
+                    stockList.classList.add("hidden");
+                }
+            });
+    }
 
-        // ✅ Ensure section persists across pages
-        const savedSection = sessionStorage.getItem("selectedSection");
-        if (savedSection) {
-            sectionSelect.value = savedSection;
-            updateDashboardStats(savedSection);
-        }
+    const savedSection = sessionStorage.getItem("selectedSection");
+    if (savedSection) {
+        sectionSelect.value = savedSection;
+        updateDashboardStats(savedSection);
+    }
 
-        sectionSelect.addEventListener("change", function () {
-            const selectedSection = this.value;
-            sessionStorage.setItem("selectedSection", selectedSection);
-            updateDashboardStats(selectedSection);
-        });
-
-        // ✅ Clear section on logout by listening for logout button
-        document.querySelector("form[action='{{ route('logout') }}']").addEventListener("submit", function () {
-            sessionStorage.removeItem("selectedSection"); // ✅ Remove section on logout
-        });
+    sectionSelect.addEventListener("change", function () {
+        const selectedSection = this.value;
+        sessionStorage.setItem("selectedSection", selectedSection);
+        updateDashboardStats(selectedSection);
     });
-</script>
 
-    @endsection
+    document.querySelector("form[action='{{ route('logout') }}']").addEventListener("submit", function () {
+        sessionStorage.removeItem("selectedSection"); // Remove section on logout
+    });
+});
+</script>
+@endsection
 @endsection

@@ -6,16 +6,6 @@ use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
-*/
 
 // Public route
 Route::get('/', function () {
@@ -44,14 +34,16 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// ✅ Admin-only stock management routes
+/// ✅ Admin-only stock management routes
 Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/stocks/create', [StockController::class, 'create'])->name('stocks.create');
     Route::post('stocks', [StockController::class, 'store'])->name('stocks.store');
-    Route::get('stocks/create', [StockController::class, 'create'])->name('stocks.create');
     Route::get('stocks/{stock}/edit', [StockController::class, 'edit'])->name('stocks.edit');
     Route::put('stocks/{stock}', [StockController::class, 'update'])->name('stocks.update');
     Route::delete('stocks/{stock}', [StockController::class, 'destroy'])->name('stocks.destroy');
 });
+
+
 
 // ✅ General stock routes for authenticated users
 Route::middleware(['auth'])->group(function () {
