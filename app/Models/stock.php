@@ -18,6 +18,7 @@ class Stock extends Model
         'model',
         'category',
         'quantity',
+        'section',
     ];
 
     public function isLowStock() {
