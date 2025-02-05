@@ -1,141 +1,92 @@
 @extends('layouts.layout')
 
-@section('title', 'Dashboard')
-
 @section('content')
-    <div class="min-h-screen">
-        <h1 class="text-2xl font-bold mb-6">Welcome, {{ auth()->user()->name }}!</h1>
-        <p class="text-gray-600 mb-8">Use the dropdown menu below to select a section.</p>
+<div class="container mx-auto px-4">
+    <h2 class="text-xl font-semibold mt-4">Dashboard</h2>
 
-        <!-- Section Selection Dropdown -->
-        <div class="mb-6">
-            <label for="sectionSelect" class="block text-sm font-semibold text-gray-700">Select Section</label>
-            <select id="sectionSelect" class="mt-1 block w-full p-2 border rounded-md">
-                <option value="" selected disabled>Select a section</option>
-                <optgroup label="Sarawak">
-                    <option value="Kuching">Kuching</option>
-                    <option value="Sri Aman">Sri Aman</option>
-                    <option value="Betong">Betong</option>
-                    <option value="Sarikei">Sarikei</option>
-                    <option value="Sibu">Sibu</option>
-                    <option value="Mukah">Mukah</option>
-                    <option value="Kapit">Kapit</option>
-                    <option value="Bintulu">Bintulu</option>
-                    <option value="Miri">Miri</option>
-                    <option value="Limbang">Limbang</option>
-                </optgroup>
-                <optgroup label="Sabah">
-                    <option value="Sandakan">Sandakan</option>
-                    <option value="Tawau">Tawau</option>
-                </optgroup>
-            </select>
+    <!-- Division Selection -->
+    <form method="GET" action="{{ route('dashboard') }}" class="mb-4">
+        <label for="division" class="block text-sm font-medium text-gray-700">Select Division:</label>
+        <select name="division" id="division" onchange="this.form.submit()" class="block w-full mt-1 border rounded p-2">
+            @foreach($divisions as $division)
+                <option value="{{ $division->id }}" {{ $selectedDivision == $division->id ? 'selected' : '' }}>
+                    {{ $division->name }}
+                </option>
+            @endforeach
+        </select>
+    </form>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-blue-100 p-4 rounded-lg shadow-md">
+            <h3 class="text-lg font-semibold">Total Stocks</h3>
+            <p class="text-2xl font-bold">{{ $totalStocks }}</p>
         </div>
 
-        <!-- Quick Overview Cards (Hidden by Default) -->
-        <div id="dashboard-stats" class="hidden grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <div class="bg-white p-6 rounded-lg shadow-md relative">
-                <h3 class="text-sm font-semibold text-gray-500">Total Stocks</h3>
-                <p class="text-3xl font-bold text-blue-600" id="total-stocks">0</p>
-            </div>
-
-            <div class="bg-white p-6 rounded-lg shadow-md relative border-l-4 border-yellow-500 low-stock-card">
-                <h3 class="text-sm font-semibold text-yellow-600">
-                    <i class="fas fa-exclamation-triangle mr-2"></i>Low Stock Items
-                </h3>
-                <p class="text-3xl font-bold text-yellow-600" id="low-stocks">0</p>
-            </div>
-
-            <div class="bg-white p-6 rounded-lg shadow-md relative">
-                <h3 class="text-sm font-semibold text-gray-500">Users</h3>
-                <p class="text-3xl font-bold text-blue-600" id="total-users">0</p>
-            </div>
-
-            <div class="bg-white p-6 rounded-lg shadow-md relative">
-                <h3 class="text-sm font-semibold text-gray-500">Recent Updates</h3>
-                <p class="text-3xl font-bold text-blue-600" id="recent-updates">0</p>
-            </div>
+        <div class="bg-yellow-100 p-4 rounded-lg shadow-md">
+            <h3 class="text-lg font-semibold">Low Stock Items</h3>
+            <p class="text-2xl font-bold">{{ $lowStockItems }}</p>
         </div>
 
-        <!-- Stock List (Hidden if no data) -->
-        <div id="stock-list" class="hidden mt-8">
-            <h3 class="text-lg font-semibold mb-4">Stock List</h3>
-            <table class="w-full border-collapse border border-gray-300">
-                <thead>
-                    <tr class="bg-gray-100">
-                        <th class="border border-gray-300 px-4 py-2">Item Name</th>
-                        <th class="border border-gray-300 px-4 py-2">Quantity</th>
-                        <th class="border border-gray-300 px-4 py-2">Last Updated</th>
-                    </tr>
-                </thead>
-                <tbody id="stock-data"></tbody>
-            </table>
+        <div class="bg-green-100 p-4 rounded-lg shadow-md">
+            <h3 class="text-lg font-semibold">Total Users</h3>
+            <p class="text-2xl font-bold">{{ $userCount }}</p>
         </div>
 
-        <div class="mt-8 text-sm text-gray-500 hidden" id="last-updated">
-            Last updated: <span id="update-time">{{ now()->format('H:i:s') }}</span>
+        <div class="bg-gray-100 p-4 rounded-lg shadow-md">
+            <h3 class="text-lg font-semibold">Recent Updates</h3>
+            <p class="text-sm text-gray-600">Latest stock transactions</p>
         </div>
     </div>
 
-@section('scripts')
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const sectionSelect = document.getElementById("sectionSelect");
-    const statsContainer = document.getElementById("dashboard-stats");
-    const stockList = document.getElementById("stock-list");
-    const lastUpdated = document.getElementById("last-updated");
+    <!-- Stock Summary Table -->
+    <div class="mt-6">
+        <h3 class="text-lg font-semibold">Stock Summary by Category ({{ $divisions->find($selectedDivision)->name }})</h3>
+        <table class="w-full mt-2 border rounded-lg shadow-md bg-white">
+            <thead>
+                <tr class="bg-gray-200 text-left">
+                    <th class="p-2">Category</th>
+                    <th class="p-2">Quantity</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($stockSummary as $stock)
+                <tr class="border-b">
+                    <td class="p-2">{{ $stock->category }}</td>
+                    <td class="p-2">{{ $stock->quantity }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
 
-    function updateDashboardStats(section) {
-        if (!section) return;
-
-        statsContainer.classList.remove("hidden");
-        lastUpdated.classList.remove("hidden");
-
-        fetch("{{ route('dashboard.stats') }}?section=" + encodeURIComponent(section))
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('total-stocks').textContent = data.totalStocks;
-                document.getElementById('low-stocks').textContent = data.lowStockItems;
-                document.getElementById('total-users').textContent = data.totalUsers;
-                document.getElementById('recent-updates').textContent = data.recentUpdates;
-            });
-
-        fetch("{{ route('dashboard.stocks') }}?section=" + encodeURIComponent(section))
-            .then(response => response.json())
-            .then(data => {
-                let stockTable = document.getElementById("stock-data");
-                stockTable.innerHTML = "";
-
-                if (data.length > 0) {
-                    stockList.classList.remove("hidden");
-                    data.forEach(stock => {
-                        stockTable.innerHTML += `<tr>
-                            <td class="border px-4 py-2">${stock.name}</td>
-                            <td class="border px-4 py-2">${stock.quantity}</td>
-                            <td class="border px-4 py-2">${stock.updated_at}</td>
-                        </tr>`;
-                    });
-                } else {
-                    stockList.classList.add("hidden");
-                }
-            });
-    }
-
-    const savedSection = sessionStorage.getItem("selectedSection");
-    if (savedSection) {
-        sectionSelect.value = savedSection;
-        updateDashboardStats(savedSection);
-    }
-
-    sectionSelect.addEventListener("change", function () {
-        const selectedSection = this.value;
-        sessionStorage.setItem("selectedSection", selectedSection);
-        updateDashboardStats(selectedSection);
-    });
-
-    document.querySelector("form[action='{{ route('logout') }}']").addEventListener("submit", function () {
-        sessionStorage.removeItem("selectedSection"); // Remove section on logout
-    });
-});
-</script>
-@endsection
+    <!-- Recent Transactions Table -->
+    <div class="mt-6">
+        <h3 class="text-lg font-semibold">Recent Transactions ({{ $divisions->find($selectedDivision)->name }})</h3>
+        <table class="w-full mt-2 border rounded-lg shadow-md bg-white">
+            <thead>
+                <tr class="bg-gray-200 text-left">
+                    <th class="p-2">Serial Number</th>
+                    <th class="p-2">Model</th>
+                    <th class="p-2">Type</th>
+                    <th class="p-2">Handled By</th>
+                    <th class="p-2">Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($recentTransactions as $transaction)
+                <tr class="border-b">
+                    <td class="p-2">{{ $transaction->serial_number }}</td>
+                    <td class="p-2">{{ $transaction->stock->model }}</td>
+                    <td class="p-2 font-bold {{ $transaction->type == 'IN' ? 'text-green-600' : 'text-red-600' }}">
+                        {{ $transaction->type }}
+                    </td>
+                    <td class="p-2">{{ $transaction->user->name }}</td>
+                    <td class="p-2">{{ $transaction->transaction_date }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
 @endsection

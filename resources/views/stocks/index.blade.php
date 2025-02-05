@@ -1,118 +1,51 @@
 @extends('layouts.layout')
 
-@section('title', 'Stock Inventory')
-
 @section('content')
-    <h1 class="text-center mb-4">Stock Inventory</h1>
+<div class="container mx-auto px-4">
+    <h2 class="text-xl font-semibold mt-4">Stock Inventory</h2>
 
-    <div class="row mb-3 align-items-center">
-        <!-- Add New Stock Button -->
-        <div class="col-md-3">
-            <a href="{{ route('stocks.create') }}" class="btn btn-primary w-100">+ Add New Stock</a>
-        </div>
+    <!-- Category Filter -->
+    <form method="GET" action="{{ route('stocks.index') }}" class="mb-4">
+        <label for="category" class="block text-sm font-medium text-gray-700">Select Category:</label>
+        <select name="category" id="category" onchange="this.form.submit()" class="block w-full mt-1 border rounded p-2">
+            <option value="">All</option>
+            <option value="Router" {{ request('category') == 'Router' ? 'selected' : '' }}>Router</option>
+            <option value="Switch" {{ request('category') == 'Switch' ? 'selected' : '' }}>Switch</option>
+            <option value="Modem" {{ request('category') == 'Modem' ? 'selected' : '' }}>Modem</option>
+        </select>
+    </form>
 
-        <!-- Filter and Search -->
-        <div class="col-md-9">
-            <form action="{{ route('stocks.index') }}" method="GET" class="d-flex align-items-center">
-                <!-- 🔹 Section Dropdown for Filtering -->
-                <select name="section" class="form-select me-2" style="max-width: 200px;" onchange="this.form.submit()">
-                    <option value="">All Sections</option>
-                    <optgroup label="Sarawak">
-                        <option value="Kuching" {{ request('section', session('selectedSection')) == 'Kuching' ? 'selected' : '' }}>Kuching</option>
-                        <option value="Sri Aman" {{ request('section', session('selectedSection')) == 'Sri Aman' ? 'selected' : '' }}>Sri Aman</option>
-                        <option value="Betong" {{ request('section', session('selectedSection')) == 'Betong' ? 'selected' : '' }}>Betong</option>
-                        <option value="Sarikei" {{ request('section', session('selectedSection')) == 'Sarikei' ? 'selected' : '' }}>Sarikei</option>
-                        <option value="Sibu" {{ request('section', session('selectedSection')) == 'Sibu' ? 'selected' : '' }}>Sibu</option>
-                        <option value="Mukah" {{ request('section', session('selectedSection')) == 'Mukah' ? 'selected' : '' }}>Mukah</option>
-                        <option value="Kapit" {{ request('section', session('selectedSection')) == 'Kapit' ? 'selected' : '' }}>Kapit</option>
-                        <option value="Bintulu" {{ request('section', session('selectedSection')) == 'Bintulu' ? 'selected' : '' }}>Bintulu</option>
-                        <option value="Miri" {{ request('section', session('selectedSection')) == 'Miri' ? 'selected' : '' }}>Miri</option>
-                        <option value="Limbang" {{ request('section', session('selectedSection')) == 'Limbang' ? 'selected' : '' }}>Limbang</option>
-                    </optgroup>
-                    <optgroup label="Sabah">
-                        <option value="Sandakan" {{ request('section', session('selectedSection')) == 'Sandakan' ? 'selected' : '' }}>Sandakan</option>
-                        <option value="Tawau" {{ request('section', session('selectedSection')) == 'Tawau' ? 'selected' : '' }}>Tawau</option>
-                    </optgroup>
-                </select>
-
-                <!-- 🔹 Category Dropdown -->
-                <select name="category" class="form-select me-2" style="max-width: 200px;" onchange="this.form.submit()">
-                    <option value="">All Categories</option>
-                    @foreach ($categories as $category)
-                        <option value="{{ $category }}" {{ $current_category === $category ? 'selected' : '' }}>
-                            {{ $category }}
-                        </option>
-                    @endforeach
-                </select>
-
-                <!-- Search Field -->
-                <div class="position-relative flex-grow-1 me-2">
-                    <input
-                        type="text"
-                        name="search"
-                        id="search-box"
-                        class="form-control"
-                        placeholder="Search stocks... (Serial number, Brand, Model)"
-                        autocomplete="off"
-                    />
-                    <ul id="search-suggestions" class="dropdown-menu" style="max-height: 200px; overflow-y: auto;"></ul>
-                </div>
-                
-                <!-- Hidden input for serial number -->
-                <input type="hidden" name="serial_number" id="search-hidden" value="">
-
-                <!-- Search Button -->
-                <button type="submit" class="btn btn-outline-secondary">Search</button>
-            </form>
-        </div>
-    </div>    
-
-    <table class="table table-bordered table-striped align-middle">
-        <thead class="table-dark">
-            <tr>
-                <th>ID</th>
-                <th>Serial Number</th>
-                <th>Brand</th>
-                <th>Model</th>
-                <th>Category</th>
-                <th>Quantity</th>
-                <th>Section</th>
-                <th>Updated At</th>
-                <th>Actions</th>
+    <!-- Stock Inventory Table -->
+    <table class="w-full border rounded-lg shadow-md bg-white">
+        <thead>
+            <tr class="bg-gray-200 text-left">
+                <th class="p-2">Serial Number</th>
+                <th class="p-2">Model</th>
+                <th class="p-2">Category</th>
+                <th class="p-2">Division</th>
+                <th class="p-2">Remarks</th>
+                <th class="p-2">Actions</th>
             </tr>
         </thead>
         <tbody>
-            @forelse ($stocks as $stock)
-                <tr>
-                    <td>{{ $stock->id }}</td>
-                    <td>{{ $stock->serial_number }}</td>
-                    <td>{{ $stock->brand }}</td>
-                    <td>{{ $stock->model }}</td>
-                    <td>{{ $stock->category }}</td>
-                    <td>{{ $stock->quantity }}</td>
-                    <td>{{ $stock->section }}</td>
-                    <td>{{ $stock->updated_at ? $stock->updated_at->format('d-m-Y H:i') : 'N/A' }}</td>
-                    <td>
-                        <a href="{{ route('stocks.show', $stock) }}" class="btn btn-sm btn-info text-white">View</a>
-                        <a href="{{ route('stocks.edit', $stock) }}" class="btn btn-sm btn-warning text-white">Edit</a>
-                        <form action="{{ route('stocks.destroy', $stock) }}" method="POST">
-    @csrf
-    @method('DELETE')
-    <input type="hidden" name="section" value="{{ request('section', session('selectedSection', 'Kuching')) }}">
-    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
-</form>
-
-                    </td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="9" class="text-center">No stocks available for this section.</td>
-                </tr>
-            @endforelse
+            @foreach($stocks as $stock)
+            <tr class="border-b">
+                <td class="p-2">{{ $stock->serial_number }}</td>
+                <td class="p-2">{{ $stock->model }}</td>
+                <td class="p-2">{{ $stock->category }}</td>
+                <td class="p-2">{{ $stock->division->name }}</td>
+                <td class="p-2">{{ $stock->remarks }}</td>
+                <td class="p-2">
+                    <a href="{{ route('stocks.edit', $stock->id) }}" class="text-blue-500 hover:underline">Edit</a>
+                    <form action="{{ route('stocks.destroy', $stock->id) }}" method="POST" class="inline-block ml-2">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="text-red-500 hover:underline">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            @endforeach
         </tbody>
-    </table>   
-
-    <div class="mt-3">
-        {{ $stocks->links() }}
-    </div>
+    </table>
+</div>
 @endsection

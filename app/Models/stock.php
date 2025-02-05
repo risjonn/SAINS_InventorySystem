@@ -10,17 +10,16 @@ class Stock extends Model
     use HasFactory;
 
     protected $fillable = [
-        'serial_number',
-        'brand',
-        'model',
-        'category',
-        'quantity',
-        'section', // Ensure section is added
+        'serial_number', 'model', 'category', 'division_id', 'remarks'
     ];
 
-    // Optional: If you have a method to check for low stock
-    public function isLowStock()
+    public function division()
     {
-        return $this->quantity < 5; // Example: Mark items with less than 5 quantity as low stock
+        return $this->belongsTo(Division::class);
+    }
+
+    public function transactions()
+    {
+        return $this->hasMany(StockTransaction::class, 'serial_number', 'serial_number');
     }
 }
