@@ -17,8 +17,13 @@
     <script defer src="https://unpkg.com/alpinejs@3.10.5/dist/cdn.min.js"></script>
     @vite(['resources/css/app.css'])
 </head>
-<body class="bg-light" x-data="{ sidebarOpen: window.innerWidth >= 1024, mobileSidebarOpen: false }" 
-      @resize.window="sidebarOpen = window.innerWidth >= 1024" x-cloak>
+<body class="bg-light" x-data="{ 
+    sidebarOpen: localStorage.getItem('sidebarOpen') === 'true', 
+    mobileSidebarOpen: false 
+    }"
+    @resize.window="sidebarOpen = window.innerWidth >= 1024 ? sidebarOpen : false"
+    x-init="$watch('sidebarOpen', value => localStorage.setItem('sidebarOpen', value))"
+    x-cloak>
     <!-- Sidebar Backdrop (mobile only) -->
     <div x-show="mobileSidebarOpen" 
          @click="mobileSidebarOpen = false" 
@@ -31,7 +36,7 @@
            style="transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);">
         <div class="relative">
             <!-- Sidebar Header -->
-            <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+            <div class="p-4 border-b border-gray-100 flex items-center justify-between h-16">
                 <!-- Text Header: Visible when sidebar is open -->
                 <h2 class="text-xl font-bold text-gray-700 whitespace-nowrap overflow-hidden" 
                     x-show="sidebarOpen"
