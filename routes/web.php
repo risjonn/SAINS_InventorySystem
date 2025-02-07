@@ -52,6 +52,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('stocks/search', [StockController::class, 'search'])->name('stocks.search');
     Route::get('stocks', [StockController::class, 'index'])->name('stocks.index');
     Route::get('stocks/{stock}', [StockController::class, 'show'])->name('stocks.show');
+
+    // New routes for Stock Overview and Stock Transaction
+    Route::get('stocks/overview', [StockController::class, 'overview'])->name('stocks.overview');
+    Route::get('stocks/transactions', [StockController::class, 'transactions'])->name('stocks.transactions');
 });
 
 // Logout route (clear session and perform logout)
