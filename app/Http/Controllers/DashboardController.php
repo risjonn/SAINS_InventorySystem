@@ -50,4 +50,15 @@ class DashboardController extends Controller
 
         return view('dashboard', compact('divisions', 'selectedDivision', 'totalStocks', 'lowStockItems', 'userCount', 'stockSummary', 'recentTransactions'));
     }
+    public function selectDivision(Request $request)
+{
+    // Assume $divisionId is determined by the user's selection
+    $divisionId = $request->input('division_id'); 
+    // Store the division in session
+    session(['selectedDivision' => $divisionId]);
+
+    // Redirect to the dashboard or the overview page
+    return redirect()->route('dashboard')->with('success', 'Division selected.');
+}
+
 }

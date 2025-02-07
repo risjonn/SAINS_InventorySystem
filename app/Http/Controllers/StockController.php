@@ -108,4 +108,31 @@ class StockController extends Controller
         // Redirect to the stock index page with a success message
         return redirect()->route('stocks.index')->with('success', 'Stock deleted successfully.');
     }
+    public function show(Stock $stock)
+{
+    return view('stocks.show', compact('stock'));
+}
+
+public function overview(Request $request)
+{
+    // Try to get the division_id from the request; if not available, check the session.
+    $divisionId = $request->get('division_id') ?? session('selectedDivision');
+
+    if (!$divisionId) {
+        return redirect()->route('dashboard')->with('message', 'Please select a division.');
+    }
+
+    $division = Division::find($divisionId);
+    if (!$division) {
+        $stocks = collect();
+        return view('stocks.overview', compact('stocks'))->with('message', 'Invalid division selected.');
+    }
+
+    $stocks = Stock::with('division')
+                    ->where('division_id', $divisionId)
+                    ->get();
+
+    return view('stocks.overview', compact('stocks', 'division'));
+}
+
 }
