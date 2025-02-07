@@ -5,7 +5,7 @@ use App\Http\Controllers\StockController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Http\Request;
 
 // Public route
 Route::get('/', function () {
@@ -34,16 +34,18 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-/// ✅ Admin-only stock management routes
-Route::middleware(['auth', 'role:admin'])->group(function () {
+// ✅ Admin-only stock management routes
+Route::middleware(['auth'])->group(function () {
     Route::get('/stocks/create', [StockController::class, 'create'])->name('stocks.create');
     Route::post('stocks', [StockController::class, 'store'])->name('stocks.store');
-    Route::get('stocks/{stock}/edit', [StockController::class, 'edit'])->name('stocks.edit');
+
+    // Edit stock route (check for admin manually in controller)
+    Route::get('/stocks/{stock}/edit', [StockController::class, 'edit'])->name('stocks.edit');
     Route::put('stocks/{stock}', [StockController::class, 'update'])->name('stocks.update');
+
+    // Delete stock route (check for admin manually in controller)
     Route::delete('stocks/{stock}', [StockController::class, 'destroy'])->name('stocks.destroy');
 });
-
-
 
 // ✅ General stock routes for authenticated users
 Route::middleware(['auth'])->group(function () {
@@ -51,6 +53,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('stocks', [StockController::class, 'index'])->name('stocks.index');
     Route::get('stocks/{stock}', [StockController::class, 'show'])->name('stocks.show');
 });
+
+// Logout route (clear session and perform logout)
 Route::post('/logout', function (Request $request) {
     // ✅ Clear Laravel session and section selection
     session()->forget('selectedSection'); // Remove section from Laravel session
@@ -64,5 +68,5 @@ Route::post('/logout', function (Request $request) {
     return redirect('/')->with('status', 'logged-out');
 })->name('logout');
 
-// Auth routes
+// Auth routes (register, login, etc.)
 require __DIR__.'/auth.php';

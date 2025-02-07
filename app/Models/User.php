@@ -11,7 +11,7 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'role', 'division_id'
+        'name', 'email', 'password', 'division_id', 'role' // Add 'role' field
     ];
 
     protected $hidden = [
@@ -25,5 +25,11 @@ class User extends Authenticatable
     public function division()
     {
         return $this->belongsTo(Division::class);
+    }
+
+    // Manually check the user's role
+    public function isAdmin()
+    {
+        return $this->role === 'Admin';  // Check if the role is 'Admin'
     }
 }
