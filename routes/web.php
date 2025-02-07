@@ -47,10 +47,11 @@
         Route::delete('stocks/{stock}', [StockController::class, 'destroy'])->name('stocks.destroy');
     });
 
-    // ✅ General stock routes for authenticated users
+// ✅ General stock routes for authenticated users
     Route::middleware(['auth'])->group(function () {
         Route::get('stocks/search', [StockController::class, 'search'])->name('stocks.search');
         Route::get('stocks', [StockController::class, 'index'])->name('stocks.index');
+        // Route::get('stocks/{stock}', [StockController::class, 'show'])->name('stocks.show');
 
         // Place fixed routes before dynamic ones.
         Route::get('stocks/overview', [StockController::class, 'overview'])->name('stocks.overview');

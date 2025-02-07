@@ -35,7 +35,21 @@ class StockController extends Controller
     
         return view('stocks.index', compact('stocks'));
     }
-    
+
+    public function transactions()
+    {
+        // Retrieve the division selected in the dashboard; if not present, default to the user's division.
+        $selectedDivision = session('selectedDivision', auth()->user()->division_id);
+
+        // Join stock_transactions with stocks to filter by the division
+        $transactions = StockTransaction::join('stocks', 'stock_transactions.serial_number', '=', 'stocks.serial_number')
+            ->join('users', 'stock_transactions.handled_by', '=', 'users.id')
+            ->where('stocks.division_id', $selectedDivision)
+            ->select('stock_transactions.*', 'users.name as handled_by_name') // Only select columns from stock_transactions
+            ->get();
+
+        return view('stocks.transactions', compact('transactions'));
+    }
 
     public function create()
     {

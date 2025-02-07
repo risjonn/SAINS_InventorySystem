@@ -11,34 +11,36 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $divisions = Division::all();
-        // Get selected division from the query parameter; default to the first division if none provided
-        $selectedDivision = request()->query('division', $divisions->first()->id);
-        // Store the selected division in session
+        // If no query parameter, default to the first division
+        $selectedDivision = $request->query('division', $divisions->first()->id);
+        
+        // Store the selected division in the session
         session(['selectedDivision' => $selectedDivision]);
 
         // Count total stocks in the selected division
         $totalStocks = Stock::where('division_id', $selectedDivision)->count();
 
-        // Fix: Low stock items (assume low stock means < 2 items per category)
+        // Low stock items (for example, < 2 per category)
         $lowStockItems = Stock::select('category', DB::raw('COUNT(*) as count'))
             ->where('division_id', $selectedDivision)
             ->groupBy('category')
             ->havingRaw('COUNT(*) < 2')
-            ->count(); // Corrected to count categories properly
+            ->count();
 
         // Count users in the selected division
         $userCount = User::where('division_id', $selectedDivision)->count();
 
-        // Fix: Stock summary by category (for the selected division)
+        // Stock summary by category for the selected division
         $stockSummary = Stock::where('division_id', $selectedDivision)
             ->select('category', DB::raw('COUNT(*) as quantity'))
             ->groupBy('category')
             ->get();
 
-        // Fix: Recent transactions filtered by division
+        // Recent transactions filtered by division.
+        // We use whereHas on the 'stock' relationship since stocks have division_id.
         $recentTransactions = StockTransaction::whereHas('stock', function ($query) use ($selectedDivision) {
                 $query->where('division_id', $selectedDivision);
             })
