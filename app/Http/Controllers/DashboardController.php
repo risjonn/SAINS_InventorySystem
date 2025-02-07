@@ -14,7 +14,10 @@ class DashboardController extends Controller
     public function index()
     {
         $divisions = Division::all();
+        // Get selected division from the query parameter; default to the first division if none provided
         $selectedDivision = request()->query('division', $divisions->first()->id);
+        // Store the selected division in session
+        session(['selectedDivision' => $selectedDivision]);
 
         // Count total stocks in the selected division
         $totalStocks = Stock::where('division_id', $selectedDivision)->count();
@@ -45,4 +48,15 @@ class DashboardController extends Controller
 
         return view('dashboard', compact('divisions', 'selectedDivision', 'totalStocks', 'lowStockItems', 'userCount', 'stockSummary', 'recentTransactions'));
     }
+    public function selectDivision(Request $request)
+{
+    // Assume $divisionId is determined by the user's selection
+    $divisionId = $request->input('division_id'); 
+    // Store the division in session
+    session(['selectedDivision' => $divisionId]);
+
+    // Redirect to the dashboard or the overview page
+    return redirect()->route('dashboard')->with('success', 'Division selected.');
+}
+
 }
