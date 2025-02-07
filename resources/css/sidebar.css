@@ -86,3 +86,11 @@ nav .w-8 {
     min-width: 32px; /* Prevent icon container from shrinking */
     flex-shrink: 0; /* Lock icon width */
 }
+
+/* Toggle arrow for Stock Inventory */
+.toggle-arrow {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+}

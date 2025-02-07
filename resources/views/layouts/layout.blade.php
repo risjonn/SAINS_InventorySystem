@@ -31,7 +31,7 @@
          x-transition.opacity></div>
 
     <!-- Sidebar -->
-    <aside class="fixed top-0 left-0 z-40 h-screen bg-white shadow-lg border-r border-gray-100 overflow-hidden"
+    <aside class="fixed top-0 left-0 z-40 h-screen bg-white shadow-lg border-r border-gray-100"
            :class="sidebarOpen ? 'w-64' : 'w-20'"
            style="transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);">
         <div class="relative">
@@ -60,14 +60,6 @@
                           {{ request()->routeIs('dashboard') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
                     <div class="w-8 flex-shrink-0 flex justify-center">
                         <i class="fas fa-home text-lg"></i>
-                        <!-- Alternatively, use an image -->
-                        <!--
-                        <img 
-                            src="{{ asset('images/home-icon.png') }}" 
-                            alt="Dashboard Icon" 
-                            class="w-6 h-6"
-                        >
-                        -->
                     </div>
                     <span class="sidebar-text ml-3 text-sm font-medium whitespace-nowrap 
                           transition-all duration-300 origin-left overflow-hidden"
@@ -75,39 +67,58 @@
                         Dashboard
                     </span>
                 </a>
-                <a href="{{ route('stocks.index') }}" 
-                   class="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors 
-                          {{ request()->routeIs('stocks.*') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
+                
+                <!-- Stock Inventory with Toggleable Submenu -->
+                <div x-data="{ stockMenuOpen: false, stockMenuHover: false }" class="relative"
+                @mouseenter="if(!sidebarOpen){ stockMenuHover = true }"
+                @mouseleave="if(!sidebarOpen){ stockMenuHover = false }">
+                <!-- Parent Button -->
+                <button @click="if(sidebarOpen){ stockMenuOpen = !stockMenuOpen }"
+                        class="flex items-center justify-between w-full p-3 rounded-lg hover:bg-gray-50 transition-colors
+                                {{ (request()->routeIs('stocks.overview') || request()->routeIs('stocks.transactions')) ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
+                    <div class="flex items-center">
                     <div class="w-8 flex-shrink-0 flex justify-center">
                         <i class="fas fa-boxes text-lg"></i>
-                        <!-- Alternatively, use an image -->
-                        <!--
-                        <img 
-                            src="{{ asset('images/boxes-icon.png') }}" 
-                            alt="Stock Inventory Icon" 
-                            class="w-6 h-6"
-                        >
-                        -->
                     </div>
-                    <span class="sidebar-text ml-3 text-sm font-medium whitespace-nowrap 
-                          transition-all duration-300 origin-left overflow-hidden"
-                          :class="sidebarOpen ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 absolute'">
+                    <span class="sidebar-text ml-3 text-sm font-medium whitespace-nowrap transition-all duration-300 origin-left overflow-hidden"
+                            :class="sidebarOpen ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 absolute'">
                         Stock Inventory
                     </span>
-                </a>
+                    </div>
+                    <!-- Toggle Arrow: Only when sidebar is expanded -->
+                    <span x-show="sidebarOpen" class="transition-transform duration-300">
+                    <i :class="{'fa-chevron-down': !stockMenuOpen, 'fa-chevron-up': stockMenuOpen}" class="fas"></i>
+                    </span>
+                </button>
+                <!-- Submenu Container -->
+                <div x-show="(sidebarOpen && stockMenuOpen) || (!sidebarOpen && stockMenuHover)"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 transform -translate-y-2"
+                    x-transition:enter-end="opacity-100 transform translate-y-0"
+                    x-transition:leave="transition ease-in duration-200"
+                    x-transition:leave-start="opacity-100 transform translate-y-0"
+                    x-transition:leave-end="opacity-0 transform -translate-y-2"
+                    :class="sidebarOpen 
+                            ? 'ml-8 mt-2 space-y-1' 
+                            : 'absolute left-full top-0 mt-0 ml-2 bg-white shadow-md p-2 rounded w-48'">
+                    <a href="{{ route('stocks.overview') }}"
+                        class="block p-2 rounded hover:bg-gray-50 transition-colors whitespace-nowrap
+                            {{ request()->routeIs('stocks.overview') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
+                        Stock Overview
+                    </a>
+                    <a href="{{ route('stocks.transactions') }}"
+                        class="block p-2 rounded hover:bg-gray-50 transition-colors whitespace-nowrap
+                            {{ request()->routeIs('stocks.transactions') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
+                        Stock Transaction
+                    </a>
+                </div>
+            </div>
+
                 <a href="{{ route('profile.edit') }}" 
                    class="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors 
                           {{ request()->routeIs('profile.edit') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
                     <div class="w-8 flex flex-shrink-0 justify-center">
                         <i class="fas fa-user-cog text-lg"></i>
-                        <!-- Alternatively, use an image -->
-                        <!--
-                        <img 
-                            src="{{ asset('images/profile-icon.png') }}" 
-                            alt="Profile Settings Icon" 
-                            class="w-6 h-6"
-                        >
-                        -->
                     </div>
                     <span class="sidebar-text ml-3 text-sm font-medium whitespace-nowrap 
                           transition-all duration-300 origin-left overflow-hidden"
@@ -120,14 +131,6 @@
                     <button type="submit" class="w-full flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors text-gray-600">
                         <div class="w-8 flex-shrink-0 flex justify-center">
                             <i class="fas fa-sign-out-alt text-lg"></i>
-                            <!-- Alternatively, use an image -->
-                            <!--
-                            <img 
-                                src="{{ asset('images/logout-icon.png') }}" 
-                                alt="Logout Icon" 
-                                class="w-6 h-6"
-                            >
-                            -->
                         </div>
                         <span class="sidebar-text ml-3 text-sm font-medium whitespace-nowrap 
                               transition-all duration-300 origin-left overflow-hidden"
