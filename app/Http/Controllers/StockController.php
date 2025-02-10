@@ -45,12 +45,17 @@ class StockController extends Controller
         $division = Division::find($selectedDivision);
 
         // Join stock_transactions with stocks to filter by the division
-        $transactions = StockTransaction::join('stocks', 'stock_transactions.serial_number', '=', 'stocks.serial_number')
+        $transactionsQuery = StockTransaction::join('stocks', 'stock_transactions.serial_number', '=', 'stocks.serial_number')
             ->join('users', 'stock_transactions.handled_by', '=', 'users.id')
             ->where('stocks.division_id', $selectedDivision)
-            ->select('stock_transactions.*', 'users.name as handled_by_name') // Only select columns from stock_transactions
-            ->get();
+            ->select('stock_transactions.*', 'users.name as handled_by_name'); // Only select columns from stock_transactions
+            
+            $filter = request('filter', 'all');
+            if ($filter !== 'all') {
+                $transactionsQuery->where('stock_transactions.type', $filter);
+            }
 
+            $transactions = $transactionsQuery->paginate(10)->appends(request()->query());
         return view('stocks.transactions', compact('transactions' , 'division'));
     }
 
