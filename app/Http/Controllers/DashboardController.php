@@ -16,6 +16,14 @@ class DashboardController extends Controller
         $divisions = Division::all();
         // If no query parameter, default to the first division
         $selectedDivision = $request->query('division', $divisions->first()->id);
+        if ($request->has('division')) {
+            $selectedDivision = $request->query('division');
+            session(['selectedDivision' => $selectedDivision]);
+        } else {
+            // Otherwise, use the stored session value, or default to the first division's id.
+            $selectedDivision = session('selectedDivision', $divisions->first()->id);
+        }
+    
         
         // Store the selected division in the session
         session(['selectedDivision' => $selectedDivision]);
