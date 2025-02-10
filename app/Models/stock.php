@@ -10,7 +10,12 @@ class Stock extends Model
     use HasFactory;
 
     protected $fillable = [
-        'serial_number', 'model', 'category', 'division_id', 'remarks'
+        'serial_number',
+        'model',
+        'category',
+        'division_id',
+        'remarks',
+        'status',
     ];
 
     public function division()

@@ -12,7 +12,7 @@ class StockTransaction extends Model
     const UPDATED_AT = 'transaction_date';
 
     protected $fillable = [
-        'serial_number', 'model', 'type', 'handled_by', 'remarks', 'transaction_date'
+        'serial_number', 'stock_model', 'category', 'type', 'handled_by', 'remarks', 'transaction_date'
     ];
 
     public function stock()
