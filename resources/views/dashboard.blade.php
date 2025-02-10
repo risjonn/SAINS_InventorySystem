@@ -8,6 +8,8 @@
     <form method="GET" action="{{ route('dashboard') }}" class="mb-4">
         <label for="division" class="block text-sm font-medium text-gray-700">Select Division:</label>
         <select name="division" id="division" onchange="this.form.submit()" class="block w-full mt-1 border rounded p-2">
+            <!-- "All Divisions" option -->
+            <option value="all" {{ $selectedDivision === 'all' ? 'selected' : '' }}>All Divisions</option>
             @foreach($divisions as $division)
                 <option value="{{ $division->id }}" {{ $selectedDivision == $division->id ? 'selected' : '' }}>
                     {{ $division->name }}
@@ -41,7 +43,9 @@
 
     <!-- Stock Summary Table -->
     <div class="mt-6">
-        <h3 class="text-lg font-semibold">Stock Summary by Category ({{ $divisions->find($selectedDivision)->name }})</h3>
+        <h3 class="text-lg font-semibold">
+            Stock Summary by Category ({{ $selectedDivision === 'all' ? 'All Divisions' : $divisions->find($selectedDivision)->name }})
+        </h3>
         <table class="w-full mt-2 border rounded-lg shadow-md bg-white">
             <thead>
                 <tr class="bg-gray-200 text-left">
@@ -62,7 +66,9 @@
 
     <!-- Recent Transactions Table -->
     <div class="mt-6">
-        <h3 class="text-lg font-semibold">Recent Transactions ({{ $divisions->find($selectedDivision)->name }})</h3>
+        <h3 class="text-lg font-semibold">
+            Recent Transactions ({{ $selectedDivision === 'all' ? 'All Divisions' : $divisions->find($selectedDivision)->name }})
+        </h3>
         <table class="w-full mt-2 border rounded-lg shadow-md bg-white">
             <thead>
                 <tr class="bg-gray-200 text-left">

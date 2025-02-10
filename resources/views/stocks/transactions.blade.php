@@ -3,13 +3,12 @@
 @section('content')
 <div class="container mx-auto px-4">
     <h2 class="text-xl font-semibold mt-4">
-        Stock Transaction
-        @if(isset($division))
-            <span class="text-sm ml-2 text-gray-600">(Division: {{ $division->name }})</span>
-        @endif
+        Stock Transactions
+        <span class="text-sm ml-2 text-gray-600">
+            (Division: {{ isset($division) ? $division->name : 'All Divisions' }})
+        </span>
     </h2>
 
-    <!-- Table for Stock Transactions -->
     <table class="w-full border rounded-lg shadow-md bg-white mt-4">
         <thead>
             <tr class="bg-gray-200 text-left">
@@ -27,7 +26,7 @@
                 <td class="p-2">{{ $transaction->serial_number }}</td>
                 <td class="p-2">{{ $transaction->stock_model }}</td>
                 <td class="p-2 font-bold {{ $transaction->type == 'IN' ? 'text-green-600' : 'text-red-600' }}">
-                    {{$transaction->type}}
+                    {{ $transaction->type }}
                 </td>
                 <td class="p-2">{{ $transaction->handled_by_name }}</td>
                 <td class="p-2">{{ $transaction->remarks }}</td>
