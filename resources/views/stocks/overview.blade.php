@@ -4,19 +4,17 @@
 <div class="container mx-auto px-4">
     <h2 class="text-xl font-semibold mt-4">
         Stock Overview
-        @if(isset($division))
-            <span class="text-sm ml-2 text-gray-600">(Division: {{ $division->name }})</span>
-        @endif
+        <span class="text-sm ml-2 text-gray-600">
+            (Division: {{ isset($division) ? $division->name : 'All Divisions' }})
+        </span>
     </h2>
 
-    <!-- Display a message if no stocks are found -->
     @if(session('message'))
         <div class="alert alert-warning mt-4">
             {{ session('message') }}
         </div>
     @endif
 
-    <!-- Stock Overview Table -->
     @if($stocks->isNotEmpty())
     <table class="w-full border rounded-lg shadow-md bg-white mt-4">
         <thead>
