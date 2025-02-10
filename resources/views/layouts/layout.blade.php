@@ -111,6 +111,11 @@
                             {{ request()->routeIs('stocks.transactions') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
                         Stock Transaction
                     </a>
+                    <a href="{{ route('stocks.management') }}"
+                        class="block p-2 rounded hover:bg-gray-50 transition-colors whitespace-nowrap
+                            {{ request()->routeIs('stocks.management') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
+                        Stock Management
+                    </a>
                 </div>
             </div>
 

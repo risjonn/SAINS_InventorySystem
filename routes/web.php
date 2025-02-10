@@ -37,7 +37,18 @@
     // ✅ Admin-only stock management routes
     Route::middleware(['auth'])->group(function () {
         Route::get('/stocks/create', [StockController::class, 'create'])->name('stocks.create');
-        Route::post('stocks', [StockController::class, 'store'])->name('stocks.store');
+
+        // Dedicated Stock Management page
+        Route::get('stocks/management', [StockController::class, 'management'])->name('stocks.management');
+        
+        // Routes for Stock Transaction IN Operation
+        Route::get('stocks/transactions/in', [StockController::class, 'createTransactionIn'])
+        ->name('stocks.transactions.in');
+        Route::post('stocks/transactions/in', [StockController::class, 'storeTransactionIn'])
+        ->name('stocks.transactions.storeIn');
+
+        // Inline OUT operation from the management page
+        Route::post('stocks/{stock}/out', [StockController::class, 'outOperation'])->name('stocks.out');
 
         // Edit stock route (check for admin manually in controller)
         Route::get('/stocks/{stock}/edit', [StockController::class, 'edit'])->name('stocks.edit');
