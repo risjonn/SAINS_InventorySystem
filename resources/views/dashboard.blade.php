@@ -8,6 +8,8 @@
     <form method="GET" action="{{ route('dashboard') }}" class="mb-4">
         <label for="division" class="block text-sm font-medium text-gray-700">Select Division:</label>
         <select name="division" id="division" onchange="this.form.submit()" class="block w-full mt-1 border rounded p-2">
+            <!-- "All Divisions" option -->
+            <option value="all" {{ $selectedDivision === 'all' ? 'selected' : '' }}>All Divisions</option>
             @foreach($divisions as $division)
                 <option value="{{ $division->id }}" {{ $selectedDivision == $division->id ? 'selected' : '' }}>
                     {{ $division->name }}
@@ -41,7 +43,9 @@
 
     <!-- Stock Summary Table -->
     <div class="mt-6">
-        <h3 class="text-lg font-semibold">Stock Summary by Category ({{ $divisions->find($selectedDivision)->name }})</h3>
+        <h3 class="text-lg font-semibold">
+            Stock Summary by Category ({{ $selectedDivision === 'all' ? 'All Divisions' : $divisions->find($selectedDivision)->name }})
+        </h3>
         <table class="w-full mt-2 border rounded-lg shadow-md bg-white">
             <thead>
                 <tr class="bg-gray-200 text-left">
@@ -51,10 +55,10 @@
             </thead>
             <tbody>
                 @foreach($stockSummary as $stock)
-                <tr class="border-b">
-                    <td class="p-2">{{ $stock->category }}</td>
-                    <td class="p-2">{{ $stock->quantity }}</td>
-                </tr>
+                    <tr class="border-b">
+                        <td class="p-2">{{ $stock->category }}</td>
+                        <td class="p-2">{{ $stock->quantity }}</td>
+                    </tr>
                 @endforeach
             </tbody>
         </table>
@@ -62,7 +66,9 @@
 
     <!-- Recent Transactions Table -->
     <div class="mt-6">
-        <h3 class="text-lg font-semibold">Recent Transactions ({{ $divisions->find($selectedDivision)->name }})</h3>
+        <h3 class="text-lg font-semibold">
+            Recent Transactions ({{ $selectedDivision === 'all' ? 'All Divisions' : $divisions->find($selectedDivision)->name }})
+        </h3>
         <table class="w-full mt-2 border rounded-lg shadow-md bg-white">
             <thead>
                 <tr class="bg-gray-200 text-left">
@@ -75,15 +81,15 @@
             </thead>
             <tbody>
                 @foreach($recentTransactions as $transaction)
-                <tr class="border-b">
-                    <td class="p-2">{{ $transaction->serial_number }}</td>
-                    <td class="p-2">{{ $transaction->stock->model }}</td>
-                    <td class="p-2 font-bold {{ $transaction->type == 'IN' ? 'text-green-600' : 'text-red-600' }}">
-                        {{ $transaction->type }}
-                    </td>
-                    <td class="p-2">{{ $transaction->user->name }}</td>
-                    <td class="p-2">{{ $transaction->transaction_date }}</td>
-                </tr>
+                    <tr class="border-b">
+                        <td class="p-2">{{ $transaction->serial_number }}</td>
+                        <td class="p-2">{{ $transaction->stock->model }}</td>
+                        <td class="p-2 font-bold {{ $transaction->type == 'IN' ? 'text-green-600' : 'text-red-600' }}">
+                            {{ $transaction->type }}
+                        </td>
+                        <td class="p-2">{{ $transaction->user->name }}</td>
+                        <td class="p-2">{{ $transaction->transaction_date }}</td>
+                    </tr>
                 @endforeach
             </tbody>
         </table>

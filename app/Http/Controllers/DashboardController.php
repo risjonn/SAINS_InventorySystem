@@ -14,51 +14,70 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $divisions = Division::all();
-        // If no query parameter, default to the first division
-        $selectedDivision = $request->query('division', $divisions->first()->id);
-        
-        // Store the selected division in the session
+
+        // Check for query parameter; if not present, use the session value (or default to the first division)
+        $selectedDivision = $request->query('division', session('selectedDivision', $divisions->first()->id));
+        // Save the selected division into the session so it persists across pages
         session(['selectedDivision' => $selectedDivision]);
 
-        // Count total stocks in the selected division
-        $totalStocks = Stock::where('division_id', $selectedDivision)->count();
+        if ($selectedDivision === 'all') {
+            // Aggregated data across all divisions
+            $totalStocks = Stock::count();
 
-        // Low stock items (for example, < 2 per category)
-        $lowStockItems = Stock::select('category', DB::raw('COUNT(*) as count'))
-            ->where('division_id', $selectedDivision)
-            ->groupBy('category')
-            ->havingRaw('COUNT(*) < 2')
-            ->count();
+            $lowStockItems = Stock::select('category', DB::raw('COUNT(*) as count'))
+                ->groupBy('category')
+                ->havingRaw('COUNT(*) < 2')
+                ->count();
 
-        // Count users in the selected division
-        $userCount = User::where('division_id', $selectedDivision)->count();
+            $userCount = User::count();
 
-        // Stock summary by category for the selected division
-        $stockSummary = Stock::where('division_id', $selectedDivision)
-            ->select('category', DB::raw('COUNT(*) as quantity'))
-            ->groupBy('category')
-            ->get();
+            $stockSummary = Stock::select('category', DB::raw('COUNT(*) as quantity'))
+                ->groupBy('category')
+                ->get();
 
-        // Recent transactions filtered by division.
-        // We use whereHas on the 'stock' relationship since stocks have division_id.
-        $recentTransactions = StockTransaction::whereHas('stock', function ($query) use ($selectedDivision) {
-                $query->where('division_id', $selectedDivision);
-            })
-            ->orderBy('transaction_date', 'desc')
-            ->take(5)
-            ->get();
+            $recentTransactions = StockTransaction::orderBy('transaction_date', 'desc')
+                ->take(5)
+                ->get();
+        } else {
+            // Data filtered by the selected division
+            $totalStocks = Stock::where('division_id', $selectedDivision)->count();
 
-        return view('dashboard', compact('divisions', 'selectedDivision', 'totalStocks', 'lowStockItems', 'userCount', 'stockSummary', 'recentTransactions'));
+            $lowStockItems = Stock::select('category', DB::raw('COUNT(*) as count'))
+                ->where('division_id', $selectedDivision)
+                ->groupBy('category')
+                ->havingRaw('COUNT(*) < 2')
+                ->count();
+
+            $userCount = User::where('division_id', $selectedDivision)->count();
+
+            $stockSummary = Stock::where('division_id', $selectedDivision)
+                ->select('category', DB::raw('COUNT(*) as quantity'))
+                ->groupBy('category')
+                ->get();
+
+            $recentTransactions = StockTransaction::whereHas('stock', function ($query) use ($selectedDivision) {
+                    $query->where('division_id', $selectedDivision);
+                })
+                ->orderBy('transaction_date', 'desc')
+                ->take(5)
+                ->get();
+        }
+
+        return view('dashboard', compact(
+            'divisions',
+            'selectedDivision',
+            'totalStocks',
+            'lowStockItems',
+            'userCount',
+            'stockSummary',
+            'recentTransactions'
+        ));
     }
+
     public function selectDivision(Request $request)
-{
-    // Assume $divisionId is determined by the user's selection
-    $divisionId = $request->input('division_id'); 
-    // Store the division in session
-    session(['selectedDivision' => $divisionId]);
-
-    // Redirect to the dashboard or the overview page
-    return redirect()->route('dashboard')->with('success', 'Division selected.');
-}
-
+    {
+        $divisionId = $request->input('division_id'); 
+        session(['selectedDivision' => $divisionId]);
+        return redirect()->route('dashboard')->with('success', 'Division selected.');
+    }
 }
