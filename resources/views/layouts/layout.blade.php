@@ -68,56 +68,59 @@
                     </span>
                 </a>
                 
-                <!-- Stock Inventory with Toggleable Submenu -->
-                <div x-data="{ stockMenuOpen: false, stockMenuHover: false }" class="relative"
-                @mouseenter="if(!sidebarOpen){ stockMenuHover = true }"
-                @mouseleave="if(!sidebarOpen){ stockMenuHover = false }">
-                <!-- Parent Button -->
-                <button @click="if(sidebarOpen){ stockMenuOpen = !stockMenuOpen }"
-                        class="flex items-center justify-between w-full p-3 rounded-lg hover:bg-gray-50 transition-colors
-                                {{ (request()->routeIs('stocks.overview') || request()->routeIs('stocks.transactions')) ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
-                    <div class="flex items-center">
-                    <div class="w-8 flex-shrink-0 flex justify-center">
-                        <i class="fas fa-boxes text-lg"></i>
+                <!-- Stock Inventory with Persisted Toggleable Submenu -->
+                <div x-data="{ 
+                    stockMenuOpen: localStorage.getItem('stockMenuOpen') === 'true', 
+                    stockMenuHover: false 
+                    }"
+                    x-init="$watch('stockMenuOpen', value => localStorage.setItem('stockMenuOpen', value))"
+                    class="relative"
+                    @mouseenter="if(!sidebarOpen){ stockMenuHover = true }"
+                    @mouseleave="if(!sidebarOpen){ stockMenuHover = false }">
+                    <!-- Parent Button -->
+                    <button @click="if(sidebarOpen){ stockMenuOpen = !stockMenuOpen }"
+                            class="flex items-center justify-between w-full p-3 rounded-lg hover:bg-gray-50 transition-colors
+                                {{ (request()->routeIs('stocks.overview') || request()->routeIs('stocks.transactions') || request()->routeIs('stocks.management')) ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
+                        <div class="flex items-center">
+                            <div class="w-8 flex-shrink-0 flex justify-center">
+                                <i class="fas fa-boxes text-lg"></i>
+                            </div>
+                            <span class="sidebar-text ml-3 text-sm font-medium whitespace-nowrap transition-all duration-300 origin-left overflow-hidden"
+                                :class="sidebarOpen ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 absolute'">
+                                Stock Inventory
+                            </span>
+                        </div>
+                        <!-- Toggle Arrow: Only shown when sidebar is open -->
+                        <span x-show="sidebarOpen" class="transition-transform duration-300">
+                            <i :class="{'fa-chevron-down': !stockMenuOpen, 'fa-chevron-up': stockMenuOpen}" class="fas"></i>
+                        </span>
+                    </button>
+                    <!-- Sublinks -->
+                    <div x-show="(sidebarOpen && stockMenuOpen) || (!sidebarOpen && stockMenuHover)"
+                        x-transition:enter="transition ease-out duration-300"
+                        x-transition:enter-start="opacity-0 transform -translate-y-2"
+                        x-transition:enter-end="opacity-100 transform translate-y-0"
+                        x-transition:leave="transition ease-in duration-200"
+                        x-transition:leave-start="opacity-100 transform translate-y-0"
+                        x-transition:leave-end="opacity-0 transform -translate-y-2"
+                        :class="sidebarOpen ? 'ml-8 mt-2 space-y-1' : 'absolute left-full top-0 mt-0 ml-2 bg-white shadow-md p-2 rounded w-48'">
+                        <a href="{{ route('stocks.overview') }}"
+                        class="block p-2 rounded hover:bg-gray-50 transition-colors whitespace-nowrap
+                                {{ request()->routeIs('stocks.overview') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
+                            Stock Overview
+                        </a>
+                        <a href="{{ route('stocks.transactions') }}"
+                        class="block p-2 rounded hover:bg-gray-50 transition-colors whitespace-nowrap
+                                {{ request()->routeIs('stocks.transactions') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
+                            Stock Transaction
+                        </a>
+                        <a href="{{ route('stocks.management') }}"
+                        class="block p-2 rounded hover:bg-gray-50 transition-colors whitespace-nowrap
+                                {{ request()->routeIs('stocks.management') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
+                            Stock Management
+                        </a>
                     </div>
-                    <span class="sidebar-text ml-3 text-sm font-medium whitespace-nowrap transition-all duration-300 origin-left overflow-hidden"
-                            :class="sidebarOpen ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 absolute'">
-                        Stock Inventory
-                    </span>
-                    </div>
-                    <!-- Toggle Arrow: Only when sidebar is expanded -->
-                    <span x-show="sidebarOpen" class="transition-transform duration-300">
-                    <i :class="{'fa-chevron-down': !stockMenuOpen, 'fa-chevron-up': stockMenuOpen}" class="fas"></i>
-                    </span>
-                </button>
-                <!-- Submenu Container -->
-                <div x-show="(sidebarOpen && stockMenuOpen) || (!sidebarOpen && stockMenuHover)"
-                    x-transition:enter="transition ease-out duration-300"
-                    x-transition:enter-start="opacity-0 transform -translate-y-2"
-                    x-transition:enter-end="opacity-100 transform translate-y-0"
-                    x-transition:leave="transition ease-in duration-200"
-                    x-transition:leave-start="opacity-100 transform translate-y-0"
-                    x-transition:leave-end="opacity-0 transform -translate-y-2"
-                    :class="sidebarOpen 
-                            ? 'ml-8 mt-2 space-y-1' 
-                            : 'absolute left-full top-0 mt-0 ml-2 bg-white shadow-md p-2 rounded w-48'">
-                    <a href="{{ route('stocks.overview') }}"
-                        class="block p-2 rounded hover:bg-gray-50 transition-colors whitespace-nowrap
-                            {{ request()->routeIs('stocks.overview') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
-                        Stock Overview
-                    </a>
-                    <a href="{{ route('stocks.transactions') }}"
-                        class="block p-2 rounded hover:bg-gray-50 transition-colors whitespace-nowrap
-                            {{ request()->routeIs('stocks.transactions') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
-                        Stock Transaction
-                    </a>
-                    <a href="{{ route('stocks.management') }}"
-                        class="block p-2 rounded hover:bg-gray-50 transition-colors whitespace-nowrap
-                            {{ request()->routeIs('stocks.management') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
-                        Stock Management
-                    </a>
                 </div>
-            </div>
 
                 <a href="{{ route('profile.edit') }}" 
                    class="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors 

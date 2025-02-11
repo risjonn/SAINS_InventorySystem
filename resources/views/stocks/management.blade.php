@@ -2,57 +2,65 @@
 
 @section('content')
 <div class="container mx-auto px-4">
+    @php $selectedDivision = session('selectedDivision'); @endphp
     <h2 class="text-xl font-semibold mt-4">
         Stock Management
-        @if(isset($division))
-            <span class="text-sm ml-2 text-gray-600">(Division: {{ $division->name }})</span>
-        @endif
+        <span class="text-sm ml-2 text-gray-600">
+            (Division: {{ $selectedDivision === 'all' ? 'All Divisions' : $division->name }})
+        </span>
     </h2>
 
-    <div class="my-4">
-        <a href="{{ route('stocks.transactions.in') }}" class="bg-green-600 text-white px-4 py-2 rounded mr-2">IN</a>
-    </div>
+    @if($selectedDivision === 'all')
+        <div class="alert alert-warning mt-4">
+            Please select a specific division for stock management operations.
+        </div>
+    @else
+        <div class="my-4">
+            <a href="{{ route('stocks.transactions.in') }}" class="bg-green-600 text-white px-4 py-2 rounded mr-2">IN</a>
+        </div>
 
-    <!-- Current Stocks Table -->
-    <div class="mt-6">
-        <h3 class="text-lg font-semibold mb-2">Current Stocks</h3>
-        @if($stocks->isNotEmpty())
-        <table class="w-full border rounded-lg shadow-md bg-white">
-            <thead>
-                <tr class="bg-gray-200 text-left">
-                    <th class="p-2">Serial Number</th>
-                    <th class="p-2">Model</th>
-                    <th class="p-2">Category</th>
-                    <th class="p-2">Remarks</th>
-                    <th class="p-2">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($stocks as $stock)
-                <tr class="border-b">
-                    <td class="p-2">{{ $stock->serial_number }}</td>
-                    <td class="p-2">{{ $stock->model }}</td>
-                    <td class="p-2">{{ $stock->category }}</td>
-                    <td class="p-2">{{ $stock->remarks }}</td>
-                    <td class="p-2">
-                        @if(empty($stock->status) || $stock->status === 'available')
-                            <button type="button" class="bg-red-600 text-white px-2 py-1 rounded btn-out" data-stock-id="{{ $stock->id }}">
-                                OUT
-                            </button>
-                        @else
-                            <span class="text-gray-500 text-sm">Removed</span>
-                        @endif
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-        @else
-            <p>No stocks available for this division.</p>
-        @endif
-    </div>
+        <!-- Current Stocks Table -->
+        <div class="mt-6">
+            <h3 class="text-lg font-semibold mb-2">Current Stocks</h3>
+            @if($stocks->isNotEmpty())
+            <table class="w-full border rounded-lg shadow-md bg-white">
+                <thead>
+                    <tr class="bg-gray-200 text-left">
+                        <th class="p-2">Serial Number</th>
+                        <th class="p-2">Model</th>
+                        <th class="p-2">Category</th>
+                        <th class="p-2">Remarks</th>
+                        <th class="p-2">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($stocks as $stock)
+                    <tr class="border-b">
+                        <td class="p-2">{{ $stock->serial_number }}</td>
+                        <td class="p-2">{{ $stock->model }}</td>
+                        <td class="p-2">{{ $stock->category }}</td>
+                        <td class="p-2">{{ $stock->remarks }}</td>
+                        <td class="p-2">
+                            @if(empty($stock->status) || $stock->status === 'available')
+                                <button type="button" class="bg-red-600 text-white px-2 py-1 rounded btn-out" data-stock-id="{{ $stock->id }}">
+                                    OUT
+                                </button>
+                            @else
+                                <span class="text-gray-500 text-sm">Removed</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            @else
+                <p>No stocks available for this division.</p>
+            @endif
+        </div>
+    @endif
 </div>
 
+@if($selectedDivision !== 'all')
 <!-- Modal for OUT Operation -->
 <div class="modal fade" id="outModal" tabindex="-1" aria-labelledby="outModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -84,15 +92,14 @@
         document.querySelectorAll('.btn-out').forEach(function(button){
              button.addEventListener('click', function(){
                  var stockId = this.getAttribute('data-stock-id');
-                 // Construct the form action URL for the OUT operation.
                  var formAction = '/stocks/' + stockId + '/out';
                  document.getElementById('outForm').setAttribute('action', formAction);
-                 // Clear any previous remark.
                  document.getElementById('outRemark').value = '';
                  outModal.show();
              });
         });
     });
-    </script>
-    
+  </script>
+@endif
+
 @endsection
