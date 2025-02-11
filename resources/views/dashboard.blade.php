@@ -77,6 +77,9 @@
                     <th class="p-2">Type</th>
                     <th class="p-2">Handled By</th>
                     <th class="p-2">Date</th>
+                    @if($selectedDivision === 'all')
+                        <th class="p-2">Division</th>
+                    @endif
                 </tr>
             </thead>
             <tbody>
@@ -88,7 +91,10 @@
                             {{ $transaction->type }}
                         </td>
                         <td class="p-2">{{ $transaction->user->name }}</td>
-                        <td class="p-2">{{ $transaction->transaction_date }}</td>
+                        <td class="p-2">{{ \Carbon\Carbon::parse($transaction->transaction_date)->format('M d, Y h:i A') }}</td>
+                        @if($selectedDivision === 'all')
+                            <td class="p-2">{{ $transaction->stock->division->name }}</td>
+                        @endif
                     </tr>
                 @endforeach
             </tbody>

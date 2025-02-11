@@ -2,11 +2,14 @@
 
 @section('content')
 <div class="container mx-auto px-4">
+    @php
+        $selectedDivision = session('selectedDivision');
+    @endphp
     <h2 class="text-xl font-semibold mt-4">
         Stock Transaction
-        @if(isset($division))
-            <span class="text-sm ml-2 text-gray-600">(Division: {{ $division->name }})</span>
-        @endif
+        <span class="text-sm ml-2 text-gray-600">
+            (Division: {{ $selectedDivision === 'all' ? 'All Divisions' : $division->name }})
+        </span>
     </h2>
 
     <!-- Tabbed Filter Interface -->
@@ -43,6 +46,9 @@
                 <th class="p-3">Handled by</th>
                 <th class="p-3">Remarks</th>
                 <th class="p-3">Transaction Date</th>
+                @if($selectedDivision === 'all')
+                    <th class="p-3">Division</th>
+                @endif
             </tr>
         </thead>
         <tbody>
@@ -55,13 +61,16 @@
                 </td>
                 <td class="p-3">{{ $transaction->handled_by_name }}</td>
                 <td class="p-3">{{ $transaction->remarks }}</td>
-                <td class="p-3">
-                    {{ \Carbon\Carbon::parse($transaction->transaction_date)->format('M d, Y h:i A') }}
-                </td>
+                <td class="p-3">{{ \Carbon\Carbon::parse($transaction->transaction_date)->format('M d, Y h:i A') }}</td>
+                @if($selectedDivision === 'all')
+                    <td class="p-3">
+                        {{ \App\Models\Division::find($transaction->division_id)->name ?? '' }}
+                    </td>
+                @endif
             </tr>
             @empty
             <tr>
-                <td colspan="6" class="p-4 text-center text-gray-500">No transactions found.</td>
+                <td colspan="{{ $selectedDivision === 'all' ? 7 : 6 }}" class="p-4 text-center text-gray-500">No transactions found.</td>
             </tr>
             @endforelse
         </tbody>

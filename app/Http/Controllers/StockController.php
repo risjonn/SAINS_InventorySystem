@@ -37,24 +37,27 @@ class StockController extends Controller
 
     public function transactions()
     {
-        // Retrieve the division selected in the dashboard; if not present, default to the user's division.
         $selectedDivision = session('selectedDivision', auth()->user()->division_id);
-
-        // Retrieve the division data
-        $division = Division::find($selectedDivision);
-
-        // Join stock_transactions with stocks to filter by the division
-        $transactionsQuery = StockTransaction::join('stocks', 'stock_transactions.serial_number', '=', 'stocks.serial_number')
-            ->join('users', 'stock_transactions.handled_by', '=', 'users.id')
-            ->where('stocks.division_id', $selectedDivision)
-            ->select('stock_transactions.*', 'users.name as handled_by_name'); // Only select columns from stock_transactions
-
+        
+        if ($selectedDivision === 'all') {
+            $transactionsQuery = StockTransaction::join('stocks', 'stock_transactions.serial_number', '=', 'stocks.serial_number')
+                ->join('users', 'stock_transactions.handled_by', '=', 'users.id')
+                ->select('stock_transactions.*', 'users.name as handled_by_name', 'stocks.division_id');
+            $division = null; // or a dummy object if needed
+        } else {
+            $division = Division::find($selectedDivision);
+            $transactionsQuery = StockTransaction::join('stocks', 'stock_transactions.serial_number', '=', 'stocks.serial_number')
+                ->join('users', 'stock_transactions.handled_by', '=', 'users.id')
+                ->where('stocks.division_id', $selectedDivision)
+                ->select('stock_transactions.*', 'users.name as handled_by_name', 'stocks.division_id');
+        }
+        
         $filter = request('filter', 'all');
         if ($filter !== 'all') {
             $transactionsQuery->where('stock_transactions.type', $filter);
         }
-
         $transactions = $transactionsQuery->paginate(10)->appends(request()->query());
+        
         return view('stocks.transactions', compact('transactions', 'division'));
     }
 
@@ -237,52 +240,58 @@ class StockController extends Controller
     {
         // Try to get the division_id from the request; if not available, check the session.
         $divisionId = $request->get('division_id') ?? session('selectedDivision');
-
+    
+        // If no division is provided, redirect with a message.
         if (!$divisionId) {
             return redirect()->route('dashboard')->with('message', 'Please select a division.');
         }
-
-        $division = Division::find($divisionId);
-        if (!$division) {
-            $stocks = collect();
-            return view('stocks.overview', compact('stocks'))->with('message', 'Invalid division selected.');
-        }
-
-        $stocks = Stock::with('division')
+    
+        if ($divisionId === 'all') {
+            // When "All Division" is selected, get stocks from all divisions.
+            $stocks = Stock::with('division')
+                        ->where('status', 'available')
+                        ->get();
+    
+            // Create a dummy division object for display.
+            $division = (object)['name' => 'All Divisions'];
+        } else {
+            // Otherwise, filter stocks by the given division.
+            $division = Division::find($divisionId);
+            if (!$division) {
+                $stocks = collect();
+                return view('stocks.overview', compact('stocks'))->with('message', 'Invalid division selected.');
+            }
+    
+            $stocks = Stock::with('division')
                         ->where('division_id', $divisionId)
                         ->where('status', 'available')
                         ->get();
-
+        }
+    
         return view('stocks.overview', compact('stocks', 'division'));
     }
 
     // Display stocks filtered by category.
     // Renamed from "show" to avoid redeclaration.
     public function showByCategory(Request $request, $category)
-{
-    // Retrieve the division id from the query parameters
-    $divisionId = $request->query('division');
-
-    if ($divisionId) {
-        // Filter stocks by category, division, and available status
-        $stocks = Stock::where('category', $category)
-                       ->where('division_id', $divisionId)
-                       ->where('status', 'available')
-                       ->get();
-
-        // Optionally, retrieve the division details
-        $division = Division::find($divisionId);
-    } else {
-        // Fallback: Filter by category and available status if no division is provided
-        $stocks = Stock::where('category', $category)
-                       ->where('status', 'available')
-                       ->get();
-        $division = null;
-    }
-
-    return view('stocks.show', compact('stocks', 'category', 'division'));
-}
-
+    {
+        $divisionId = $request->query('division', 'all');
     
+        if ($divisionId === 'all') {
+            // Retrieve stocks by category across all divisions.
+            $stocks = Stock::where('category', $category)
+                           ->where('status', 'available')
+                           ->get();
+            $division = null; // No specific division selected.
+        } else {
+            $stocks = Stock::where('category', $category)
+                           ->where('division_id', $divisionId)
+                           ->where('status', 'available')
+                           ->get();
+            $division = Division::find($divisionId);
+        }
+    
+        return view('stocks.show', compact('stocks', 'category', 'division'));
+    }
     
 }

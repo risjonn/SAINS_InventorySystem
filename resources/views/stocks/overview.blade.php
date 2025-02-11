@@ -2,11 +2,14 @@
 
 @section('content')
 <div class="container mx-auto px-4">
+    @php
+        $selectedDivision = session('selectedDivision');
+    @endphp
     <h2 class="text-xl font-semibold mt-4">
         Stock Overview
-        @if(isset($division))
-            <span class="text-sm ml-2 text-gray-600">(Division: {{ $division->name }})</span>
-        @endif
+        <span class="text-sm ml-2 text-gray-600">
+            (Division: {{ $selectedDivision === 'all' ? 'All Divisions' : $division->name }})
+        </span>
     </h2>
 
     @if(session('message'))
@@ -16,17 +19,19 @@
     @endif
 
     @php
-        // If a division is provided, filter the stocks by the division's id.
-        if(isset($division)) {
-            $stocks = $stocks->where('division_id', $division->id);
+        // If a specific division is selected, filter the stocks; otherwise, use all.
+        if ($selectedDivision !== 'all' && isset($division)) {
+            $filteredStocks = $stocks->where('division_id', $division->id);
+        } else {
+            $filteredStocks = $stocks;
         }
         // Group the (filtered) stocks by category.
-        $groupedStocks = $stocks->groupBy('category');
+        $groupedStocks = $filteredStocks->groupBy('category');
     @endphp
 
     <!-- Stock Overview Table -->
     @if($groupedStocks->isNotEmpty())
-        <table class="w-full border rounded-lg shadow-md bg-white mt-4">
+        <table class="w-full mt-4 border rounded-lg shadow-md bg-white">
             <thead>
                 <tr class="bg-gray-200 text-left">
                     <th class="p-2">Category</th>
@@ -37,16 +42,16 @@
             <tbody>
                 @foreach($groupedStocks as $category => $group)
                     @php
-                        // Calculate the total quantity by counting the stock records in this group.
                         $totalQuantity = $group->count();
                     @endphp
                     <tr class="border-b">
                         <td class="p-2">{{ $category }}</td>
                         <td class="p-2">{{ $totalQuantity }}</td>
                         <td class="p-2">
-                        <a href="{{ route('stocks.byCategory', ['category' => $category, 'division' => $division->id]) }}" class="text-blue-600 hover:underline">
-    View
-</a>
+                            <a href="{{ route('stocks.byCategory', ['category' => $category, 'division' => $selectedDivision]) }}" 
+                                class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-2 rounded transition duration-300 ease-in-out">
+                                 View
+                             </a>
                         </td>
                     </tr>
                 @endforeach
