@@ -232,7 +232,7 @@ class StockController extends Controller
         return view('stocks.show', compact('stock'));
     }
 
-public function overview(Request $request)
+    public function overview(Request $request)
     {
         // Try to get the division_id from the request; if not available, check the session.
         $divisionId = $request->get('division_id') ?? session('selectedDivision');
