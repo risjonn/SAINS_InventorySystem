@@ -68,8 +68,11 @@
         Route::get('stocks/overview', [StockController::class, 'overview'])->name('stocks.overview');
         Route::get('stocks/transactions', [StockController::class, 'transactions'])->name('stocks.transactions');
 
-        // Dynamic route should be last.
-        Route::get('stocks/{stock}', [StockController::class, 'show'])->name('stocks.show');
+       // In your routes/web.php
+// Route for displaying stock details by category
+Route::get('stocks/category/{category?}', [StockController::class, 'showByCategory'])->name('stocks.byCategory');
+Route::get('stocks/{stock}', [StockController::class, 'show'])->name('stocks.show');
+
     });
 
 

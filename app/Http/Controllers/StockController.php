@@ -6,8 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Stock;
 use App\Models\Division;
 use App\Models\StockTransaction;
-class StockController extends Controller
 
+class StockController extends Controller
 {
     public function __construct()
     {
@@ -22,17 +22,16 @@ class StockController extends Controller
         })->only(['edit', 'update', 'destroy']); // Apply this check only to edit, update, destroy
     }
 
-
     public function index(Request $request)
     {
         $category = $request->get('category'); // Get the selected category from the request
-    
+
         $stocks = Stock::with('division')
                         ->when($category, function ($query, $category) {
                             return $query->where('category', $category); // Filter based on selected category
                         })
                         ->get();
-    
+
         return view('stocks.index', compact('stocks'));
     }
 
@@ -49,14 +48,14 @@ class StockController extends Controller
             ->join('users', 'stock_transactions.handled_by', '=', 'users.id')
             ->where('stocks.division_id', $selectedDivision)
             ->select('stock_transactions.*', 'users.name as handled_by_name'); // Only select columns from stock_transactions
-            
-            $filter = request('filter', 'all');
-            if ($filter !== 'all') {
-                $transactionsQuery->where('stock_transactions.type', $filter);
-            }
 
-            $transactions = $transactionsQuery->paginate(10)->appends(request()->query());
-        return view('stocks.transactions', compact('transactions' , 'division'));
+        $filter = request('filter', 'all');
+        if ($filter !== 'all') {
+            $transactionsQuery->where('stock_transactions.type', $filter);
+        }
+
+        $transactions = $transactionsQuery->paginate(10)->appends(request()->query());
+        return view('stocks.transactions', compact('transactions', 'division'));
     }
 
     public function management()
@@ -87,7 +86,7 @@ class StockController extends Controller
     public function storeTransactionIn(Request $request)
     {
         $selectedDivision = session('selectedDivision', auth()->user()->division_id);
-        
+
         $validated = $request->validate([
             'serial_number' => 'required',
             'model'         => 'required',
@@ -141,17 +140,17 @@ class StockController extends Controller
     public function outOperation(Request $request, Stock $stock)
     {
         $selectedDivision = session('selectedDivision', auth()->user()->division_id);
-        
+
         // Verify the stock belongs to the selected division.
         if ($stock->division_id != $selectedDivision) {
             return redirect()->back()->with('error', 'This stock does not belong to the selected division.');
         }
-        
+
         // Validate the remark from the modal.
         $validated = $request->validate([
             'remarks' => 'required|string',
         ]);
-        
+
         // Record the OUT transaction using the user-provided remark.
         StockTransaction::create([
             'serial_number'    => $stock->serial_number,
@@ -162,11 +161,11 @@ class StockController extends Controller
             'remarks'          => $validated['remarks'],
             'transaction_date' => now(),
         ]);
-        
+
         // Update the stock record to mark it as removed.
         $stock->status = 'OUT';
         $stock->save();
-        
+
         return redirect()->route('stocks.management')->with('success', 'OUT transaction recorded and stock removed.');
     }
 
@@ -182,10 +181,10 @@ class StockController extends Controller
         // Validate stock data before storing it
         $validated = $request->validate([
             'serial_number' => 'required|unique:stocks',
-            'model' => 'required',
-            'category' => 'required',
-            'division_id' => 'required|exists:divisions,id',
-            'remarks' => 'nullable'
+            'model'         => 'required',
+            'category'      => 'required',
+            'division_id'   => 'required|exists:divisions,id',
+            'remarks'       => 'nullable'
         ]);
 
         // Create the stock entry
@@ -206,10 +205,10 @@ class StockController extends Controller
     {
         // Validate the updated stock data
         $validated = $request->validate([
-            'model' => 'required',
-            'category' => 'required',
-            'division_id' => 'required|exists:divisions,id',
-            'remarks' => 'nullable'
+            'model'         => 'required',
+            'category'      => 'required',
+            'division_id'   => 'required|exists:divisions,id',
+            'remarks'       => 'nullable'
         ]);
 
         // Update the stock details
@@ -227,6 +226,8 @@ class StockController extends Controller
         // Redirect to the stock index page with a success message
         return redirect()->route('stocks.index')->with('success', 'Stock deleted successfully.');
     }
+
+    // Display a single stock detail
     public function show(Stock $stock)
     {
         return view('stocks.show', compact('stock'));
@@ -255,4 +256,33 @@ class StockController extends Controller
         return view('stocks.overview', compact('stocks', 'division'));
     }
 
+    // Display stocks filtered by category.
+    // Renamed from "show" to avoid redeclaration.
+    public function showByCategory(Request $request, $category)
+{
+    // Retrieve the division id from the query parameters
+    $divisionId = $request->query('division');
+
+    if ($divisionId) {
+        // Filter stocks by category, division, and available status
+        $stocks = Stock::where('category', $category)
+                       ->where('division_id', $divisionId)
+                       ->where('status', 'available')
+                       ->get();
+
+        // Optionally, retrieve the division details
+        $division = Division::find($divisionId);
+    } else {
+        // Fallback: Filter by category and available status if no division is provided
+        $stocks = Stock::where('category', $category)
+                       ->where('status', 'available')
+                       ->get();
+        $division = null;
+    }
+
+    return view('stocks.show', compact('stocks', 'category', 'division'));
+}
+
+    
+    
 }
