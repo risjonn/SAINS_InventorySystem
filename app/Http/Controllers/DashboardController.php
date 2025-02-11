@@ -22,16 +22,18 @@ class DashboardController extends Controller
 
         if ($selectedDivision === 'all') {
             // Aggregated data across all divisions
-            $totalStocks = Stock::count();
+            $totalStocks = Stock::where('status', 'available')->count();
 
-            $lowStockItems = Stock::select('category', DB::raw('COUNT(*) as count'))
+            $lowStockItems = Stock::where('status', 'available')
+                ->select('category', DB::raw('COUNT(*) as count'))
                 ->groupBy('category')
                 ->havingRaw('COUNT(*) < 2')
                 ->count();
 
             $userCount = User::count();
 
-            $stockSummary = Stock::select('category', DB::raw('COUNT(*) as quantity'))
+            $stockSummary = Stock::where('status', 'available')
+                ->select('category', DB::raw('COUNT(*) as quantity'))
                 ->groupBy('category')
                 ->get();
 
@@ -40,17 +42,22 @@ class DashboardController extends Controller
                 ->get();
         } else {
             // Data filtered by the selected division
-            $totalStocks = Stock::where('division_id', $selectedDivision)->count();
+            $totalStocks = Stock::where('division_id', $selectedDivision)
+                ->where('status', 'available')
+                ->count();
 
-            $lowStockItems = Stock::select('category', DB::raw('COUNT(*) as count'))
-                ->where('division_id', $selectedDivision)
+                $lowStockItems = Stock::where('division_id', $selectedDivision)
+                ->where('status', 'available')
+                ->select('category', DB::raw('COUNT(*) as count'))
                 ->groupBy('category')
                 ->havingRaw('COUNT(*) < 2')
+                ->get()
                 ->count();
 
             $userCount = User::where('division_id', $selectedDivision)->count();
 
             $stockSummary = Stock::where('division_id', $selectedDivision)
+                ->where('status', 'available')
                 ->select('category', DB::raw('COUNT(*) as quantity'))
                 ->groupBy('category')
                 ->get();
