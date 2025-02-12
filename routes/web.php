@@ -69,9 +69,9 @@
         Route::get('stocks/transactions', [StockController::class, 'transactions'])->name('stocks.transactions');
 
        // In your routes/web.php
-// Route for displaying stock details by category
-Route::get('stocks/category/{category?}', [StockController::class, 'showByCategory'])->name('stocks.byCategory');
-Route::get('stocks/{stock}', [StockController::class, 'show'])->name('stocks.show');
+        // Route for displaying stock details by category
+        Route::get('stocks/category/{category?}', [StockController::class, 'showByCategory'])->name('stocks.byCategory');
+        Route::get('stocks/{stock}', [StockController::class, 'show'])->name('stocks.show');
 
     });
 
