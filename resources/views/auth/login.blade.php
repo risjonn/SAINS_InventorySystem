@@ -5,16 +5,15 @@
     <form id="loginForm" method="POST" action="{{ route('login') }}">
         @csrf
 
-        <!-- Email Address -->
+        <!-- Username -->
         <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full border border-gray-300 rounded-md p-2 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                type="email" name="email" :value="old('email')" autocomplete="username" />
+            <x-input-label for="username" :value="__('Username')" />
+            <x-text-input id="username" class="block mt-1 w-full border border-gray-300 rounded-md p-2 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                type="text" name="username" :value="old('username')" autocomplete="username" />
 
-            <p class="text-red-600 text-sm mt-1 hidden error-message" id="emailError">Email is required.</p>
-            <p class="text-red-600 text-sm mt-1 hidden error-message" id="emailFormatError">Please enter a valid email address.</p>
+            <p class="text-red-600 text-sm mt-1 hidden error-message" id="usernameError">Username is required.</p>
 
-            @error('email')
+            @error('username')
                 <p class="text-red-600 text-sm mt-1 error-message">{{ $message }}</p>
             @enderror
         </div>
@@ -54,38 +53,27 @@
         </div>
     </form>
 
-    <!-- JavaScript for Auto-Submit and Validations -->
+    <!-- JavaScript adjustments: update any references from "email" to "username" -->
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            let emailField = document.getElementById("email");
+            let usernameField = document.getElementById("username");
             let passwordField = document.getElementById("password");
             let loginButton = document.getElementById("loginButton");
             let form = document.getElementById("loginForm");
 
-            let emailError = document.getElementById("emailError");
-            let emailFormatError = document.getElementById("emailFormatError");
+            let usernameError = document.getElementById("usernameError");
             let passwordError = document.getElementById("passwordError");
-
-            // Function to validate email format
-            function isValidEmail(email) {
-                let emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                return emailPattern.test(email);
-            }
 
             // Function to show validation errors on button click
             function validateForm(event) {
                 let valid = true;
 
                 // Reset error messages
-                emailError.classList.add("hidden");
-                emailFormatError.classList.add("hidden");
+                usernameError.classList.add("hidden");
                 passwordError.classList.add("hidden");
 
-                if (emailField.value.trim() === "") {
-                    emailError.classList.remove("hidden");
-                    valid = false;
-                } else if (!isValidEmail(emailField.value.trim())) {
-                    emailFormatError.classList.remove("hidden");
+                if (usernameField.value.trim() === "") {
+                    usernameError.classList.remove("hidden");
                     valid = false;
                 }
 
@@ -110,11 +98,11 @@
             loginButton.addEventListener("click", validateForm);
 
             // Hide errors when the user starts typing
-            hideErrorMessage(emailField, emailError, emailFormatError);
+            hideErrorMessage(usernameField, usernameError);
             hideErrorMessage(passwordField, passwordError);
 
-            // Move to the password field when pressing Enter in the email field
-            emailField.addEventListener("keydown", function (event) {
+            // Move to the password field when pressing Enter in the username field
+            usernameField.addEventListener("keydown", function (event) {
                 if (event.key === "Enter") {
                     event.preventDefault();
                     passwordField.focus();
