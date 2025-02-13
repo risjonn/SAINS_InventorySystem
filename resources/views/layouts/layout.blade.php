@@ -55,18 +55,37 @@
                 >
             </div>
             <nav class="mt-4 px-2 space-y-1">
-                <a href="{{ route('dashboard') }}" 
-                   class="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors 
-                          {{ request()->routeIs('dashboard') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
-                    <div class="w-8 flex-shrink-0 flex justify-center">
-                        <i class="fas fa-home text-lg"></i>
+                <!-- Dashboard Link with Tooltip -->
+                <div x-data="{ hover: false }" 
+                    @mouseenter="hover = true" 
+                    @mouseleave="hover = false"
+                    class="relative">
+                    <a href="{{ route('dashboard') }}" 
+                    class="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors 
+                            {{ request()->routeIs('dashboard') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
+                        <div class="w-8 flex-shrink-0 flex justify-center">
+                            <i class="fas fa-home text-lg"></i>
+                        </div>
+                        <span class="sidebar-text ml-3 text-sm font-medium whitespace-nowrap 
+                            transition-all duration-300 origin-left overflow-hidden"
+                            :class="sidebarOpen ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 absolute'">
+                            Dashboard
+                        </span>
+                    </a>
+                    <!-- Tooltip -->
+                    <div x-show="!sidebarOpen && hover"
+                        x-transition:enter="transition ease-out duration-300"
+                        x-transition:enter-start="opacity-0 transform -translate-y-2"
+                        x-transition:enter-end="opacity-100 transform translate-y-0"
+                        x-transition:leave="transition ease-in duration-200"
+                        x-transition:leave-start="opacity-100 transform translate-y-0"
+                        x-transition:leave-end="opacity-0 transform -translate-y-2"
+                        class="absolute left-full top-0 mt-0 ml-2 bg-white shadow-md p-2 rounded w-48">
+                        <span class="text-sm font-medium text-gray-600 whitespace-nowrap">
+                            Dashboard
+                        </span>
                     </div>
-                    <span class="sidebar-text ml-3 text-sm font-medium whitespace-nowrap 
-                          transition-all duration-300 origin-left overflow-hidden"
-                          :class="sidebarOpen ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 absolute'">
-                        Dashboard
-                    </span>
-                </a>
+                </div>
                 
                 <!-- Stock Inventory with Persisted Toggleable Submenu -->
                 <div x-data="{ 
@@ -122,31 +141,69 @@
                     </div>
                 </div>
 
-                <a href="{{ route('profile.edit') }}" 
-                   class="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors 
-                          {{ request()->routeIs('profile.edit') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
-                    <div class="w-8 flex flex-shrink-0 justify-center">
-                        <i class="fas fa-user-cog text-lg"></i>
-                    </div>
-                    <span class="sidebar-text ml-3 text-sm font-medium whitespace-nowrap 
-                          transition-all duration-300 origin-left overflow-hidden"
-                          :class="sidebarOpen ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 absolute'">
-                        Profile Settings
-                    </span>
-                </a>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="w-full flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors text-gray-600">
-                        <div class="w-8 flex-shrink-0 flex justify-center">
-                            <i class="fas fa-sign-out-alt text-lg"></i>
+                <!-- Profile Settings with Tooltip -->
+                <div x-data="{ hover: false }" 
+                    @mouseenter="hover = true" 
+                    @mouseleave="hover = false"
+                    class="relative">
+                    <a href="{{ route('profile.edit') }}" 
+                    class="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors 
+                            {{ request()->routeIs('profile.edit') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
+                        <div class="w-8 flex flex-shrink-0 justify-center">
+                            <i class="fas fa-user-cog text-lg"></i>
                         </div>
                         <span class="sidebar-text ml-3 text-sm font-medium whitespace-nowrap 
-                              transition-all duration-300 origin-left overflow-hidden"
-                              :class="sidebarOpen ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 absolute'">
+                            transition-all duration-300 origin-left overflow-hidden"
+                            :class="sidebarOpen ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 absolute'">
+                            Profile Settings
+                        </span>
+                    </a>
+                    <!-- Tooltip -->
+                    <div x-show="!sidebarOpen && hover"
+                        x-transition:enter="transition ease-out duration-300"
+                        x-transition:enter-start="opacity-0 transform -translate-y-2"
+                        x-transition:enter-end="opacity-100 transform translate-y-0"
+                        x-transition:leave="transition ease-in duration-200"
+                        x-transition:leave-start="opacity-100 transform translate-y-0"
+                        x-transition:leave-end="opacity-0 transform -translate-y-2"
+                        class="absolute left-full top-0 mt-0 ml-2 bg-white shadow-md p-2 rounded w-48">
+                        <span class="text-sm font-medium text-gray-600 whitespace-nowrap">
+                            Profile Settings
+                        </span>
+                    </div>
+                </div>
+                <!-- Logout with Tooltip -->
+                <div x-data="{ hover: false }" 
+                    @mouseenter="hover = true" 
+                    @mouseleave="hover = false"
+                    class="relative">
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="w-full flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors text-gray-600">
+                            <div class="w-8 flex-shrink-0 flex justify-center">
+                                <i class="fas fa-sign-out-alt text-lg"></i>
+                            </div>
+                            <span class="sidebar-text ml-3 text-sm font-medium whitespace-nowrap 
+                                transition-all duration-300 origin-left overflow-hidden"
+                                :class="sidebarOpen ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 absolute'">
+                                Logout
+                            </span>
+                        </button>
+                    </form>
+                    <!-- Tooltip -->
+                    <div x-show="!sidebarOpen && hover"
+                        x-transition:enter="transition ease-out duration-300"
+                        x-transition:enter-start="opacity-0 transform -translate-y-2"
+                        x-transition:enter-end="opacity-100 transform translate-y-0"
+                        x-transition:leave="transition ease-in duration-200"
+                        x-transition:leave-start="opacity-100 transform translate-y-0"
+                        x-transition:leave-end="opacity-0 transform -translate-y-2"
+                        class="absolute left-full top-0 mt-0 ml-2 bg-white shadow-md p-2 rounded w-48">
+                        <span class="text-sm font-medium text-gray-600 whitespace-nowrap">
                             Logout
                         </span>
-                    </button>
-                </form>
+                    </div>
+                </div>
             </nav>
             
             <!-- Edge Hover Zone -->
