@@ -77,6 +77,7 @@
         // Route for displaying stock details by category
         Route::get('stocks/category/{category?}', [StockController::class, 'showByCategory'])->name('stocks.byCategory');
         Route::get('stocks/{stock}', [StockController::class, 'show'])->name('stocks.show');
+        Route::get('stocks/{category}', [StockController::class, 'show'])->name('stocks.show');
 
     });
 

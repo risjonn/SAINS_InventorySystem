@@ -30,10 +30,12 @@
                         <td class="p-2">{{ $group->category }}</td>
                         <td class="p-2">{{ $group->total }}</td>
                         <td class="p-2">
-                            <a href="{{ route('stocks.byCategory', ['category' => $group->category, 'division' => $divisionId]) }}" 
-                               class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-2 rounded transition duration-300 ease-in-out">
-                                View
-                            </a>
+                        <a href="{{ route('stocks.show', ['category' => $group->category, 'division' => $divisionId]) }}" 
+   class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-2 rounded transition duration-300 ease-in-out">
+   View
+</a>
+
+
                         </td>
                     </tr>
                 @endforeach
