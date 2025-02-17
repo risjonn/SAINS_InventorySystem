@@ -2,13 +2,10 @@
 
 @section('content')
 <div class="container mx-auto px-4 my-5">
-    @php
-        $selectedDivision = session('selectedDivision');
-    @endphp
     <h2 class="text-xl font-semibold mt-4">
         Stock Overview
         <span class="text-sm ml-2 text-gray-600">
-            (Division: {{ $selectedDivision === 'all' ? 'All Divisions' : $division->name }})
+            (Division: {{ $divisionId === 'all' ? 'All Divisions' : $divisionName }})
         </span>
     </h2>
 
@@ -17,17 +14,6 @@
             {{ session('message') }}
         </div>
     @endif
-
-    @php
-        // If a specific division is selected, filter the stocks; otherwise, use all.
-        if ($selectedDivision !== 'all' && isset($division)) {
-            $filteredStocks = $stocks->where('division_id', $division->id);
-        } else {
-            $filteredStocks = $stocks;
-        }
-        // Group the (filtered) stocks by category.
-        $groupedStocks = $filteredStocks->groupBy('category');
-    @endphp
 
     @if($groupedStocks->isNotEmpty())
         <table id="stocksTable" class="w-full mt-4 border rounded-lg shadow-md bg-white">
@@ -39,15 +25,12 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($groupedStocks as $category => $group)
-                    @php
-                        $totalQuantity = $group->count();
-                    @endphp
+                @foreach($groupedStocks as $group)
                     <tr class="border-b">
-                        <td class="p-2">{{ $category }}</td>
-                        <td class="p-2">{{ $totalQuantity }}</td>
+                        <td class="p-2">{{ $group->category }}</td>
+                        <td class="p-2">{{ $group->total }}</td>
                         <td class="p-2">
-                            <a href="{{ route('stocks.byCategory', ['category' => $category, 'division' => $selectedDivision]) }}" 
+                            <a href="{{ route('stocks.byCategory', ['category' => $group->category, 'division' => $divisionId]) }}" 
                                class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-2 rounded transition duration-300 ease-in-out">
                                 View
                             </a>
@@ -56,6 +39,11 @@
                 @endforeach
             </tbody>
         </table>
+
+        <!-- Pagination links for aggregated groups -->
+        <div class="mt-4">
+            {{ $groupedStocks->appends(request()->input())->links() }}
+        </div>
     @else
         <p>No stocks available for this division.</p>
     @endif
@@ -73,10 +61,9 @@
         $(document).ready(function() {
             $('#stocksTable').DataTable({
                 ordering: true,
-                paging: false,    // Disable pagination if not needed
-                info: false,      // Disable table info display
-                searching: false, // Disable search box if not needed
-                // You can optionally set an initial order, e.g. order by category (first column):
+                paging: false,    // Disable DataTables pagination since Laravel's pagination is used.
+                info: false,
+                searching: false,
                 order: [[0, "asc"]]
             });
         });
