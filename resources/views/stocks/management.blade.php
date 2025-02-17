@@ -31,7 +31,17 @@
         <div class="row mb-4">
             <!-- Search Input (Left Column) -->
             <div class="col-md-8 mb-2 mb-md-0">
-                <input type="text" id="searchInput" placeholder="Search stocks... (Serial Number, Model)" class="form-control">
+                <form method="GET" action="{{ url()->current() }}">
+                    <div class="input-group">
+                        <input type="text" id="searchInput" name="search" value="{{ request('search') }}" 
+                               placeholder="Search stocks... (Serial Number, Model)" class="form-control">
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-primary ml-2">Apply</button>
+                            <!-- Clear Button to reset the search and page -->
+                            <button type="button" class="btn btn-secondary ml-2" id="clearSearch">Clear</button>
+                        </div>
+                    </div>
+                </form>
             </div>
             <!-- Sorting Dropdown (Right Column) -->
             <div class="col-md-4 text-md-right">
@@ -39,6 +49,8 @@
                 <select id="sortOption" class="p-2 border rounded" style="width: 250px;">
                     <option value="model_asc">Model (A-Z)</option>
                     <option value="model_desc">Model (Z-A)</option>
+                    <option value="category_asc">Category (A-Z)</option>
+                    <option value="category_desc">Category (Z-A)</option>
                     <option value="updated_at_asc">Updated At (Oldest)</option>
                     <option value="updated_at_desc" selected>Updated At (Newest)</option>
                 </select>
@@ -50,11 +62,8 @@
             <h3 class="text-lg font-semibold mb-2">Current Stocks</h3>
             @if($stocks->isNotEmpty())
             <div class="card shadow-sm border-0" style="border-radius: 12px;">
-                <!-- Card Header with Division Name -->
-               
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <!-- Updated table with an extra column for Updated At -->
                         <table id="stockTable" class="w-full border rounded-lg shadow-md bg-white">
                             <thead>
                                 <tr class="bg-gray-200 text-left">
@@ -94,6 +103,11 @@
                 <p>No stocks available for this division.</p>
             @endif
         </div>
+
+        <!-- Pagination Links -->
+        <div class="mt-4">
+            {{ $stocks->appends(request()->all())->links() }}
+        </div>
     @endif
 </div>
 
@@ -121,42 +135,26 @@
         </div>
       </form>
     </div>
-  </div>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', function(){
-        var outModal = new bootstrap.Modal(document.getElementById('outModal'));
-        document.querySelectorAll('.btn-out').forEach(function(button){
-             button.addEventListener('click', function(){
-                 var stockId = this.getAttribute('data-stock-id');
-                 var formAction = '/stocks/' + stockId + '/out';
-                 document.getElementById('outForm').setAttribute('action', formAction);
-                 document.getElementById('outRemark').value = '';
-                 outModal.show();
-             });
-        });
-    });
-  </script>
+</div>
 @endif
+
 @endsection
 
 @section('scripts')
 <!-- Include jQuery -->
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<!-- Ensure Bootstrap Bundle is loaded for Modal functionality -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 $(document).ready(function(){
 
-    /* ----------------------------
-       Sorting Functionality
-       ---------------------------- */
+    /* ---------------------------- Sorting Functionality ---------------------------- */
     function sortTableByOption() {
         var sortValue = $("#sortOption").val();
         var config = { columnIndex: 1, order: "asc", isDate: false }; // Default to Model ascending.
-
-        // Map dropdown value to config.
         switch(sortValue) {
             case "model_asc":
-                config.columnIndex = 1;
+                config.columnIndex = 1; // Model column
                 config.order = "asc";
                 config.isDate = false;
                 break;
@@ -165,8 +163,18 @@ $(document).ready(function(){
                 config.order = "desc";
                 config.isDate = false;
                 break;
+            case "category_asc":
+                config.columnIndex = 2; // Category column
+                config.order = "asc";
+                config.isDate = false;
+                break;
+            case "category_desc":
+                config.columnIndex = 2;
+                config.order = "desc";
+                config.isDate = false;
+                break;
             case "updated_at_asc":
-                config.columnIndex = 4; // Updated At is the 5th column (index 4)
+                config.columnIndex = 4; // Updated At column
                 config.order = "asc";
                 config.isDate = true;
                 break;
@@ -206,17 +214,14 @@ $(document).ready(function(){
         });
     }
 
-    // When the sort dropdown changes, sort the table.
+    // Trigger sorting when the dropdown selection changes.
     $("#sortOption").on("change", function() {
         sortTableByOption();
     });
-
     // Trigger default sorting on page load.
     $("#sortOption").trigger("change");
 
-    /* ----------------------------
-       Search Filter Functionality
-       ---------------------------- */
+    /* ---------------------------- Search Functionality ---------------------------- */
     $("#searchInput").on("keyup", function() {
         var value = $(this).val().toLowerCase();
         var $rows = $("#stockTable tbody tr").not(".no-record");
@@ -224,7 +229,7 @@ $(document).ready(function(){
         $rows.each(function() {
             var serial = $(this).find("td:nth-child(1)").text().toLowerCase();
             var model = $(this).find("td:nth-child(2)").text().toLowerCase();
-            var showRow = (serial.indexOf(value) === 0 || model.indexOf(value) === 0);
+            var showRow = (serial.indexOf(value) !== -1 || model.indexOf(value) !== -1);
             $(this).toggle(showRow);
         });
 
@@ -234,6 +239,33 @@ $(document).ready(function(){
         } else {
             $("#stockTable tbody tr.no-record").remove();
         }
+    });
+
+    // Intercept the search form submission to prevent page refresh
+    $("#searchForm").on("submit", function(e) {
+        e.preventDefault();
+        $("#searchInput").trigger("keyup");
+        return false;
+    });
+
+    // Clear button functionality: reset the search input and reload the page.
+    $("#clearSearch").on("click", function() {
+        // Reset the search input field and reload the page.
+        $("#searchInput").val('');
+        $(this).closest("form").submit(); // This will reset the form and reload the page.
+    });
+
+    /* ---------------------------- OUT Button Functionality ---------------------------- */
+    $('.btn-out').on('click', function(){
+        var stockId = $(this).data('stock-id');
+        // Build the action URL for the out operation.
+        var url = "{{ url('stocks') }}/" + stockId + "/out";
+        $('#outForm').attr('action', url);
+
+        // Show the modal using Bootstrap's modal API.
+        var outModalEl = document.getElementById('outModal');
+        var outModal = new bootstrap.Modal(outModalEl);
+        outModal.show();
     });
 });
 </script>

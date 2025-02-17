@@ -6,6 +6,8 @@
     use Illuminate\Support\Facades\Route;
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Http\Request;
+    use App\Http\Controllers\StockTransactionController;
+
 
     // Public route
     Route::get('/', function () {
@@ -77,6 +79,9 @@
         // Place fixed routes before dynamic ones.
         Route::get('stocks/overview', [StockController::class, 'overview'])->name('stocks.overview');
         Route::get('stocks/transactions', [StockController::class, 'transactions'])->name('stocks.transactions');
+        Route::get('/stocks/transactions/search', [StockTransactionController::class, 'ajaxSearch'])
+    ->name('stocks.transactions.search');
+
 
        // In your routes/web.php
         // Route for displaying stock details by category

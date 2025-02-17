@@ -1,6 +1,6 @@
 @extends('layouts.layout')
 
-@section('title', 'Stock Details')
+@section('title', 'Stock Transaction')
 
 @section('content')
 <div class="container my-5">
@@ -40,6 +40,35 @@
             </li>
         </ul>
     </div>
+
+    <!-- Row for Search and Sorting Options -->
+ <!-- Row for Search and Sorting Options -->
+<div class="row mb-4">
+    <!-- Search Input (Left Column, 8 columns wide) -->
+    <div class="col-md-8 mb-2 mb-md-0">
+        <form method="GET" action="{{ route('stocks.transactions') }}">
+            <div class="input-group">
+                <input type="text" id="searchInput" name="search" value="{{ request('search') }}" placeholder="Search transactions... (Serial Number, Model, Division)" class="form-control">
+                <div class="input-group-append">
+                    <button type="submit" class="btn btn-primary ml-2">Apply</button>
+                    <button type="button" class="btn btn-secondary " id="clearSearch">Clear</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Sorting Dropdown (Right Column, right-aligned) -->
+    <div class="col-md-4 text-md-right">
+        <label for="sortOption" class="mr-2 font-semibold">Sort by:</label>
+        <select id="sortOption" class="p-2 border rounded" style="width: 250px;">
+            <option value="model_asc">Model (A-Z)</option>
+            <option value="model_desc">Model (Z-A)</option>
+            <option value="transaction_date_asc">Transaction Date (Oldest)</option>
+            <option value="transaction_date_desc" selected>Transaction Date (Newest)</option>
+        </select>
+    </div>
+</div>
+
 
     <!-- Table for Stock Transactions -->
     <table id="transactionsTable" class="w-full border rounded-lg shadow-md bg-white mt-4">
@@ -93,16 +122,23 @@
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script>
 $(document).ready(function(){
-    // Set a flag for "All Divisions"
-    var allDivisions = @json($selectedDivision === 'all');
+    var allDivisions = @json($selectedDivision === 'all'); // Check if "All Divisions" is selected
 
-    /* =======================================
-       Sorting Functionality via Dropdown
-       ======================================= */
+    // Set the placeholder dynamically based on the division selection
+    if (allDivisions) {
+        $("#searchInput").attr("placeholder", "Search transactions... (Serial Number, Model, Division)");
+    } else {
+        $("#searchInput").attr("placeholder", "Search transactions... (Serial Number, Model)");
+    }
+
+    /* =======================
+       Sorting Functionality
+       ======================= */
     function sortTableByOption() {
         var sortValue = $("#sortOption").val();
         var config = { columnIndex: 1, order: "asc", isDate: false }; // Default to Model ascending.
 
+        // Sort based on the dropdown value
         switch(sortValue) {
             case "model_asc":
                 config.columnIndex = 1;
@@ -155,14 +191,17 @@ $(document).ready(function(){
         });
     }
 
+    // Trigger sorting when the dropdown selection changes.
     $("#sortOption").on("change", function() {
         sortTableByOption();
     });
+
+    // Trigger default sorting on page load.
     $("#sortOption").trigger("change");
 
-    /* =======================================
+    /* =======================
        Search Filter Functionality
-       ======================================= */
+       ======================= */
     $("#searchInput").on("keyup", function() {
         var value = $(this).val().toLowerCase();
         var $rows = $("#transactionsTable tbody tr").not(".no-record");
@@ -172,8 +211,8 @@ $(document).ready(function(){
             var model = $(this).find("td:nth-child(2)").text().toLowerCase();
             var divisionText = "";
             if(allDivisions) {
-                // Division column is the last column.
-                divisionText = $(this).find("td:last-child").text().toLowerCase();
+                // If all divisions are selected, Division column is the 4th column.
+                divisionText = $(this).find("td:nth-child(4)").text().toLowerCase();
             }
             var showRow = (serial.indexOf(value) === 0 || model.indexOf(value) === 0 || (allDivisions && divisionText.indexOf(value) === 0));
             $(this).toggle(showRow);
@@ -187,12 +226,11 @@ $(document).ready(function(){
         }
     });
 
-    // Dynamically set placeholder based on the selected division
-    if (allDivisions) {
-        $("#searchInput").attr("placeholder", "Search transactions... (Serial Number, Model, Division)");
-    } else {
-        $("#searchInput").attr("placeholder", "Search transactions... (Serial Number, Model)");
-    }
+    // Clear button functionality: reset the search input and submit the form.
+    $("#clearSearch").on("click", function() {
+        $("#searchInput").val('');
+        $(this).closest("form").submit();
+    });
 });
 </script>
 @endsection
