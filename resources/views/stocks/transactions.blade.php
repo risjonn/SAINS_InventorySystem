@@ -22,19 +22,19 @@
         <ul class="flex border-b">
             <li class="-mb-px mr-1">
                 <a href="{{ route('stocks.transactions', ['filter' => 'all']) }}"
-                   class="bg-white inline-block border-l border-t border-r rounded-t px-4 py-2 {{ request('filter', 'all') == 'all' ? 'text-blue-800 font-bold bg-blue-200' : 'text-gray-500 font-bold' }}">
+                   class="bg-white inline-block border-l border-t border-r rounded-t px-4 py-2 {{ request('filter', 'all') == 'all' ? 'text-blue-9500 font-bold bg-blue-200' : 'text-gray-500 font-bold' }}">
                     All
                 </a>
             </li>
             <li class="mr-1">
                 <a href="{{ route('stocks.transactions', ['filter' => 'IN']) }}"
-                   class="bg-white inline-block border-l border-t border-r rounded-t px-4 py-2 {{ request('filter') == 'IN' ? 'text-green-800 font-bold bg-green-200' : 'text-gray-500 font-bold' }}">
+                   class="bg-white inline-block border-l border-t border-r rounded-t px-4 py-2 {{ request('filter') == 'IN' ? 'text-green-950 font-bold bg-green-200' : 'text-gray-500 font-bold' }}">
                     IN
                 </a>
             </li>
             <li class="mr-1">
                 <a href="{{ route('stocks.transactions', ['filter' => 'OUT']) }}"
-                   class="bg-white inline-block border-l border-t border-r rounded-t px-4 py-2 {{ request('filter') == 'OUT' ? 'text-red-800 font-bold bg-red-200' : 'text-gray-500 font-bold' }}">
+                   class="bg-white inline-block border-l border-t border-r rounded-t px-4 py-2 {{ request('filter') == 'OUT' ? 'text-red-950 font-bold bg-red-200' : 'text-gray-500 font-bold' }}">
                     OUT
                 </a>
             </li>
