@@ -2,26 +2,78 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
     public function run()
     {
+        // Create a User Manager
         User::create([
-            'name' => 'Admin User',
-            'email' => 'admin@example.com',
-            'password' => bcrypt('password'), // Default password
-            'role' => 'admin',
+            'username'    => 'usermanager',
+            'name'        => 'User Manager',
+            'email'       => 'manager@example.com',
+            'password'    => Hash::make('password'),
+            'division_id' => 1,
+            'role'        => 'User Manager',
         ]);
 
-        User::create([
-            'name' => 'Regular User',
-            'email' => 'user@example.com',
-            'password' => bcrypt('password'), // Default password
-            'role' => 'user',
-        ]);
+        // Create Admins (one per division for example)
+        $admins = [
+            [
+                'username'    => 'admin_kuching',
+                'name'        => 'Admin Kuching',
+                'email'       => 'admin_kuching@example.com',
+                'password'    => Hash::make('password'),
+                'division_id' => 1, // Kuching
+                'role'        => 'Admin',
+            ],
+            [
+                'username'    => 'admin_miri',
+                'name'        => 'Admin Miri',
+                'email'       => 'admin_miri@example.com',
+                'password'    => Hash::make('password'),
+                'division_id' => 2, // Miri
+                'role'        => 'Admin',
+            ],
+            [
+                'username'    => 'admin_samarahan',
+                'name'        => 'Admin Samarahan',
+                'email'       => 'admin_samarahan@example.com',
+                'password'    => Hash::make('password'),
+                'division_id' => 3, // Samarahan
+                'role'        => 'Admin',
+            ],
+            [
+                'username'    => 'admin_sriaman',
+                'name'        => 'Admin Sri Aman',
+                'email'       => 'admin_sriaman@example.com',
+                'password'    => Hash::make('password'),
+                'division_id' => 4, // Sri Aman
+                'role'        => 'Admin',
+            ],
+            [
+                'username'    => 'admin_bintulu',
+                'name'        => 'Admin Bintulu',
+                'email'       => 'admin_bintulu@example.com',
+                'password'    => Hash::make('password'),
+                'division_id' => 5, // Bintulu
+                'role'        => 'Admin',
+            ],
+            [
+                'username'    => 'admin_kapit',
+                'name'        => 'Admin Kapit',
+                'email'       => 'admin_kapit@example.com',
+                'password'    => Hash::make('password'),
+                'division_id' => 6, // Kapit
+                'role'        => 'Admin',
+            ],
+        ];
+
+        foreach ($admins as $admin) {
+            User::create($admin);
+        }
     }
 }
