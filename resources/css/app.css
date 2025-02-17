@@ -4,6 +4,10 @@
 
 @import 'sidebar.css';
 
+[x-cloak] {
+    display: none !important; 
+}
+
 /* Popup Message Styling */
 .popup-center {
     position: fixed;

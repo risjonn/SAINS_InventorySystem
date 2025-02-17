@@ -37,7 +37,7 @@
     });
 
     // ✅ Admin-only stock management routes
-    Route::middleware(['auth'])->group(function () {
+    Route::middleware(['auth', 'role:Admin'])->group(function () {
         Route::get('/stocks/create', [StockController::class, 'create'])->name('stocks.create');
 
         // Dedicated Stock Management page
@@ -58,6 +58,16 @@
 
         // Delete stock route (check for admin manually in controller)
         Route::delete('stocks/{stock}', [StockController::class, 'destroy'])->name('stocks.destroy');
+    });
+
+    // User Manager routes
+    Route::middleware(['auth', 'role:User Manager'])->group(function () {
+        Route::get('/users', [\App\Http\Controllers\UserManagementController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [\App\Http\Controllers\UserManagementController::class, 'create'])->name('users.create');
+        Route::post('/users', [\App\Http\Controllers\UserManagementController::class, 'store'])->name('users.store');
+        Route::get('/users/{user}/edit', [\App\Http\Controllers\UserManagementController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [\App\Http\Controllers\UserManagementController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [\App\Http\Controllers\UserManagementController::class, 'destroy'])->name('users.destroy');
     });
 
 // ✅ General stock routes for authenticated users
