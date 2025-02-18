@@ -5,12 +5,9 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Foundation\Auth\AuthenticatesUsers;
 
 class LoginController extends Controller
 {
-    use AuthenticatesUsers;
-
     /**
      * Where to redirect users after login.
      *
@@ -46,22 +43,18 @@ class LoginController extends Controller
      */
     public function store(Request $request)
     {
-        $this->validateLogin($request);
+        $request->validate([
+            'username' => 'required|string',
+            'password' => 'required|string',
+        ]);
 
-        // If the class is using the ThrottlesLogins trait, we can automatically throttle the login attempts.
-        if (method_exists($this, 'hasTooManyLoginAttempts') &&
-            $this->hasTooManyLoginAttempts($request)) {
-            $this->fireLockoutEvent($request);
-            return $this->sendLockoutResponse($request);
+        if (Auth::attempt($request->only('username', 'password'))) {
+            return redirect()->intended($this->redirectTo);
         }
 
-        if ($this->attemptLogin($request)) {
-            return $this->sendLoginResponse($request);
-        }
-
-        $this->incrementLoginAttempts($request);
-
-        return $this->sendFailedLoginResponse($request);
+        return back()->withErrors([
+            'username' => 'Invalid login credentials.',
+        ]);
     }
 
     /**
@@ -72,10 +65,9 @@ class LoginController extends Controller
      */
     public function destroy(Request $request)
     {
-        Auth::guard()->logout();
+        Auth::logout();
 
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
         return redirect('/');
