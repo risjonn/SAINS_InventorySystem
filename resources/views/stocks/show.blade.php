@@ -5,15 +5,17 @@
 @section('content')
 <div class="container my-5">
     @php 
-        // Get the selected division value from the query or session.
+        // Get the selected division and category values from the query or session.
         $selectedDivision = request()->query('division', session('selectedDivision', 'all'));
+        $selectedCategory = $category; // Use the category passed from the controller
     @endphp
 
     <!-- Page Header -->
     <h2 class="text-center mb-4">
         Stock Overview
         <span class="text-sm ml-2 text-gray-600">
-            (Division: {{ $selectedDivision === 'all' ? 'All Divisions' : $division->name }})
+            (Division: {{ $selectedDivision === 'all' ? 'All Divisions' : $division->name }} 
+            | Category: {{ $selectedCategory }})
         </span>
     </h2>
     <div class="text-center mb-4">
@@ -24,19 +26,22 @@
     <div class="row mb-4">
         <!-- Search Input (Left Column: 8 columns) -->
         <div class="col-md-8 mb-2 mb-md-0">
-            <!-- Update the form action to pass the expected "stock" parameter -->
-            <form id="searchForm" method="GET" action="{{ route('stocks.show', ['stock' => $category]) }}">
-                <input type="hidden" name="division" value="{{ request('division', 'all') }}">
-                <div class="input-group">
-                    <input type="text" id="searchInput" name="search" value="{{ request('search') }}" 
-                           placeholder="Search stocks..." class="form-control">
-                    <div class="input-group-append">
-                        <button type="submit" class="btn btn-primary ml-2">Apply</button>
-                        <a href="{{ route('stocks.show', ['stock' => $category, 'division' => request('division', 'all')]) }}" 
-                           class="btn btn-secondary ml-2">Clear</a>
-                    </div>
-                </div>
-            </form>
+        <form id="searchForm" method="GET" action="{{ route('stocks.show', ['category' => $selectedCategory, 'division' => $selectedDivision]) }}">
+    <input type="hidden" name="division" value="{{ request('division', 'all') }}">
+    <input type="hidden" name="category" value="{{ $selectedCategory }}">
+    <div class="input-group">
+        <input type="text" id="searchInput" name="search" value="{{ request('search') }}" 
+               placeholder="Search stocks..." class="form-control">
+        <div class="input-group-append">
+            <button type="submit" class="btn btn-primary ml-2">Apply</button>
+            <a href="{{ route('stocks.show', ['category' => $selectedCategory, 'division' => request('division', 'all')]) }}" 
+               class="btn btn-secondary ml-2">Clear</a>
+        </div>
+    </div>
+</form>
+
+
+
         </div>
 
         <!-- Sorting Dropdown (Right Column: 4 columns, right-aligned) -->
@@ -69,19 +74,24 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($stocks as $stock)
-                            <tr style="border-bottom: 1px solid #f0f0f0;">
-                                <td class="text-center py-2">{{ $stock->serial_number }}</td>
-                                <td class="text-center py-2">{{ $stock->model }}</td>
-                                <td class="text-center py-2">{{ $stock->category }}</td>
-                                @if($selectedDivision === 'all')
-                                    <td class="text-center py-2">{{ $stock->division->name }}</td>
-                                @endif
-                                <td class="text-center py-2">{{ $stock->remarks }}</td>
-                                <td class="text-center py-2">{{ \Carbon\Carbon::parse($stock->updated_at)->format('M d, Y h:i A') }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
+    @forelse($stocks as $stock)
+        <tr style="border-bottom: 1px solid #f0f0f0;">
+            <td class="text-center py-2">{{ $stock->serial_number }}</td>
+            <td class="text-center py-2">{{ $stock->model }}</td>
+            <td class="text-center py-2">{{ $stock->category }}</td>
+            @if($selectedDivision === 'all')
+                <td class="text-center py-2">{{ $stock->division->name }}</td>
+            @endif
+            <td class="text-center py-2">{{ $stock->remarks }}</td>
+            <td class="text-center py-2">{{ \Carbon\Carbon::parse($stock->updated_at)->format('M d, Y h:i A') }}</td>
+        </tr>
+    @empty
+        <tr>
+            <td colspan="6" class="text-center py-3">No matching records found</td>
+        </tr>
+    @endforelse
+</tbody>
+
                 </table>
             </div>
         </div>
@@ -89,7 +99,7 @@
 
     <!-- Pagination Links -->
     <div class="mt-4">
-        {{ $stocks->appends(['search' => request('search'), 'division' => request('division', 'all')])->links() }}
+        {{ $stocks->appends(['search' => request('search'), 'division' => request('division', 'all'), 'category' => $selectedCategory])->links() }}
     </div>
 </div>
 @endsection

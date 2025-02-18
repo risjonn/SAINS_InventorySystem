@@ -272,35 +272,35 @@ class StockController extends Controller
     {
         $divisionId = $request->query('division', 'all');
         $search = $request->query('search'); // Get the search term
-    
-        if ($divisionId === 'all') {
-            $stocks = Stock::where('category', $category)
-                            ->where('status', 'available')
-                            ->when($search, function ($query) use ($search) {
-                                $query->where('serial_number', 'LIKE', "%{$search}%")
-                                       ->orWhere('model', 'LIKE', "%{$search}%")
-                                       ->orWhere('category', 'LIKE', "%{$search}%");
-                            })
-                            ->paginate(10);
-            $division = null;
-        } else {
-            $stocks = Stock::where('category', $category)
-                            ->where('division_id', $divisionId)
-                            ->where('status', 'available')
-                            ->when($search, function ($query) use ($search) {
-                                $query->where('serial_number', 'LIKE', "%{$search}%")
-                                       ->orWhere('model', 'LIKE', "%{$search}%")
-                                       ->orWhere('category', 'LIKE', "%{$search}%");
-                            })
-                            ->paginate(10);
+        
+        // Get the division if it's not 'all'
+        if ($divisionId !== 'all') {
             $division = Division::find($divisionId);
+        } else {
+            $division = null;
         }
     
-        return view('stocks.show', compact('stocks', 'category', 'division'));
+        // Query stocks filtered by category, status, division, and search term
+        $stocks = Stock::where('category', $category)
+                        ->where('status', 'available')
+                        ->when($divisionId !== 'all', function ($query) use ($divisionId) {
+                            return $query->where('division_id', $divisionId);
+                        })
+                        ->when($search, function ($query, $search) {
+                            return $query->where(function ($q) use ($search) {
+                                $q->where('serial_number', 'LIKE', "%{$search}%")
+                                  ->orWhere('model', 'LIKE', "%{$search}%")
+                                  ->orWhere('category', 'LIKE', "%{$search}%");
+                            });
+                        })
+                        ->paginate(10); // Paginate results (10 per page)
+    
+        return view('stocks.show', compact('stocks', 'category', 'division')); // Pass division here
     }
-
+    
 public function overview(Request $request)
 {
+    // Get division from request or session
     $divisionId = $request->get('division_id') ?? session('selectedDivision');
         
     if (!$divisionId) {
@@ -339,6 +339,7 @@ public function overview(Request $request)
     // Return the view with aggregated stocks, division name, and division ID
     return view('stocks.overview', compact('groupedStocks', 'divisionName', 'divisionId'));
 }
+
 
     
 
