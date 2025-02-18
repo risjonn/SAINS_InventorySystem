@@ -22,19 +22,19 @@
         <ul class="flex border-b">
             <li class="-mb-px mr-1">
                 <a href="{{ route('stocks.transactions', ['filter' => 'all']) }}"
-                   class="bg-white inline-block border-l border-t border-r rounded-t px-4 py-2 {{ request('filter', 'all') == 'all' ? 'text-blue-950 font-bold bg-blue-300' : 'text-gray-500 font-bold' }}">
+                class="inline-block border-l border-t border-r rounded-t px-4 py-2 {{ request('filter', 'all') == 'all' ? 'text-white font-bold bg-blue-600' : 'text-blue-800 font-bold bg-blue-100' }}">
                     All
                 </a>
             </li>
             <li class="mr-1">
                 <a href="{{ route('stocks.transactions', ['filter' => 'IN']) }}"
-                   class="bg-white inline-block border-l border-t border-r rounded-t px-4 py-2 {{ request('filter') == 'IN' ? 'text-green-950 font-bold bg-green-300' : 'text-gray-500 font-bold' }}">
+                class="inline-block border-l border-t border-r rounded-t px-4 py-2 {{ request('filter') == 'IN' ? 'text-white font-bold bg-green-600' : 'text-green-800 font-bold bg-green-100' }}">
                     IN
                 </a>
             </li>
             <li class="mr-1">
                 <a href="{{ route('stocks.transactions', ['filter' => 'OUT']) }}"
-                   class="bg-white inline-block border-l border-t border-r rounded-t px-4 py-2 {{ request('filter') == 'OUT' ? 'text-red-950 font-bold bg-red-300' : 'text-gray-500 font-bold' }}">
+                class="inline-block border-l border-t border-r rounded-t px-4 py-2 {{ request('filter') == 'OUT' ? 'text-white font-bold bg-red-600' : 'text-red-800 font-bold bg-red-100' }}">
                     OUT
                 </a>
             </li>
@@ -42,32 +42,31 @@
     </div>
 
     <!-- Row for Search and Sorting Options -->
- <!-- Row for Search and Sorting Options -->
-<div class="row mb-4">
-    <!-- Search Input (Left Column, 8 columns wide) -->
-    <div class="col-md-8 mb-2 mb-md-0">
-        <form method="GET" action="{{ route('stocks.transactions') }}">
-            <div class="input-group">
-                <input type="text" id="searchInput" name="search" value="{{ request('search') }}" placeholder="Search transactions... (Serial Number, Model, Division)" class="form-control">
-                <div class="input-group-append">
-                    <button type="submit" class="btn btn-primary ml-2">Apply</button>
-                    <button type="button" class="btn btn-secondary " id="clearSearch">Clear</button>
+    <div class="row mb-4">
+        <!-- Search Input (Left Column, 8 columns wide) -->
+        <div class="col-md-8 mb-2 mb-md-0">
+            <form method="GET" action="{{ route('stocks.transactions') }}">
+                <div class="input-group">
+                    <input type="text" id="searchInput" name="search" value="{{ request('search') }}" placeholder="Search transactions... (Serial Number, Model, Division)" class="form-control">
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-primary ml-2">Apply</button>
+                        <button type="button" class="btn btn-secondary " id="clearSearch">Clear</button>
+                    </div>
                 </div>
-            </div>
-        </form>
-    </div>
+            </form>
+        </div>
 
-    <!-- Sorting Dropdown (Right Column, right-aligned) -->
-    <div class="col-md-4 text-md-right">
-        <label for="sortOption" class="mr-2 font-semibold">Sort by:</label>
-        <select id="sortOption" class="p-2 border rounded" style="width: 250px;">
-            <option value="model_asc">Model (A-Z)</option>
-            <option value="model_desc">Model (Z-A)</option>
-            <option value="transaction_date_asc">Transaction Date (Oldest)</option>
-            <option value="transaction_date_desc" selected>Transaction Date (Newest)</option>
-        </select>
+        <!-- Sorting Dropdown (Right Column, right-aligned) -->
+        <div class="col-md-4 text-md-right">
+            <label for="sortOption" class="mr-2 font-semibold">Sort by:</label>
+            <select id="sortOption" class="p-2 border rounded" style="width: 250px;">
+                <option value="model_asc">Model (A-Z)</option>
+                <option value="model_desc">Model (Z-A)</option>
+                <option value="transaction_date_asc">Transaction Date (Oldest)</option>
+                <option value="transaction_date_desc" selected>Transaction Date (Newest)</option>
+            </select>
+        </div>
     </div>
-</div>
 
 
     <!-- Table for Stock Transactions -->
