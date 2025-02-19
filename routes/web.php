@@ -54,6 +54,8 @@
 
         // Inline OUT operation from the management page
         Route::post('stocks/{stock}/out', [StockController::class, 'outOperation'])->name('stocks.out');
+        Route::post('/stocks/transactions/storeOutOrLoan', [StockController::class, 'storeOutOrLoan'])->name('stocks.transactions.storeOutOrLoan');
+
 
         // Edit stock route (check for admin manually in controller)
         Route::get('/stocks/{stock}/edit', [StockController::class, 'edit'])->name('stocks.edit');

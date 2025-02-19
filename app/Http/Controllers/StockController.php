@@ -116,6 +116,13 @@ class StockController extends Controller
                         })
                         ->paginate(10);
         return view('stocks.management', compact('stocks', 'division'));
+        $operationType = $request->input('operation_type');
+if ($operationType === 'LOAN') {
+    // Process loan transaction, including storing expected_return_date
+} else {
+    // Process standard OUT transaction
+}
+
     }
     
     public function createTransactionIn()
