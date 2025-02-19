@@ -25,7 +25,7 @@
     <div class="row mb-4">
         <!-- Search Input (Left Column: 8 columns) -->
         <div class="col-md-8 mb-2 mb-md-0">
-            <form id="searchForm" method="GET" action="{{ route('stocks.show', ['category' => $category, 'division' => $selectedDivision]) }}">
+            <form id="searchForm" method="GET" action="{{ route('stocks.byCategory', ['category' => $category, 'division' => $selectedDivision === 'all' ? 'all' : ($division->id ?? 'all')]) }}">
                 <input type="hidden" name="division" value="{{ $selectedDivision }}">
                 <input type="hidden" name="category" value="{{ $category }}">
                 <!-- Hidden field for page number if needed -->
@@ -35,7 +35,7 @@
                            placeholder="Search stocks... (Serial Number, Model, Division)" class="form-control">
                     <div class="input-group-append">
                         <button type="submit" class="btn btn-primary ml-2">Apply</button>
-                        <a href="{{ route('stocks.show', ['category' => $category, 'division' => $selectedDivision]) }}" class="btn btn-secondary ml-2" id="clearSearch">Clear</a>
+                        <a href="{{ route('stocks.byCategory', ['category' => $category, 'division' => $selectedDivision === 'all' ? 'all' : ($division->id ?? 'all')]) }}" class="btn btn-secondary ml-2" id="clearSearch">Clear</a>
                     </div>
                 </div>
             </form>
@@ -122,7 +122,7 @@ $(document).ready(function(){
         var sortOption = $("#sortOption").val();
         var currentPage = $("#currentPage").val();
         $.ajax({
-            url: "{{ route('stocks.show', ['category' => $category, 'division' => $selectedDivision]) }}",
+            url: "{{ route('stocks.byCategory', ['category' => $category, 'division' => $selectedDivision === 'all' ? 'all' : ($division->id ?? 'all')]) }}",
             type: "GET",
             data: {
                 search: searchQuery,

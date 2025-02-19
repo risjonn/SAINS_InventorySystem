@@ -32,7 +32,7 @@ class UserManagementController extends Controller
             'email'      => 'required|email|unique:users,email',
             'password'   => 'required|min:6|confirmed',
             'division_id'=> 'required|exists:divisions,id',
-            'role'       => 'required|in:Admin,User Manager,User', // adjust as needed
+            'role'       => 'required|in:Admin,Super Admin',
         ]);
 
         User::create([
@@ -62,7 +62,7 @@ class UserManagementController extends Controller
             'name'       => 'required',
             'email'      => 'required|email|unique:users,email,' . $user->id,
             'division_id'=> 'required|exists:divisions,id',
-            'role'       => 'required|in:Admin,User Manager,User',
+            'role'       => 'required|in:Admin,Super Admin',
         ]);
 
         $user->update($request->only('username', 'name', 'email', 'division_id', 'role'));

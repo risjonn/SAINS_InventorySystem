@@ -16,7 +16,7 @@ class StockController extends Controller
 
         // Manually check if the user is an admin
         $this->middleware(function ($request, $next) {
-            if (auth()->check() && auth()->user()->role !== 'Admin') { // Check if the user's role is 'Admin'
+            if (auth()->check() && !in_array(auth()->user()->role, ['Admin', 'Super Admin'])) {
                 abort(403, 'Unauthorized Action');
             }
             return $next($request);
@@ -280,14 +280,13 @@ if ($operationType === 'LOAN') {
     
     public function overview(Request $request)
     {
-        $divisionId = $request->get('division_id') ?? session('selectedDivision');
-            
-        if (!$divisionId) {
-            return redirect()->route('dashboard')->with('message', 'Please select a division.');
-        }
-    
+        // Get division from request or session; default to first division or 'all'
+        $divisionId = $request->get('division_id') ?? session('selectedDivision', 'all');
+        $selectedDivision = $divisionId;
+        
         if ($divisionId === 'all') {
             $divisionName = 'All Divisions';
+            $division = null;
         } else {
             $division = Division::find($divisionId);
             if (!$division) {
@@ -295,45 +294,55 @@ if ($operationType === 'LOAN') {
             }
             $divisionName = $division->name;
         }
-    
-        $search = $request->get('search');
-    
-        $groupedStocks = Stock::select('category', DB::raw('count(*) as total'))
-                            ->where('status', 'available')
-                            ->when($divisionId !== 'all', function ($query) use ($divisionId) {
-                                return $query->where('division_id', $divisionId);
-                            })
-                            ->when($search, function ($query, $search) {
-                                return $query->where(function ($q) use ($search) {
-                                    $q->where('serial_number', 'LIKE', "%{$search}%")
-                                      ->orWhere('model', 'LIKE', "%{$search}%")
-                                      ->orWhere('category', 'LIKE', "%{$search}%");
-                                });
-                            })
-                            ->groupBy('category')
-                            ->paginate(10);
         
-        return view('stocks.overview', compact('groupedStocks', 'divisionName', 'divisionId'));
+        $search = $request->get('search', '');
+
+        // Group stocks by category and count the total for each group.
+        $groupedStocks = Stock::select('category', DB::raw('COUNT(*) as total'))
+            ->where('status', 'available')
+            ->when($divisionId !== 'all', function ($query) use ($divisionId) {
+                return $query->where('division_id', $divisionId);
+            })
+            ->when($search, function ($query, $search) {
+                return $query->where(function ($q) use ($search) {
+                    $q->where('serial_number', 'LIKE', "%{$search}%")
+                      ->orWhere('model', 'LIKE', "%{$search}%")
+                      ->orWhere('category', 'LIKE', "%{$search}%");
+                });
+            })
+            ->groupBy('category')
+            ->paginate(10);
+
+        return view('stocks.overview', compact(
+            'groupedStocks',
+            'divisionName',
+            'divisionId',
+            'selectedDivision',
+            'division'
+        ));
     }
     
-    public function showByCategory(Request $request, $category)
+    public function showByCategory(Request $request, $category, $division)
     {
-        $divisionId = $request->query('division', 'all');
-    
-        if ($divisionId === 'all') {
+        if ($division === 'all') {
+            // Retrieve stocks by category across all divisions.
             $stocks = Stock::where('category', $category)
-                        ->where('status', 'available')
-                        ->paginate(10);
-            $division = null;
+                           ->where('status', 'available')
+                           ->paginate(10);
+            $divisionModel = null;
         } else {
             $stocks = Stock::where('category', $category)
-                        ->where('division_id', $divisionId)
-                        ->where('status', 'available')
-                        ->paginate(10);
-            $division = Division::find($divisionId);
+                           ->where('division_id', $division)
+                           ->where('status', 'available')
+                           ->paginate(10);
+            $divisionModel = Division::find($division);
         }
     
-        return view('stocks.show', compact('stocks', 'category', 'division'));
+        return view('stocks.show', [
+            'stocks' => $stocks,
+            'category' => $category,
+            'division' => $divisionModel,
+        ]);
     }
     
     public function ajaxSearch(Request $request)

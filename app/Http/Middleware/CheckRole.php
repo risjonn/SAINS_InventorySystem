@@ -18,10 +18,16 @@ class CheckRole
      */
     public function handle(Request $request, Closure $next, $roles)
     {
-        $allowedRoles = array_map('trim', explode(',', $roles));
-        if (!auth()->check() || !in_array(auth()->user()->role, $allowedRoles)) {
+        // Split roles using the pipe delimiter
+        $allowedRoles = explode('|', $roles);
+        $allowedRoles = array_map('strtolower', array_map('trim', $allowedRoles));
+        
+        $userRole = auth()->check() ? strtolower(auth()->user()->role) : null;
+    
+        if (!$userRole || !in_array($userRole, $allowedRoles)) {
             abort(403, 'Unauthorized action.');
         }
+    
         return $next($request);
     }
 }

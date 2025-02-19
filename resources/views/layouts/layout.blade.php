@@ -111,8 +111,7 @@
             </div>
           </template>
         </div>
-        
-        @if(auth()->user()->role === 'Admin')
+
         <!-- Stock Inventory Link -->
         <div x-data="{
                 id: 'stockInventory',
@@ -192,10 +191,9 @@
             </a>
           </div>
         </div>
-        @endif
         
-        <!-- User Manager-only Link -->
-        @if(auth()->user()->role === 'User Manager')
+        <!-- Super Admin-only Link -->
+        @if(auth()->user()->role === 'Super Admin')
         <div x-data="{ id: 'userManager' }"
              @mouseenter="$store.activeTooltip.set(id)"
              @mouseleave="setTimeout(() => { $store.activeTooltip.clear(id) }, 0)"

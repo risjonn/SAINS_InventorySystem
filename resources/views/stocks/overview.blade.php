@@ -2,12 +2,9 @@
 
 @section('content')
 <div class="container mx-auto px-4 my-5">
-    <h2 class="text-xl font-semibold mt-4">
-        Stock Overview
-        <span class="text-sm ml-2 text-gray-600">
-            (Division: {{ $divisionId === 'all' ? 'All Divisions' : $divisionName }})
-        </span>
-    </h2>
+    <h3 class="text-lg font-semibold">
+        Stock Summary by Category ({{ $selectedDivision === 'all' ? 'All Divisions' : $divisionName }})
+    </h3>
 
     @if(session('message'))
         <div class="alert alert-warning mt-4">
@@ -15,8 +12,8 @@
         </div>
     @endif
 
-    @if($groupedStocks->isNotEmpty())
-        <table id="stocksTable" class="w-full mt-4 border rounded-lg shadow-md bg-white">
+    @if($groupedStocks->count() > 0)
+        <table class="w-full mt-2 border rounded-lg shadow-md bg-white">
             <thead>
                 <tr class="bg-gray-200 text-left">
                     <th class="p-2">Category</th>
@@ -30,12 +27,10 @@
                         <td class="p-2">{{ $group->category }}</td>
                         <td class="p-2">{{ $group->total }}</td>
                         <td class="p-2">
-                        <a href="{{ route('stocks.show', ['category' => $group->category, 'division' => $divisionId]) }}" 
-   class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-2 rounded transition duration-300 ease-in-out">
-   View
-</a>
-
-
+                            <a href="{{ route('stocks.byCategory', ['category' => $group->category, 'division' => $selectedDivision === 'all' ? 'all' : $division->id]) }}"
+                                class="text-blue-600 hover:underline">
+                                View
+                             </a>
                         </td>
                     </tr>
                 @endforeach
