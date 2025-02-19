@@ -14,13 +14,20 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $divisions = Division::all();
+        $user = auth()->user();
 
-        // Get selected division from query or session
-        $selectedDivision = $request->query('division', session('selectedDivision', $divisions->first()->id));
+        // If the user is a Super Admin, allow division selection from query string; otherwise, use the user's division.
+        if ($user->role === 'Super Admin') {
+            // Get selected division from query or session; default to 'all' or first division as needed.
+            $selectedDivision = $request->query('division', session('selectedDivision', 'all'));
+        } else {
+            $selectedDivision = $user->division_id;
+        }
+        // Save selected division in session
         session(['selectedDivision' => $selectedDivision]);
 
+        // Retrieve data based on selected division
         if ($selectedDivision === 'all') {
-            // Aggregated data across all divisions
             $totalStocks = Stock::where('status', 'available')->count();
 
             $lowStockItems = Stock::where('status', 'available')
@@ -41,7 +48,6 @@ class DashboardController extends Controller
                 ->take(5)
                 ->get();
         } else {
-            // Data filtered by the selected division
             $totalStocks = Stock::where('division_id', $selectedDivision)
                 ->where('status', 'available')
                 ->count();
@@ -70,6 +76,11 @@ class DashboardController extends Controller
                 ->get();
         }
 
+        // If the user is not a Super Admin, we can retrieve their division directly.
+        $divisionName = $selectedDivision === 'all'
+            ? 'All Divisions'
+            : $divisions->find($selectedDivision)->name;
+
         return view('dashboard', compact(
             'divisions',
             'selectedDivision',
@@ -77,12 +88,14 @@ class DashboardController extends Controller
             'lowStockItems',
             'userCount',
             'stockSummary',
-            'recentTransactions'
+            'recentTransactions',
+            'divisionName'
         ));
     }
 
     public function selectDivision(Request $request)
     {
+        // This method is now only used by Super Admins.
         $divisionId = $request->input('division_id'); 
         session(['selectedDivision' => $divisionId]);
         return redirect()->route('dashboard')->with('success', 'Division selected.');

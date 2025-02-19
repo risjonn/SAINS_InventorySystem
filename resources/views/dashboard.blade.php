@@ -4,25 +4,33 @@
 <div class="container mx-auto px-4">
     <h2 class="text-xl font-semibold mt-4">Dashboard</h2>
 
-    <!-- Division Selection -->
-    <form method="GET" action="{{ route('dashboard') }}" class="mb-4">
-        <label for="division" class="block text-sm font-medium text-gray-700">Select Division:</label>
-        <select name="division" id="division" onchange="this.form.submit()" class="block w-full mt-1 border rounded p-2">
-            <!-- "All Divisions" option -->
-            <option value="all" {{ $selectedDivision === 'all' ? 'selected' : '' }}>All Divisions</option>
-            @foreach($divisions as $division)
-                <option value="{{ $division->id }}" {{ $selectedDivision == $division->id ? 'selected' : '' }}>
-                    {{ $division->name }}
-                </option>
-            @endforeach
-        </select>
-    </form>
+    <!-- Division Selection: only show for Super Admin -->
+    @if(auth()->user()->role === 'Super Admin')
+        <form method="GET" action="{{ route('dashboard') }}" class="mb-4">
+            <label for="division" class="block text-sm font-medium text-gray-700">Select Division:</label>
+            <select name="division" id="division" onchange="this.form.submit()" class="block w-full mt-1 border rounded p-2">
+                <!-- "All Divisions" option -->
+                <option value="all" {{ $selectedDivision === 'all' ? 'selected' : '' }}>All Divisions</option>
+                @foreach($divisions as $division)
+                    <option value="{{ $division->id }}" {{ $selectedDivision == $division->id ? 'selected' : '' }}>
+                        {{ $division->name }}
+                    </option>
+                @endforeach
+            </select>
+        </form>
+    @else
+        <!-- For regular admins, show their division (read-only) -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700">Division:</label>
+            <p class="mt-1 p-2 border rounded bg-gray-100">{{ $divisions->find($selectedDivision)->name }}</p>
+        </div>
+    @endif
 
     <!-- Summary Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
     <!-- Low Stock Items Card (Clickable) -->
     <a href="{{ route('stocks.low') }}" class="block">
-        <div class="relative p-6 rounded-xl bg-yellow-100 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl">
+        <div class="relative p-6 rounded-xl shadow-lg bg-yellow-100 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl">
             <!-- Glowing border layer (only when low stock exists) -->
             @if($lowStockItems > 0)
                 <div class="absolute inset-0 rounded-xl animate-glow pointer-events-none"></div>
@@ -51,7 +59,7 @@
       </a>
 
     <!-- Recent Updates Card -->
-    <div class="bg-gradient-to-br from-gray-100 to-gray-200 p-6 rounded-xl shadow-lg hover:from-gray-200 hover:to-gray-300 transition-colors duration-300">
+    <div class="bg-gradient-to-br from-gray-100 to-gray-200 p-6 rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl">
         <h3 class="text-xl font-semibold text-gray-800">Recent Updates</h3>
         <p class="mt-2 text-sm text-gray-600">Latest stock transactions</p>
     </div>
