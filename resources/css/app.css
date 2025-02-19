@@ -210,3 +210,33 @@
         50% { opacity: 0.5; height: 50%; }
     }
 }
+
+@keyframes glow {
+    0% {
+      box-shadow: 0 0 10px 2px rgba(250, 190, 88, 0.5);
+    }
+    50% {
+      box-shadow: 0 0 10px 4px rgba(250, 190, 88, 1);
+    }
+    100% {
+      box-shadow: 0 0 10px 2px rgba(250, 190, 88, 0.5);
+    }
+  }
+  
+  .animate-glow {
+    animation: glow 1s infinite !important;
+  }
+  
+  /* Synchronized bounce animation */
+  @keyframes bounce-sync {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+  
+  .animate-bounce-sync {
+    animation: bounce-sync 1s infinite !important;
+  }

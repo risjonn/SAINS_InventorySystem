@@ -6,7 +6,7 @@
     use Illuminate\Support\Facades\Route;
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Http\Request;
-    use App\Http\Controllers\StockTransactionController;
+    //use App\Http\Controllers\StockTransactionController;
 
 
     // Public route
@@ -39,6 +39,9 @@
     // ✅ Admin-only stock management routes
     Route::middleware(['auth', 'role:Admin'])->group(function () {
         Route::get('/stocks/create', [StockController::class, 'create'])->name('stocks.create');
+
+        // Route to low stock page
+        Route::get('stocks/low', [StockController::class, 'lowStock'])->name('stocks.low')->middleware('auth');
 
         // Dedicated Stock Management page
         Route::get('stocks/management', [StockController::class, 'management'])->name('stocks.management');
@@ -79,8 +82,7 @@
         // Place fixed routes before dynamic ones.
         Route::get('stocks/overview', [StockController::class, 'overview'])->name('stocks.overview');
         Route::get('stocks/transactions', [StockController::class, 'transactions'])->name('stocks.transactions');
-        Route::get('/stocks/transactions/search', [StockTransactionController::class, 'ajaxSearch'])
-    ->name('stocks.transactions.search');
+        Route::get('/stocks/transactions/search', [StockController::class, 'ajaxSearch'])->name('stocks.transactions.search');
 
 
        // In your routes/web.php
