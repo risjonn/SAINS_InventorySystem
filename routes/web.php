@@ -48,8 +48,10 @@ Route::middleware(['auth', 'role:Admin|Super Admin'])->group(function () {
     Route::post('stocks/transactions/in', [StockController::class, 'storeTransactionIn'])
          ->name('stocks.transactions.storeIn');
 
-    // Inline OUT operation
-    Route::post('stocks/{stock}/out', [StockController::class, 'outOperation'])->name('stocks.out');
+        // Inline OUT operation from the management page
+        Route::post('stocks/{stock}/out', [StockController::class, 'outOperation'])->name('stocks.out');
+        Route::post('/stocks/transactions/storeOutOrLoan', [StockController::class, 'storeOutOrLoan'])->name('stocks.transactions.storeOutOrLoan');
+
 
     // Edit and delete stock routes
     Route::get('/stocks/{stock}/edit', [StockController::class, 'edit'])->name('stocks.edit');
