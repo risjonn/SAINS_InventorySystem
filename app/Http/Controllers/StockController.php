@@ -34,6 +34,29 @@ class StockController extends Controller
         return view('stocks.index', compact('stocks'));
     }
 
+    public function lowStock(Request $request)
+    {
+        $selectedDivision = session('selectedDivision', auth()->user()->division_id);
+
+        if ($selectedDivision === 'all') {
+            $stocks = Stock::where('status', 'available')
+                ->select('category', DB::raw('COUNT(*) as total'))
+                ->groupBy('category')
+                ->havingRaw('COUNT(*) < 5')
+                ->get();
+            $division = null;
+        } else {
+            $division = Division::find($selectedDivision);
+            $stocks = Stock::where('division_id', $selectedDivision)
+                ->where('status', 'available')
+                ->select('category', DB::raw('COUNT(*) as total'))
+                ->groupBy('category')
+                ->havingRaw('COUNT(*) < 5')
+                ->get();
+        }
+        return view('stocks.low', compact('stocks', 'division'));
+    }
+
     public function transactions(Request $request)
     {
         $selectedDivision = session('selectedDivision', auth()->user()->division_id);

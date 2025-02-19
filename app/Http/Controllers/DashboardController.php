@@ -15,9 +15,8 @@ class DashboardController extends Controller
     {
         $divisions = Division::all();
 
-        // Check for query parameter; if not present, use the session value (or default to the first division)
+        // Get selected division from query or session
         $selectedDivision = $request->query('division', session('selectedDivision', $divisions->first()->id));
-        // Save the selected division into the session so it persists across pages
         session(['selectedDivision' => $selectedDivision]);
 
         if ($selectedDivision === 'all') {
@@ -27,7 +26,8 @@ class DashboardController extends Controller
             $lowStockItems = Stock::where('status', 'available')
                 ->select('category', DB::raw('COUNT(*) as count'))
                 ->groupBy('category')
-                ->havingRaw('COUNT(*) < 2')
+                ->havingRaw('COUNT(*) < 5')
+                ->get()
                 ->count();
 
             $userCount = User::count();
@@ -46,11 +46,11 @@ class DashboardController extends Controller
                 ->where('status', 'available')
                 ->count();
 
-                $lowStockItems = Stock::where('division_id', $selectedDivision)
+            $lowStockItems = Stock::where('division_id', $selectedDivision)
                 ->where('status', 'available')
                 ->select('category', DB::raw('COUNT(*) as count'))
                 ->groupBy('category')
-                ->havingRaw('COUNT(*) < 2')
+                ->havingRaw('COUNT(*) < 5')
                 ->get()
                 ->count();
 

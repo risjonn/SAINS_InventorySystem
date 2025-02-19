@@ -19,26 +19,42 @@
     </form>
 
     <!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="bg-blue-100 p-4 rounded-lg shadow-md">
-            <h3 class="text-lg font-semibold">Total Stocks</h3>
-            <p class="text-2xl font-bold">{{ $totalStocks }}</p>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <!-- Low Stock Items Card (Clickable) -->
+    <a href="{{ route('stocks.low') }}" class="block">
+        <div class="relative p-6 rounded-xl bg-yellow-100 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl">
+            <!-- Glowing border layer (only when low stock exists) -->
+            @if($lowStockItems > 0)
+                <div class="absolute inset-0 rounded-xl animate-glow pointer-events-none"></div>
+            @endif
+      
+            <!-- Card content -->
+            <div class="relative">
+                <div class="flex items-center">
+                <h3 class="text-xl font-semibold {{ $lowStockItems > 0 ? 'text-yellow-800' : 'text-yellow-700' }}">
+                    Low Stock Items
+                </h3>
+                @if($lowStockItems > 0)
+                    <div class="relative ml-2">
+                    <i class="fas fa-exclamation-circle text-yellow-800 text-lg animate-bounce-sync"></i>
+                    </div>
+                @endif
+                </div>
+                <p class="mt-2 text-3xl font-bold {{ $lowStockItems > 0 ? 'text-yellow-900' : 'text-yellow-800' }}">
+                {{ $lowStockItems }}
+                </p>
+                <p class="mt-1 text-sm {{ $lowStockItems > 0 ? 'text-yellow-700' : 'text-yellow-600' }}">
+                Click for details
+                </p>
+            </div>
         </div>
+      </a>
 
-        <div class="bg-yellow-100 p-4 rounded-lg shadow-md">
-            <h3 class="text-lg font-semibold">Low Stock Items</h3>
-            <p class="text-2xl font-bold">{{ $lowStockItems }}</p>
-        </div>
-
-        <div class="bg-green-100 p-4 rounded-lg shadow-md">
-            <h3 class="text-lg font-semibold">Total Users</h3>
-            <p class="text-2xl font-bold">{{ $userCount }}</p>
-        </div>
-
-        <div class="bg-gray-100 p-4 rounded-lg shadow-md">
-            <h3 class="text-lg font-semibold">Recent Updates</h3>
-            <p class="text-sm text-gray-600">Latest stock transactions</p>
-        </div>
+    <!-- Recent Updates Card -->
+    <div class="bg-gradient-to-br from-gray-100 to-gray-200 p-6 rounded-xl shadow-lg hover:from-gray-200 hover:to-gray-300 transition-colors duration-300">
+        <h3 class="text-xl font-semibold text-gray-800">Recent Updates</h3>
+        <p class="mt-2 text-sm text-gray-600">Latest stock transactions</p>
+    </div>
     </div>
 
     <!-- Stock Summary Table -->
