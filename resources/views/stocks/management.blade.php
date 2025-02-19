@@ -10,7 +10,7 @@
     @endphp
 
     <!-- Page Header -->
-    <h2 class="text-center mb-4">
+    <h2 class="text-xl font-semibold mt-4">
         Stock Management
         <span class="text-sm ml-2 text-gray-600">
             (Division: {{ $selectedDivision === 'all' ? 'All Divisions' : $division->name }})
@@ -112,25 +112,47 @@
 </div>
 
 @if($selectedDivision !== 'all')
-<!-- Modal for OUT Operation -->
-<div class="modal fade" id="outModal" tabindex="-1" aria-labelledby="outModalLabel" aria-hidden="true">
+<!-- Modal for OUT/Loan Operation -->
+<div class="modal fade" id="operationModal" tabindex="-1" aria-labelledby="operationModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-      <form id="outForm" method="POST">
+      <form id="operationForm" method="POST" action="{{ route('stocks.transactions.storeOutOrLoan') }}">
         @csrf
+        <!-- Hidden field for Stock ID -->
+        <input type="hidden" name="stock_id" id="stock_id">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="outModalLabel">Confirm OUT Operation</h5>
+            <h5 class="modal-title" id="operationModalLabel">Confirm Operation</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
+            <!-- Operation Type -->
             <div class="mb-3">
-              <label for="outRemark" class="form-label">Please provide a remark for this OUT operation:</label>
-              <textarea name="remarks" id="outRemark" class="form-control" required></textarea>
+                <label class="form-label">Operation Type</label>
+                <div>
+                    <label class="form-check-label me-2">
+                        <input type="radio" name="operation_type" value="OUT" class="form-check-input" checked>
+                        OUT
+                    </label>
+                    <label class="form-check-label">
+                        <input type="radio" name="operation_type" value="LOAN" class="form-check-input">
+                        Loan
+                    </label>
+                </div>
+            </div>
+            <!-- Remarks Field -->
+            <div class="mb-3">
+                <label for="operationRemark" class="form-label">Remarks</label>
+                <textarea name="remarks" id="operationRemark" class="form-control" required></textarea>
+            </div>
+            <!-- Taken by Field (for Loan operation only) -->
+            <div class="mb-3" id="loanFields" style="display: none;">
+                <label for="taken_by" class="form-label">Taken by</label>
+                <input type="text" name="taken_by" id="taken_by" class="form-control">
             </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-danger">Confirm OUT</button>
+            <button type="submit" class="btn btn-danger">Confirm Operation</button>
           </div>
         </div>
       </form>
@@ -141,9 +163,9 @@
 @endsection
 
 @section('scripts')
-<!-- Include jQuery -->
+<!-- Include jQuery once -->
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-<!-- Ensure Bootstrap Bundle is loaded for Modal functionality -->
+<!-- Include Bootstrap Bundle for modal functionality -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 $(document).ready(function(){
@@ -156,22 +178,18 @@ $(document).ready(function(){
             case "model_asc":
                 config.columnIndex = 1; // Model column
                 config.order = "asc";
-                config.isDate = false;
                 break;
             case "model_desc":
                 config.columnIndex = 1;
                 config.order = "desc";
-                config.isDate = false;
                 break;
             case "category_asc":
                 config.columnIndex = 2; // Category column
                 config.order = "asc";
-                config.isDate = false;
                 break;
             case "category_desc":
                 config.columnIndex = 2;
                 config.order = "desc";
-                config.isDate = false;
                 break;
             case "updated_at_asc":
                 config.columnIndex = 4; // Updated At column
@@ -214,11 +232,9 @@ $(document).ready(function(){
         });
     }
 
-    // Trigger sorting when the dropdown selection changes.
     $("#sortOption").on("change", function() {
         sortTableByOption();
     });
-    // Trigger default sorting on page load.
     $("#sortOption").trigger("change");
 
     /* ---------------------------- Search Functionality ---------------------------- */
@@ -241,32 +257,45 @@ $(document).ready(function(){
         }
     });
 
-    // Intercept the search form submission to prevent page refresh
     $("#searchForm").on("submit", function(e) {
         e.preventDefault();
         $("#searchInput").trigger("keyup");
         return false;
     });
 
-    // Clear button functionality: reset the search input and reload the page.
     $("#clearSearch").on("click", function() {
-        // Reset the search input field and reload the page.
         $("#searchInput").val('');
-        $(this).closest("form").submit(); // This will reset the form and reload the page.
+        $(this).closest("form").submit();
     });
 
     /* ---------------------------- OUT Button Functionality ---------------------------- */
     $('.btn-out').on('click', function(){
         var stockId = $(this).data('stock-id');
-        // Build the action URL for the out operation.
-        var url = "{{ url('stocks') }}/" + stockId + "/out";
-        $('#outForm').attr('action', url);
+        // Set the hidden stock_id field in the modal.
+        $("#stock_id").val(stockId);
+        var operationModalEl = document.getElementById('operationModal');
+        var operationModal = new bootstrap.Modal(operationModalEl);
+        operationModal.show();
+    });
 
-        // Show the modal using Bootstrap's modal API.
-        var outModalEl = document.getElementById('outModal');
-        var outModal = new bootstrap.Modal(outModalEl);
-        outModal.show();
+    /* ---------------------------- Modal Operation Type Change ---------------------------- */
+    $("input[name='operation_type']").on("change", function(){
+        console.log("Operation type changed: " + $(this).val());
+        if ($(this).val() === 'LOAN') {
+            $("#loanFields").show();
+        } else {
+            $("#loanFields").hide();
+        }
+    });
+
+    /* ---------------------------- Reset Modal on Close ---------------------------- */
+    $('#operationModal').on('hidden.bs.modal', function (e) {
+        // Reset the form fields inside the modal
+        $(this).find('form')[0].reset();
+        // Hide the loan fields after resetting
+        $("#loanFields").hide();
     });
 });
 </script>
 @endsection
+    
