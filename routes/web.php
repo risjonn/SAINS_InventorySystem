@@ -51,6 +51,7 @@ Route::middleware(['auth', 'role:Admin|Super Admin'])->group(function () {
         // Inline OUT operation from the management page
         Route::post('stocks/{stock}/out', [StockController::class, 'outOperation'])->name('stocks.out');
         Route::post('/stocks/transactions/storeOutOrLoan', [StockController::class, 'storeOutOrLoan'])->name('stocks.transactions.storeOutOrLoan');
+        Route::get('stocks/loan', [StockController::class, 'loanedStocks'])->name('stocks.loan');
 
 
     // Edit and delete stock routes
