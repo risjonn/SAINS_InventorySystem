@@ -8,11 +8,22 @@ use Illuminate\Database\Eloquent\Model;
 class StockTransaction extends Model
 {
     use HasFactory;
+    
     const CREATED_AT = 'transaction_date';
     const UPDATED_AT = 'transaction_date';
 
     protected $fillable = [
-        'serial_number', 'stock_model', 'category', 'type', 'handled_by', 'remarks', 'transaction_date'
+        'serial_number', 
+        'stock_model', 
+        'category', 
+        'type', 
+        'handled_by', 
+        'remarks', 
+        'transaction_date',
+        'brand', 
+        'product_code', 
+        'requisition_no', 
+        
     ];
 
     public function stock()
