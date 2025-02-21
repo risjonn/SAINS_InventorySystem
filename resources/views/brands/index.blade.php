@@ -67,7 +67,7 @@
              <label for="brandName" class="form-label">Brand Name</label>
              <input type="text" class="form-control" id="brandName" name="name" required>
            </div>
-           <!-- Dropdown for status instead of a checkbox -->
+           <!-- Dropdown for status -->
            <div class="mb-3">
              <label for="brandStatus" class="form-label">Status</label>
              <select class="form-select" id="brandStatus" name="active">
@@ -89,7 +89,7 @@
 <div class="modal fade" id="editBrandModal" tabindex="-1" aria-labelledby="editBrandModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <!-- Note: The form action is set dynamically -->
+      <!-- The form action will be set dynamically -->
       <form id="editBrandForm" method="POST">
         @csrf
         @method('PUT')
@@ -124,7 +124,7 @@
 
 @section('scripts')
 <script>
-  // Listen for the show event of the edit modal and populate it with data.
+  // When the edit modal is shown, populate its fields with data from the triggering button.
   var editBrandModal = document.getElementById('editBrandModal');
   editBrandModal.addEventListener('show.bs.modal', function (event) {
     var button = event.relatedTarget; // Button that triggered the modal
@@ -132,10 +132,11 @@
     var brandActive = button.getAttribute('data-active');
     var updateUrl = button.getAttribute('data-update-url');
 
-    // Update modal form fields
-    var modal = this;
-    modal.querySelector('#editBrandName').value = brandName;
-    modal.querySelector('#editBrandStatus').value = brandActive; // Set dropdown value
+    // Populate the modal fields
+    document.getElementById('editBrandName').value = brandName;
+    document.getElementById('editBrandStatus').value = brandActive; // Sets the dropdown value
+
+    // Set the form action URL dynamically
     document.getElementById('editBrandForm').action = updateUrl;
   });
 </script>

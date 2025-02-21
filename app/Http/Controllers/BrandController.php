@@ -51,7 +51,7 @@ class BrandController extends Controller
 
         $brand->update([
             'name' => $request->name,
-            'active' => $request->has('active') ? true : false,
+            'active' => $request->input('active') == "1",
         ]);
 
         return redirect()->route('brands.index')->with('success', 'Brand updated successfully.');

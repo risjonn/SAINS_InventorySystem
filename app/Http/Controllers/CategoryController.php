@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
-    // Only Super Admin should be able to manage brands.
+    // Only Super Admin should be able to manage categories.
     public function __construct()
     {
         $this->middleware(['auth', 'role:Super Admin']);
@@ -27,39 +27,39 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|unique:category,name',
+            'name' => 'required|unique:categories,name',
         ]);
 
         Category::create([
             'name' => $request->name,
-            'active' => $request->has('active') ? true : false,
+            'active' => $request->input('active') == "1",
         ]);
 
         return redirect()->route('category.index')->with('success', 'Category created successfully.');
     }
 
-    public function edit(Category $categories)
+    public function edit(Category $category)
     {
         return view('category.edit', compact('category'));
     }
 
-    public function update(Request $request, Category $categories)
+    public function update(Request $request, Category $category)
     {
         $request->validate([
-            'name' => 'required|unique:brands,name,' . $categories->id,
+            'name' => 'required|unique:categories,name,' . $category->id,
         ]);
 
-        $categories->update([
+        $category->update([
             'name' => $request->name,
-            'active' => $request->has('active') ? true : false,
+            'active' => $request->input('active') == "1",
         ]);
 
         return redirect()->route('category.index')->with('success', 'Category updated successfully.');
     }
 
-    public function destroy(Category $categories)
+    public function destroy(Category $category)
     {
-        $categories->delete();
+        $category->delete();
         return redirect()->route('category.index')->with('success', 'Category deleted successfully.');
     }
 }

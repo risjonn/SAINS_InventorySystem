@@ -12,7 +12,7 @@
         <i class="fas fa-plus mr-1"></i> Add New Category
     </button>
 
-    <!-- Category Listing Table -->
+    <!-- Categories Listing Table -->
     <table class="min-w-full mt-4 border rounded-lg shadow-md bg-white">
         <thead>
             <tr class="bg-gray-200 text-left">
@@ -67,7 +67,7 @@
              <label for="categoryName" class="form-label">Category Name</label>
              <input type="text" class="form-control" id="categoryName" name="name" required>
            </div>
-           <!-- Dropdown for status instead of a checkbox -->
+           <!-- Dropdown for status -->
            <div class="mb-3">
              <label for="categoryStatus" class="form-label">Status</label>
              <select class="form-select" id="categoryStatus" name="active">
@@ -89,7 +89,7 @@
 <div class="modal fade" id="editCategoryModal" tabindex="-1" aria-labelledby="editCategoryModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <!-- Note: The form action is set dynamically -->
+      <!-- The form action will be set dynamically -->
       <form id="editCategoryForm" method="POST">
         @csrf
         @method('PUT')
@@ -119,12 +119,11 @@
     </div>
   </div>
 </div>
-
 @endsection
 
 @section('scripts')
 <script>
-  // Listen for the show event of the edit modal and populate it with data.
+  // When the edit category modal is shown, populate its fields with data.
   var editCategoryModal = document.getElementById('editCategoryModal');
   editCategoryModal.addEventListener('show.bs.modal', function (event) {
     var button = event.relatedTarget; // Button that triggered the modal
@@ -132,10 +131,11 @@
     var categoryActive = button.getAttribute('data-active');
     var updateUrl = button.getAttribute('data-update-url');
 
-    // Update modal form fields
-    var modal = this;
-    modal.querySelector('#editCategoryName').value = categoryName;
-    modal.querySelector('#editCategoryStatus').value = categoryActive; // Set dropdown value
+    // Populate the modal fields
+    document.getElementById('editCategoryName').value = categoryName;
+    document.getElementById('editCategoryStatus').value = categoryActive; // Set the dropdown value
+
+    // Set the form action URL dynamically
     document.getElementById('editCategoryForm').action = updateUrl;
   });
 </script>
