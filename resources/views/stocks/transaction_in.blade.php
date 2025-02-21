@@ -24,27 +24,31 @@
             </select>
         </div>
 
-        <!-- Brand Field -->
+        <!-- Brand Field (Dropdown) -->
         <div class="mb-4">
             <label for="brand" class="block text-sm font-medium text-gray-700">Brand</label>
-            <input type="text" name="brand" id="brand" class="mt-1 block w-full border rounded p-2" required>
+            <select name="brand" id="brand" class="mt-1 block w-full border rounded p-2" required>
+                <option value="">Select Brand</option>
+                @foreach($brands as $brand)
+                    <option value="{{ $brand->name }}">{{ $brand->name }}</option>
+                @endforeach
+            </select>
         </div>
 
-        <!-- Model Field -->
+        <!-- Model Field (remains text input) -->
         <div class="mb-4">
             <label for="model" class="block text-sm font-medium text-gray-700">Model</label>
             <input type="text" name="model" id="model" class="mt-1 block w-full border rounded p-2" required>
         </div>
 
-        <!-- Category Select -->
+        <!-- Category Select (Dropdown) -->
         <div class="mb-4">
             <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
             <select name="category" id="category" class="mt-1 block w-full border rounded p-2" required>
                 <option value="">Select Category</option>
-                <option value="Router">Router</option>
-                <option value="Switch">Switch</option>
-                <option value="Modem">Modem</option>
-                <!-- Add additional categories if needed -->
+                @foreach($categories as $cat)
+                    <option value="{{ $cat->name }}">{{ $cat->name }}</option>
+                @endforeach
             </select>
         </div>
 
@@ -84,14 +88,15 @@ $(document).ready(function(){
     $("#product_code").on("change", function(){
         var code = $(this).val();
         if(productTemplates.hasOwnProperty(code)){
+            // For dropdowns, set the value to the matching option
             $("#brand").val(productTemplates[code].brand);
             $("#model").val(productTemplates[code].model);
             $("#category").val(productTemplates[code].category);
-            // Optionally, set fields to read-only if you don't want them modified.
-            $("#brand, #model, #category").attr("readonly", true);
+            // Optionally, disable the fields if you want to prevent editing
+            $("#brand, #model, #category").attr("disabled", true);
         } else {
-            // If no valid product code, clear fields and allow editing.
-            $("#brand, #model, #category").val("").removeAttr("readonly");
+            // If no valid product code, clear fields and enable editing.
+            $("#brand, #model, #category").val("").removeAttr("disabled");
         }
     });
 });

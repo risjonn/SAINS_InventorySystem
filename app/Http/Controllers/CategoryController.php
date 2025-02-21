@@ -1,0 +1,65 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Category;
+use Illuminate\Http\Request;
+
+class CategoryController extends Controller
+{
+    // Only Super Admin should be able to manage categories.
+    public function __construct()
+    {
+        $this->middleware(['auth', 'role:Super Admin']);
+    }
+
+    public function index()
+    {
+        $categories = Category::orderBy('name')->paginate(10);
+        return view('category.index', compact('categories'));
+    }
+
+    public function create()
+    {
+        return view('category.create');
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|unique:categories,name',
+        ]);
+
+        Category::create([
+            'name' => $request->name,
+            'active' => $request->input('active') == "1",
+        ]);
+
+        return redirect()->route('category.index')->with('success', 'Category created successfully.');
+    }
+
+    public function edit(Category $category)
+    {
+        return view('category.edit', compact('category'));
+    }
+
+    public function update(Request $request, Category $category)
+    {
+        $request->validate([
+            'name' => 'required|unique:categories,name,' . $category->id,
+        ]);
+
+        $category->update([
+            'name' => $request->name,
+            'active' => $request->input('active') == "1",
+        ]);
+
+        return redirect()->route('category.index')->with('success', 'Category updated successfully.');
+    }
+
+    public function destroy(Category $category)
+    {
+        $category->delete();
+        return redirect()->route('category.index')->with('success', 'Category deleted successfully.');
+    }
+}
