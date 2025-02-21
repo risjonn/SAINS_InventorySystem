@@ -31,6 +31,7 @@
     });
   </script>
   @vite(['resources/css/app.css'])
+  @yield('styles')
 </head>
 <body class="bg-light" x-data="{ 
     sidebarOpen: localStorage.getItem('sidebarOpen') === 'true', 
@@ -194,36 +195,98 @@
         
         <!-- Super Admin-only Link -->
         @if(auth()->user()->role === 'Super Admin')
-        <div x-data="{ id: 'userManager' }"
+          <div x-data="{ id: 'userManager' }"
+              @mouseenter="$store.activeTooltip.set(id)"
+              @mouseleave="setTimeout(() => { $store.activeTooltip.clear(id) }, 0)"
+              class="relative group">
+              <a href="{{ route('users.index') }}" 
+                :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
+                class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 text-gray-600"
+                x-bind:class="($store.activeTooltip.current === 'userManager') ? 'bg-gray-200 text-blue-600' : ''">
+                <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center group-hover:text-blue-600">
+                    <i class="fas fa-users text-lg"></i>
+                </div>
+                <span x-show="sidebarOpen" x-cloak class="ml-3 text-sm font-medium whitespace-nowrap transition-all duration-150">
+                    Manage Users
+                </span>
+              </a>
+                <template x-if="!sidebarOpen">
+                    <div x-show="$store.activeTooltip.current === id" x-cloak class="absolute left-full ml-0 top-1/2  -translate-y-1/2 transition duration-150 z-50 pointer-events-none">
+                      <div class="relative">
+                          <div class="bg-gray-200 text-blue-600 flex items-center h-14 rounded-r-lg rounded-l-none p-4 text-sm font-medium whitespace-nowrap">
+                            Manage Users
+                          </div>
+                          <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
+                            <svg class="w-3 h-3 fill-current text-gray-200" viewBox="0 0 10 10">
+                              <polygon points="0,0 10,0 5,5"/>
+                            </svg>
+                          </div>
+                      </div>
+                    </div>
+                </template>
+          </div>
+
+          <div x-data="{ id: 'brands' }"
              @mouseenter="$store.activeTooltip.set(id)"
              @mouseleave="setTimeout(() => { $store.activeTooltip.clear(id) }, 0)"
              class="relative group">
-          <a href="{{ route('users.index') }}" 
-             :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
-             class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 text-gray-600"
-             x-bind:class="($store.activeTooltip.current === 'userManager') ? 'bg-gray-200 text-blue-600' : ''">
-            <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center group-hover:text-blue-600">
-              <i class="fas fa-users text-lg"></i>
-            </div>
-            <span x-show="sidebarOpen" x-cloak class="ml-3 text-sm font-medium whitespace-nowrap transition-all duration-150">
-              Manage Users
-            </span>
-          </a>
-          <template x-if="!sidebarOpen">
-            <div x-show="$store.activeTooltip.current === id" x-cloak class="absolute left-full ml-0 top-1/2 -translate-y-1/2 transition duration-150 z-50 pointer-events-none">
-              <div class="relative">
-                <div class="bg-gray-200 text-blue-600 flex items-center h-14 rounded-r-lg rounded-l-none p-4 text-sm font-medium whitespace-nowrap">
-                  Manage Users
+              <a href="{{ route('brands.index') }}" 
+                  :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
+                  class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 {{ request()->routeIs('brands*') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}"
+                  x-bind:class="($store.activeTooltip.current === 'brands') ? 'bg-gray-200 text-blue-600' : ''">
+                <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center">
+                    <i class="fas fa-tag text-lg"></i>
                 </div>
-                <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
-                  <svg class="w-3 h-3 fill-current text-gray-200" viewBox="0 0 10 10">
-                    <polygon points="0,0 10,0 5,5"/>
-                  </svg>
+                <span x-show="sidebarOpen" x-cloak class="ml-3 text-sm font-medium whitespace-nowrap transition-all duration-150">
+                    Brands
+                </span>
+              </a>
+              <template x-if="!sidebarOpen">
+                <div x-show="$store.activeTooltip.current === id" x-cloak class="absolute left-full ml-0 top-1/2 -translate-y-1/2 transition duration-150 z-50">
+                  <div class="relative">
+                    <div class="bg-gray-200 text-blue-600 flex items-center h-14 rounded-r-lg rounded-l-none p-4 text-sm font-medium whitespace-nowrap">
+                      Brands
+                    </div>
+                    <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
+                      <svg class="w-3 h-3 fill-current text-gray-200" viewBox="0 0 10 10">
+                        <polygon points="0,0 10,0 5,5"/>
+                      </svg>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </template>
-        </div>
+              </template>
+          </div>
+
+          <div x-data="{ id: 'category' }"
+          @mouseenter="$store.activeTooltip.set(id)"
+          @mouseleave="setTimeout(() => { $store.activeTooltip.clear(id) }, 0)"
+          class="relative group">
+           <a href="{{ route('category.index') }}" 
+               :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
+               class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 {{ request()->routeIs('category*') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}"
+               x-bind:class="($store.activeTooltip.current === 'category') ? 'bg-gray-200 text-blue-600' : ''">
+             <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center">
+                 <i class="fas fa-list-alt text-lg"></i>
+             </div>
+             <span x-show="sidebarOpen" x-cloak class="ml-3 text-sm font-medium whitespace-nowrap transition-all duration-150">
+                 Category
+             </span>
+           </a>
+           <template x-if="!sidebarOpen">
+             <div x-show="$store.activeTooltip.current === id" x-cloak class="absolute left-full ml-0 top-1/2 -translate-y-1/2 transition duration-150 z-50">
+               <div class="relative">
+                 <div class="bg-gray-200 text-blue-600 flex items-center h-14 rounded-r-lg rounded-l-none p-4 text-sm font-medium whitespace-nowrap">
+                   Category
+                 </div>
+                 <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
+                   <svg class="w-3 h-3 fill-current text-gray-200" viewBox="0 0 10 10">
+                     <polygon points="0,0 10,0 5,5"/>
+                   </svg>
+                 </div>
+               </div>
+             </div>
+           </template>
+       </div>
         @endif
         
         <!-- Profile Settings Link -->
