@@ -82,8 +82,11 @@
                                     <thead>
                                         <tr class="bg-gray-200 text-left">
                                             <th class="p-2">Serial Number</th>
+                                            <th class="p-2">Brand</th>
                                             <th class="p-2">Model</th>
                                             <th class="p-2">Category</th>
+                                            <th class="p-2">Product Code</th>
+                                            <th class="p-2">Requisition No.</th>
                                             <th class="p-2">Remarks</th>
                                             <th class="p-2">Updated At</th>
                                             <th class="p-2">Action</th>
@@ -93,8 +96,11 @@
                                         @foreach($availableStocks as $stock)
                                         <tr class="border-b">
                                             <td class="p-2">{{ $stock->serial_number }}</td>
+                                            <td class="p-2">{{ $stock->brand ?? 'N/A' }}</td>
                                             <td class="p-2">{{ $stock->model }}</td>
                                             <td class="p-2">{{ $stock->category }}</td>
+                                            <td class="p-2">{{ $stock->product_code ?? 'N/A' }}</td>
+                                            <td class="p-2">{{ $stock->requisition_no ?? 'N/A' }}</td>
                                             <td class="p-2">{{ $stock->remarks }}</td>
                                             <td class="p-2">{{ \Carbon\Carbon::parse($stock->updated_at)->format('M d, Y h:i A') }}</td>
                                             <td class="p-2">
@@ -119,52 +125,100 @@
             </div>
 
             <!-- Loaned Stocks Pane -->
-            <div class="tab-pane fade" id="loanedTab" role="tabpanel" aria-labelledby="loaned-tab">
-                <div class="mt-4">
-                    @if($loanedStocks->isNotEmpty())
-                    <div class="card shadow-sm border-0" style="border-radius: 12px;">
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table id="loanedStockTable" class="w-full border rounded-lg shadow-md bg-white">
-                                    <thead>
-                                        <tr class="bg-gray-200 text-left">
-                                            <th class="p-2">Serial Number</th>
-                                            <th class="p-2">Model</th>
-                                            <th class="p-2">Category</th>
-                                            <th class="p-2">Remarks</th>
-                                            <th class="p-2">Updated At</th>
-                                            <th class="p-2">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($loanedStocks as $stock)
-                                        <tr class="border-b">
-                                            <td class="p-2">{{ $stock->serial_number }}</td>
-                                            <td class="p-2">{{ $stock->model }}</td>
-                                            <td class="p-2">{{ $stock->category }}</td>
-                                            <td class="p-2">{{ $stock->remarks }}</td>
-                                            <td class="p-2">{{ \Carbon\Carbon::parse($stock->updated_at)->format('M d, Y h:i A') }}</td>
-                                            <td class="p-2">
-                                                <button type="button" class="bg-blue-600 text-white px-2 py-1 rounded btn-return" data-stock-id="{{ $stock->id }}" title="Mark as Returned">
-                                                    Return
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        {!! $loanedStocks->appends(request()->all())->links('pagination::bootstrap-4') !!}
-                    </div>
-                    @else
-                        <p>No loaned stocks for this division.</p>
-                    @endif
+            <!-- Loaned Stocks Pane -->
+<div class="tab-pane fade" id="loanedTab" role="tabpanel" aria-labelledby="loaned-tab">
+    <div class="mt-4">
+        @if($loanedStocks->isNotEmpty())
+        <div class="card shadow-sm border-0" style="border-radius: 12px;">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table id="loanedStockTable" class="w-full border rounded-lg shadow-md bg-white">
+                        <thead>
+                            <tr class="bg-gray-200 text-left">
+                                <th class="p-2">Serial Number</th>
+                                <th class="p-2">Brand</th>
+                                <th class="p-2">Model</th>
+                                <th class="p-2">Category</th>
+                                <th class="p-2">Product Code</th>
+                                <th class="p-2">Requisition No.</th>
+                                <!-- New column for "Taken by" -->
+                                <th class="p-2">Taken by</th>
+
+                                <th class="p-2">Remarks</th>
+                                <th class="p-2">Updated At</th>
+                                <th class="p-2">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($loanedStocks as $stock)
+                                @php
+                                    // Grab the most recent LOAN transaction for this stock
+                                    $loanTx = $stock->transactions()
+                                                   ->where('type', 'LOAN')
+                                                   ->latest('transaction_date')
+                                                   ->first();
+
+                                    // Default values
+                                    $takenByValue = 'N/A';
+                                    $displayRemarks = $stock->remarks;
+
+                                    if ($loanTx) {
+                                        // If the loanTx has remarks with (Taken by: ...)
+                                        $pattern = '/\(Taken by:\s*(.*?)\)/i';
+                                        $fullRemarks = $loanTx->remarks ?? '';
+                                        
+                                        // Attempt to parse
+                                        if (preg_match($pattern, $fullRemarks, $matches)) {
+                                            $takenByValue   = $matches[1];  // The captured group
+                                            // Remove the substring from remarks for display
+                                            $displayRemarks = trim(preg_replace($pattern, '', $fullRemarks));
+                                        } else {
+                                            // If no pattern found, just display full remarks
+                                            $displayRemarks = $fullRemarks;
+                                        }
+                                    }
+                                @endphp
+
+                                <tr class="border-b">
+                                    <td class="p-2">{{ $stock->serial_number }}</td>
+                                    <td class="p-2">{{ $stock->brand ?? 'N/A' }}</td>
+                                    <td class="p-2">{{ $stock->model }}</td>
+                                    <td class="p-2">{{ $stock->category }}</td>
+                                    <td class="p-2">{{ $stock->product_code ?? 'N/A' }}</td>
+                                    <td class="p-2">{{ $stock->requisition_no ?? 'N/A' }}</td>
+
+                                    <!-- "Taken by" column -->
+                                    <td class="p-2">{{ $takenByValue }}</td>
+
+                                    <!-- Display remarks (with the "(Taken by: ...)" substring removed) -->
+                                    <td class="p-2">{{ $displayRemarks }}</td>
+
+                                    <td class="p-2">
+                                        {{ \Carbon\Carbon::parse($stock->updated_at)->format('M d, Y h:i A') }}
+                                    </td>
+                                    <td class="p-2">
+                                        <button type="button"
+                                            class="bg-blue-600 text-white px-2 py-1 rounded btn-return"
+                                            data-stock-id="{{ $stock->id }}"
+                                            title="Mark as Returned">
+                                            Return
+                                        </button>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
+        <div class="mt-4">
+            {!! $loanedStocks->appends(request()->all())->links('pagination::bootstrap-4') !!}
+        </div>
+        @else
+            <p>No loaned stocks for this division.</p>
+        @endif
+    </div>
+</div>
     @endif
 </div>
 
@@ -235,45 +289,44 @@ $(document).ready(function(){
         var config = { columnIndex: 1, order: "asc", isDate: false };
         switch(sortValue) {
             case "model_asc":
-                config.columnIndex = 1;
+                config.columnIndex = 3; // Column 1: Serial, 2: Brand, 3: Model.
                 config.order = "asc";
                 break;
             case "model_desc":
-                config.columnIndex = 1;
+                config.columnIndex = 3;
                 config.order = "desc";
                 break;
             case "category_asc":
-                config.columnIndex = 2;
+                config.columnIndex = 4; // Column 4 is Category.
                 config.order = "asc";
                 break;
             case "category_desc":
-                config.columnIndex = 2;
+                config.columnIndex = 4;
                 config.order = "desc";
                 break;
             case "updated_at_asc":
-                config.columnIndex = 4;
+                config.columnIndex = 8; // Updated At is column 8.
                 config.order = "asc";
                 config.isDate = true;
                 break;
             case "updated_at_desc":
-                config.columnIndex = 4;
+                config.columnIndex = 8;
                 config.order = "desc";
                 config.isDate = true;
                 break;
             default:
-                config.columnIndex = 1;
+                config.columnIndex = 3;
                 config.order = "asc";
         }
         sortTable(config.columnIndex, config.order, config.isDate);
+        sortLoanedTable(config.columnIndex, config.order, config.isDate);
     }
 
     function sortTable(columnIndex, order, isDate) {
         let rows = $("#availableStockTable tbody tr").get();
-        // If you also want to sort the loaned table at the same time, replicate logic for #loanedStockTable
-
         rows.sort(function(a, b) {
-            var A = $(a).children("td").eq(columnIndex).text().toUpperCase();
-            var B = $(b).children("td").eq(columnIndex).text().toUpperCase();
+            var A = $(a).children("td").eq(columnIndex - 1).text().toUpperCase();
+            var B = $(b).children("td").eq(columnIndex - 1).text().toUpperCase();
             if(isDate) {
                 A = new Date(A);
                 B = new Date(B);
@@ -285,6 +338,23 @@ $(document).ready(function(){
             $("#availableStockTable tbody").append(row);
         });
     }
+    
+    function sortLoanedTable(columnIndex, order, isDate) {
+        let rows = $("#loanedStockTable tbody tr").get();
+        rows.sort(function(a, b) {
+            var A = $(a).children("td").eq(columnIndex - 1).text().toUpperCase();
+            var B = $(b).children("td").eq(columnIndex - 1).text().toUpperCase();
+            if(isDate) {
+                A = new Date(A);
+                B = new Date(B);
+            }
+            return order === "asc" ? (A < B ? -1 : A > B ? 1 : 0)
+                                   : (A > B ? -1 : A < B ? 1 : 0);
+        });
+        $.each(rows, function(index, row) {
+            $("#loanedStockTable tbody").append(row);
+        });
+    }
 
     $("#sortOption").on("change", function() {
         sortTableByOption();
@@ -294,13 +364,12 @@ $(document).ready(function(){
     /* ======================= Search Functionality ======================= */
     $("#searchInput").on("keyup", function() {
         var value = $(this).val().toLowerCase();
-
+        
         // Filter availableStockTable
         var $rowsAvail = $("#availableStockTable tbody tr").not(".no-record");
         $rowsAvail.each(function() {
-            var serial = $(this).find("td:nth-child(1)").text().toLowerCase();
-            var model = $(this).find("td:nth-child(2)").text().toLowerCase();
-            var showRow = (serial.indexOf(value) !== -1 || model.indexOf(value) !== -1);
+            var rowText = $(this).text().toLowerCase(); 
+            var showRow = rowText.indexOf(value) !== -1;
             $(this).toggle(showRow);
         });
         if($("#availableStockTable tbody tr:visible").length === 0) {
@@ -309,13 +378,12 @@ $(document).ready(function(){
         } else {
             $("#availableStockTable tbody tr.no-record").remove();
         }
-
+        
         // Filter loanedStockTable
         var $rowsLoan = $("#loanedStockTable tbody tr").not(".no-record");
         $rowsLoan.each(function() {
-            var serial = $(this).find("td:nth-child(1)").text().toLowerCase();
-            var model = $(this).find("td:nth-child(2)").text().toLowerCase();
-            var showRow = (serial.indexOf(value) !== -1 || model.indexOf(value) !== -1);
+            var rowText = $(this).text().toLowerCase();
+            var showRow = rowText.indexOf(value) !== -1;
             $(this).toggle(showRow);
         });
         if($("#loanedStockTable tbody tr:visible").length === 0) {
@@ -349,7 +417,7 @@ $(document).ready(function(){
         // Reset the remarks and show the operation type radio
         $("#operationRemark").val('');
         $("input[name='operation_type'][value='OUT']").prop('checked', true);
-        // <-- SHOW the taken_by for BOTH OUT and LOAN
+        // Show the taken_by for BOTH OUT and LOAN
         $("#loanFields").show();
         operationModal.show();
     });
@@ -380,7 +448,7 @@ $(document).ready(function(){
     });
 
     /* ======================= Reset Modal on Close ======================= */
-    $('#operationModal').on('hidden.bs.modal', function (e) {
+    $('#operationModal').on("hidden.bs.modal", function (e) {
         $(this).find('form')[0].reset();
         $("#loanFields").hide();
         $("#operationModalLabel").text("Confirm Operation");
