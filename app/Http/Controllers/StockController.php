@@ -83,17 +83,17 @@ class StockController extends Controller
             $filter = 'IN';
         }
     
-        // Apply filter (note: $filter will never be "all" here)
-        $transactionsQuery->where('stock_transactions.type', $filter);
+        // Existing code: "if ($filter !== 'all') {...}"
+        // But now, $filter will never be "all", so you'll never see everything.
+        if ($filter !== 'all') {
+            $transactionsQuery->where('stock_transactions.type', $filter);
+        }
     
-        // Apply search filter – when filter is IN, include product_code in the search
+        // Apply search filter
         if ($search) {
-            $transactionsQuery->where(function($q) use ($search, $selectedDivision, $filter) {
+            $transactionsQuery->where(function($q) use ($search, $selectedDivision) {
                 $q->where('stock_transactions.serial_number', 'LIKE', $search.'%')
                   ->orWhere('stock_transactions.stock_model', 'LIKE', $search.'%');
-                if ($filter === 'IN') {
-                    $q->orWhere('stock_transactions.product_code', 'LIKE', $search.'%');
-                }
                 if ($selectedDivision === 'all') {
                     $q->orWhereHas('stock.division', function($q2) use ($search) {
                         $q2->where('name', 'LIKE', $search.'%');
@@ -106,7 +106,6 @@ class StockController extends Controller
         $transactions = $transactionsQuery->paginate(10)->appends($request->all());
         return view('stocks.transactions', compact('transactions', 'division'));
     }
-    
     
 
     public function management(Request $request)
@@ -171,68 +170,47 @@ class StockController extends Controller
     return view('stocks.management', compact('availableStocks', 'loanedStocks', 'division'));
 }
 
-public function createTransactionIn()
-{
-    $selectedDivision = session('selectedDivision', auth()->user()->division_id);
-    $division = Division::find($selectedDivision);
+    public function createTransactionIn()
+    {
+        $selectedDivision = session('selectedDivision', auth()->user()->division_id);
+        $division = Division::find($selectedDivision);
+        return view('stocks.transaction_in', compact('division'));
+    }
 
-    return view('stocks.transaction_in', compact('division'));
-}
+    public function storeTransactionIn(Request $request)
+    {
+        $selectedDivision = session('selectedDivision', auth()->user()->division_id);
 
-public function storeTransactionIn(Request $request)
-{
-    $selectedDivision = session('selectedDivision', auth()->user()->division_id);
+        $validated = $request->validate([
+            'serial_number' => 'required',
+            'model'         => 'required',
+            'category'      => 'required',
+            'remarks'       => 'nullable',
+        ]);
 
-    // 1) Include 'requisition_no' and 'sla_category' in validation
-    $validated = $request->validate([
-        'brand'           => 'required|string',
-        'product_code'    => 'nullable|string',
-        'serial_number'   => 'required',
-        'model'           => 'required',
-        'category'        => 'required',
-        'remarks'         => 'nullable',
-        'requisition_no'  => 'nullable|string',
-        'sla_category'    => 'nullable|string',
-    ]);
+        // This method will update if the stock exists, or create it if not.
+        $stock = Stock::updateOrCreate(
+            ['serial_number' => trim($validated['serial_number'])],
+            [
+                'model'       => $validated['model'],
+                'category'    => $validated['category'],
+                'division_id' => $selectedDivision,
+                'remarks'     => $validated['remarks']
+            ]
+        );
 
-    // 2) Update or create the Stock record with new fields
-    $stock = Stock::updateOrCreate(
-        ['serial_number' => trim($validated['serial_number'])],
-        [
-            'model'        => $validated['model'],
-            'category'     => $validated['category'],
-            'division_id'  => $selectedDivision,
-            'remarks'      => $validated['remarks'],
-            'brand'        => $validated['brand'] ?? null,
-            'product_code' => $validated['product_code'] ?? null,
-            // (Optional) If you store requisition_no or sla_category in the stocks table:
-            // 'requisition_no' => $validated['requisition_no'] ?? null,
-            // 'sla_category'   => $validated['sla_category'] ?? null,
-        ]
-    );
+        StockTransaction::create([
+            'serial_number'    => trim($validated['serial_number']),
+            'stock_model'      => $validated['model'],
+            'category'         => $validated['category'],
+            'type'             => 'IN',
+            'handled_by'       => auth()->id(),
+            'remarks'          => $validated['remarks'],
+            'transaction_date' => now(),
+        ]);
 
-    // 3) Create a matching transaction record with new fields
-    StockTransaction::create([
-        'serial_number'    => trim($validated['serial_number']),
-        'stock_model'      => $validated['model'],
-        'category'         => $validated['category'],
-        'type'             => 'IN',
-        'handled_by'       => auth()->id(),
-        'remarks'          => $validated['remarks'],
-        'transaction_date' => now(),
-
-        // The newly added fields:
-        'brand'           => $validated['brand']           ?? null,
-        'product_code'    => $validated['product_code']    ?? null,
-        'requisition_no'  => $validated['requisition_no']  ?? null,
-        'sla_category'    => $validated['sla_category']    ?? null,
-    ]);
-
-    return redirect()->route('stocks.management')->with('success', 'IN transaction recorded.');
-}
-
-
-
+        return redirect()->route('stocks.management')->with('success', 'IN transaction recorded.');
+    }
 
     public function createTransactionOut()
     {

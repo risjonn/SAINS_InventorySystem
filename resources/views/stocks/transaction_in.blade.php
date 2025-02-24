@@ -14,15 +14,13 @@
     <form action="{{ route('stocks.transactions.storeIn') }}" method="POST" class="mt-4">
         @csrf
 
-        <!-- Category Field -->
+        <!-- Product Code Selection -->
         <div class="mb-4">
-            <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
-            <select name="category" id="category" class="mt-1 block w-full border rounded p-2" required>
-                <option value="">Select Category</option>
-                <option value="Router">Router</option>
-                <option value="Switch">Switch</option>
-                <option value="Modem">Modem</option>
-                <!-- Add additional categories if needed -->
+            <label for="product_code" class="block text-sm font-medium text-gray-700">Product Code</label>
+            <select name="product_code" id="product_code" class="mt-1 block w-full border rounded p-2">
+                <option value="">Select Product Code</option>
+                <option value="001">001 - Huawei MA5600T</option>
+                <!-- Add additional product codes if needed -->
             </select>
         </div>
 
@@ -38,26 +36,22 @@
             <input type="text" name="model" id="model" class="mt-1 block w-full border rounded p-2" required>
         </div>
 
+        <!-- Category Select -->
+        <div class="mb-4">
+            <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
+            <select name="category" id="category" class="mt-1 block w-full border rounded p-2" required>
+                <option value="">Select Category</option>
+                <option value="Router">Router</option>
+                <option value="Switch">Switch</option>
+                <option value="Modem">Modem</option>
+                <!-- Add additional categories if needed -->
+            </select>
+        </div>
+
         <!-- Serial Number Field -->
         <div class="mb-4">
             <label for="serial_number" class="block text-sm font-medium text-gray-700">Serial Number</label>
             <input type="text" name="serial_number" id="serial_number" class="mt-1 block w-full border rounded p-2" required>
-        </div>
-
-        <!-- Product Code -->
-        <div class="mb-4">
-            <label for="product_code" class="block text-sm font-medium text-gray-700">Product Code</label>
-            <select name="product_code" id="product_code" class="mt-1 block w-full border rounded p-2">
-                <option value="">Select Product Code</option>
-                <option value="001">001 - Huawei MA5600T</option>
-                <!-- Add additional product codes if needed -->
-            </select>
-        </div>
-
-        <!-- Requisition No Field -->
-        <div class="mb-4">
-            <label for="requisition_no" class="block text-sm font-medium text-gray-700">Requisition No.</label>
-            <input type="text" name="requisition_no" id="requisition_no" class="mt-1 block w-full border rounded p-2">
         </div>
 
         <!-- Remarks Field -->
@@ -72,11 +66,11 @@
 @endsection
 
 @section('scripts')
-<!-- Include jQuery once -->
+<!-- Include jQuery -->
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script>
 $(document).ready(function(){
-    // Predefined product templates (keeps existing logic)
+    // Predefined product templates (can later be replaced with dynamic data)
     var productTemplates = {
         "001": {
             brand: "Huawei",
@@ -93,8 +87,7 @@ $(document).ready(function(){
             $("#brand").val(productTemplates[code].brand);
             $("#model").val(productTemplates[code].model);
             $("#category").val(productTemplates[code].category);
-
-            // Optionally set fields to read-only if you want them locked after selection
+            // Optionally, set fields to read-only if you don't want them modified.
             $("#brand, #model, #category").attr("readonly", true);
         } else {
             // If no valid product code, clear fields and allow editing.
