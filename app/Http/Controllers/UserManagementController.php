@@ -10,10 +10,41 @@ use Illuminate\Support\Facades\Hash;
 class UserManagementController extends Controller
 {
     // List all users
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with('division')->get();
-        return view('users.index', compact('users'));
+        $query = User::with('division');
+    
+        // Live search by username, email, name, or role
+        if ($search = $request->query('q')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('username', 'LIKE', "%{$search}%")
+                  ->orWhere('email', 'LIKE', "%{$search}%")
+                  ->orWhere('name', 'LIKE', "%{$search}%")
+                  ->orWhere('role', 'LIKE', "%{$search}%");
+            });
+        }
+    
+        // Advanced filter: division
+        if ($request->has('division_id') && $request->division_id != "") {
+            $query->where('division_id', $request->division_id);
+        }
+    
+        // Advanced filter: role
+        if ($request->has('role') && $request->role != "") {
+            $query->where('role', $request->role);
+        }
+    
+        $users = $query->orderBy('name')->paginate(10);
+    
+        // If AJAX request, return just the user table partial
+        if ($request->ajax()) {
+             return view('users.partials.user_table', compact('users'))->render();
+        }
+    
+        // Also pass divisions for the filter dropdown
+        $divisions = \App\Models\Division::all();
+    
+        return view('users.index', compact('users', 'divisions'));
     }
 
     // Show the form to create a new user
