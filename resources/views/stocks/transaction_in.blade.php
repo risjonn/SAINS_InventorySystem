@@ -35,13 +35,13 @@
             </select>
         </div>
 
-        <!-- Model Field (remains text input) -->
+        <!-- Model Field (Text) -->
         <div class="mb-4">
             <label for="model" class="block text-sm font-medium text-gray-700">Model</label>
             <input type="text" name="model" id="model" class="mt-1 block w-full border rounded p-2" required>
         </div>
 
-        <!-- Category Select (Dropdown) -->
+        <!-- Category Field (Dropdown) -->
         <div class="mb-4">
             <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
             <select name="category" id="category" class="mt-1 block w-full border rounded p-2" required>
@@ -56,6 +56,12 @@
         <div class="mb-4">
             <label for="serial_number" class="block text-sm font-medium text-gray-700">Serial Number</label>
             <input type="text" name="serial_number" id="serial_number" class="mt-1 block w-full border rounded p-2" required>
+        </div>
+
+        <!-- Requisition No. Field -->
+        <div class="mb-4">
+            <label for="requisition_no" class="block text-sm font-medium text-gray-700">Requisition No.</label>
+            <input type="text" name="requisition_no" id="requisition_no" class="mt-1 block w-full border rounded p-2">
         </div>
 
         <!-- Remarks Field -->
@@ -74,7 +80,7 @@
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script>
 $(document).ready(function(){
-    // Predefined product templates (can later be replaced with dynamic data)
+    // Predefined product templates (unchanged from 19/2 logic)
     var productTemplates = {
         "001": {
             brand: "Huawei",
@@ -88,14 +94,15 @@ $(document).ready(function(){
     $("#product_code").on("change", function(){
         var code = $(this).val();
         if(productTemplates.hasOwnProperty(code)){
-            // For dropdowns, set the value to the matching option
+            // For dropdown fields, set the matching option if it exists
             $("#brand").val(productTemplates[code].brand);
             $("#model").val(productTemplates[code].model);
             $("#category").val(productTemplates[code].category);
-            // Optionally, disable the fields if you want to prevent editing
+
+            // Optionally disable them if you want to prevent further editing
             $("#brand, #model, #category").attr("disabled", true);
         } else {
-            // If no valid product code, clear fields and enable editing.
+            // If no valid product code, clear fields and allow editing
             $("#brand, #model, #category").val("").removeAttr("disabled");
         }
     });
