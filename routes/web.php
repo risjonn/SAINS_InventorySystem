@@ -60,7 +60,7 @@ Route::middleware(['auth', 'role:Admin|Super Admin'])->group(function () {
     Route::delete('stocks/{stock}', [StockController::class, 'destroy'])->name('stocks.destroy');
 });
 
-// Super Admin (previously "User Manager") routes for managing users
+// Super Admin routes
 Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::get('/users', [\App\Http\Controllers\UserManagementController::class, 'index'])->name('users.index');
     Route::get('/users/create', [\App\Http\Controllers\UserManagementController::class, 'create'])->name('users.create');
@@ -68,6 +68,8 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::get('/users/{user}/edit', [\App\Http\Controllers\UserManagementController::class, 'edit'])->name('users.edit');
     Route::put('/users/{user}', [\App\Http\Controllers\UserManagementController::class, 'update'])->name('users.update');
     Route::delete('/users/{user}', [\App\Http\Controllers\UserManagementController::class, 'destroy'])->name('users.destroy');
+    Route::resource('brands', \App\Http\Controllers\BrandController::class);
+    Route::resource('category', \App\Http\Controllers\CategoryController::class);
 });
 
 // General stock routes for authenticated users

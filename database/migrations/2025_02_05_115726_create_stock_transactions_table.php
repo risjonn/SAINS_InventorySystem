@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('stock_transactions', function (Blueprint $table) {
             $table->id();
             $table->string('serial_number');
-            $table->enum('type', ['IN', 'OUT']);
+            $table->enum('type', ['IN', 'OUT', 'LOAN']);
             $table->unsignedBigInteger('handled_by'); // Make sure this is unsigned
 
             $table->text('remarks')->nullable();

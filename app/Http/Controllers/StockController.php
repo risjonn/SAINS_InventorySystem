@@ -109,72 +109,76 @@ class StockController extends Controller
     
 
     public function management(Request $request)
-{
-    // If this is a POST request for returning a loaned item
-    if ($request->isMethod('post') && $request->input('force_operation_type') === 'RETURN') {
-        $stockId = $request->input('stock_id');
-        $stock = Stock::findOrFail($stockId);
+    {
+        // If this is a POST request for returning a loaned item
+        if ($request->isMethod('post') && $request->input('force_operation_type') === 'RETURN') {
+            $stockId = $request->input('stock_id');
+            $stock = Stock::findOrFail($stockId);
 
-        // Verify that the stock is currently on loan
-        if ($stock->status !== 'LOAN') {
-            return redirect()->route('stocks.management')->with('error', 'This item is not on loan.');
+            // Verify that the stock is currently on loan
+            if ($stock->status !== 'LOAN') {
+                return redirect()->route('stocks.management')->with('error', 'This item is not on loan.');
+            }
+
+            $validated = $request->validate([
+                'remarks' => 'required|string',
+            ]);
+
+            // Create a transaction record of type "RETURN"
+            StockTransaction::create([
+                'serial_number'    => $stock->serial_number,
+                'stock_model'      => $stock->model,
+                'category'         => $stock->category,
+                'type'             => 'RETURN', // or "IN" if you prefer
+                'handled_by'       => auth()->id(),
+                'remarks'          => $validated['remarks'],
+                'transaction_date' => now(),
+            ]);
+
+            // Update the stock status back to "IN" (or 'available' as needed)
+            $stock->status = 'IN';
+            $stock->save();
+
+            return redirect()->route('stocks.management')->with('success', 'Stock returned successfully.');
         }
 
-        $validated = $request->validate([
-            'remarks' => 'required|string',
-        ]);
+        // Otherwise, process the GET request to display management page
+        $selectedDivision = session('selectedDivision', auth()->user()->division_id);
+        $division = Division::find($selectedDivision);
+        $search = $request->query('search');
 
-        // Create a transaction record of type "RETURN"
-        StockTransaction::create([
-            'serial_number'    => $stock->serial_number,
-            'stock_model'      => $stock->model,
-            'category'         => $stock->category,
-            'type'             => 'RETURN', // or "IN" if you prefer
-            'handled_by'       => auth()->id(),
-            'remarks'          => $validated['remarks'],
-            'transaction_date' => now(),
-        ]);
+        // Available stocks (using a unique pagination parameter)
+        $availableStocks = Stock::with('division')
+            ->where('division_id', $selectedDivision)
+            ->where('status', 'available')
+            ->when($search, function ($query, $search) {
+                return $query->where('serial_number', 'LIKE', "%{$search}%")
+                            ->orWhere('model', 'LIKE', "%{$search}%");
+            })
+            ->paginate(10, ['*'], 'available_page');
 
-        // Update the stock status back to "IN" (or 'available' as needed)
-        $stock->status = 'IN';
-        $stock->save();
+        // Loaned stocks (using a different pagination parameter)
+        $loanedStocks = Stock::with('division')
+            ->where('division_id', $selectedDivision)
+            ->where('status', 'LOAN')
+            ->when($search, function ($query, $search) {
+                return $query->where('serial_number', 'LIKE', "%{$search}%")
+                            ->orWhere('model', 'LIKE', "%{$search}%");
+            })
+            ->paginate(10, ['*'], 'loan_page');
 
-        return redirect()->route('stocks.management')->with('success', 'Stock returned successfully.');
+        return view('stocks.management', compact('availableStocks', 'loanedStocks', 'division'));
     }
-
-    // Otherwise, process the GET request to display management page
-    $selectedDivision = session('selectedDivision', auth()->user()->division_id);
-    $division = Division::find($selectedDivision);
-    $search = $request->query('search');
-
-    // Available stocks (using a unique pagination parameter)
-    $availableStocks = Stock::with('division')
-        ->where('division_id', $selectedDivision)
-        ->where('status', 'available')
-        ->when($search, function ($query, $search) {
-            return $query->where('serial_number', 'LIKE', "%{$search}%")
-                         ->orWhere('model', 'LIKE', "%{$search}%");
-        })
-        ->paginate(10, ['*'], 'available_page');
-
-    // Loaned stocks (using a different pagination parameter)
-    $loanedStocks = Stock::with('division')
-        ->where('division_id', $selectedDivision)
-        ->where('status', 'LOAN')
-        ->when($search, function ($query, $search) {
-            return $query->where('serial_number', 'LIKE', "%{$search}%")
-                         ->orWhere('model', 'LIKE', "%{$search}%");
-        })
-        ->paginate(10, ['*'], 'loan_page');
-
-    return view('stocks.management', compact('availableStocks', 'loanedStocks', 'division'));
-}
 
     public function createTransactionIn()
     {
         $selectedDivision = session('selectedDivision', auth()->user()->division_id);
         $division = Division::find($selectedDivision);
-        return view('stocks.transaction_in', compact('division'));
+        // Fetch active brands and categories sorted by name
+        $brands = \App\Models\Brand::where('active', true)->orderBy('name')->get();
+        $categories = \App\Models\Category::where('active', true)->orderBy('name')->get();
+
+        return view('stocks.transaction_in', compact('division', 'brands', 'categories'));
     }
 
     public function storeTransactionIn(Request $request)
