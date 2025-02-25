@@ -18,10 +18,19 @@
             <td class="p-2">{{ $user->division->name ?? 'N/A' }}</td>
             <td class="p-2">{{ $user->role }}</td>
             <td class="p-2">
-                <a href="{{ route('users.edit', $user->id) }}" 
-                   class="text-blue-500 hover:text-blue-700 mr-2">
+                <button type="button" 
+                    class="edit-user-btn text-blue-500 hover:text-blue-700"
+                    data-bs-toggle="modal" 
+                    data-bs-target="#editUserModal"
+                    data-id="{{ $user->id }}"
+                    data-username="{{ $user->username }}"
+                    data-name="{{ $user->name }}"
+                    data-email="{{ $user->email }}"
+                    data-division="{{ $user->division ? $user->division->id : '' }}"
+                    data-role="{{ $user->role }}">
                     <i class="fas fa-edit"></i>
-                </a>
+                </button>
+
                 <button type="button" 
                         class="text-red-500 hover:text-red-700 delete-button"
                         data-bs-toggle="modal" 
