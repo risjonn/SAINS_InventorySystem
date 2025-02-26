@@ -177,6 +177,31 @@ $(document).ready(function(){
           }
        });
     });
+
+    // Use event delegation for edit buttons
+    $(document).on('click', '.edit-user-btn', function() {
+        var userId = $(this).data('id');
+        var username = $(this).data('username');
+        var name = $(this).data('name');
+        var email = $(this).data('email');
+        var divisionId = $(this).data('division');
+        var role = $(this).data('role');
+
+        // Set the modal form values
+        $('#edit_username').val(username);
+        $('#edit_name').val(name);
+        $('#edit_email').val(email);
+        $('#edit_division').val(divisionId);
+        $('#edit_role').val(role);
+
+        // Dynamically set the form action URL; assuming your update route is /users/{id}
+        $('#editUserForm').attr('action', '/users/' + userId);
+    });
+
+    $(document).on('click', '.delete-button', function() {
+        var action = $(this).data('action');
+        $('#deleteForm').attr('action', action);
+    });
 });
 </script>
 
