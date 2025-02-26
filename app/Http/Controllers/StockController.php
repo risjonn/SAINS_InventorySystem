@@ -318,13 +318,17 @@ class StockController extends Controller
     {
         $divisionId = $request->query('division', 'all');
         $search = $request->query('search');
-
+    
+        // 1) Read the 'sort' param from the query, default to 'updated_at_desc'
+        $sort = $request->query('sort', 'updated_at_desc');
+    
         if ($divisionId !== 'all') {
             $division = Division::find($divisionId);
         } else {
             $division = null;
         }
-
+    
+        // 2) Build the query for stocks
         $stocks = Stock::where('category', $category)
                         ->where('status', 'available')
                         ->when($divisionId !== 'all', function ($query) use ($divisionId) {
@@ -337,10 +341,27 @@ class StockController extends Controller
                                   ->orWhere('category', 'LIKE', "%{$search}%");
                             });
                         })
+    
+                        // 3) Add server-side sorting based on $sort
+                        ->when($sort === 'updated_at_asc', function($query){
+                            return $query->orderBy('updated_at', 'asc');
+                        })
+                        ->when($sort === 'updated_at_desc', function($query){
+                            return $query->orderBy('updated_at', 'desc');
+                        })
+                        ->when($sort === 'model_asc', function($query){
+                            return $query->orderBy('model', 'asc');
+                        })
+                        ->when($sort === 'model_desc', function($query){
+                            return $query->orderBy('model', 'desc');
+                        })
+    
+                        // Finally paginate
                         ->paginate(10);
-
+    
         return view('stocks.show', compact('stocks', 'category', 'division'));
     }
+    
 
     public function overview(Request $request)
     {
@@ -388,26 +409,43 @@ class StockController extends Controller
 
     public function showByCategory(Request $request, $category, $division)
     {
+        $search = $request->query('search');
+        
         if ($division === 'all') {
             // Retrieve stocks by category across all divisions.
             $stocks = Stock::where('category', $category)
                            ->where('status', 'available')
+                           ->when($search, function ($query, $search) {
+                               $query->where(function ($q) use ($search) {
+                                   $q->where('serial_number', 'LIKE', "%{$search}%")
+                                     ->orWhere('model', 'LIKE', "%{$search}%")
+                                     ->orWhere('category', 'LIKE', "%{$search}%");
+                               });
+                           })
                            ->paginate(10);
             $divisionModel = null;
         } else {
             $stocks = Stock::where('category', $category)
                            ->where('division_id', $division)
                            ->where('status', 'available')
+                           ->when($search, function ($query, $search) {
+                               $query->where(function ($q) use ($search) {
+                                   $q->where('serial_number', 'LIKE', "%{$search}%")
+                                     ->orWhere('model', 'LIKE', "%{$search}%")
+                                     ->orWhere('category', 'LIKE', "%{$search}%");
+                               });
+                           })
                            ->paginate(10);
             $divisionModel = Division::find($division);
         }
-
+    
         return view('stocks.show', [
             'stocks' => $stocks,
             'category' => $category,
             'division' => $divisionModel,
         ]);
     }
+    
 
     public function ajaxSearch(Request $request)
     {

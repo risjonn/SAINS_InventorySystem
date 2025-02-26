@@ -125,100 +125,79 @@
             </div>
 
             <!-- Loaned Stocks Pane -->
-            <!-- Loaned Stocks Pane -->
-<div class="tab-pane fade" id="loanedTab" role="tabpanel" aria-labelledby="loaned-tab">
-    <div class="mt-4">
-        @if($loanedStocks->isNotEmpty())
-        <div class="card shadow-sm border-0" style="border-radius: 12px;">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table id="loanedStockTable" class="w-full border rounded-lg shadow-md bg-white">
-                        <thead>
-                            <tr class="bg-gray-200 text-left">
-                                <th class="p-2">Serial Number</th>
-                                <th class="p-2">Brand</th>
-                                <th class="p-2">Model</th>
-                                <th class="p-2">Category</th>
-                                <th class="p-2">Product Code</th>
-                                <th class="p-2">Requisition No.</th>
-                                <!-- New column for "Taken by" -->
-                                <th class="p-2">Taken by</th>
-
-                                <th class="p-2">Remarks</th>
-                                <th class="p-2">Updated At</th>
-                                <th class="p-2">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($loanedStocks as $stock)
-                                @php
-                                    // Grab the most recent LOAN transaction for this stock
-                                    $loanTx = $stock->transactions()
-                                                   ->where('type', 'LOAN')
-                                                   ->latest('transaction_date')
-                                                   ->first();
-
-                                    // Default values
-                                    $takenByValue = 'N/A';
-                                    $displayRemarks = $stock->remarks;
-
-                                    if ($loanTx) {
-                                        // If the loanTx has remarks with (Taken by: ...)
-                                        $pattern = '/\(Taken by:\s*(.*?)\)/i';
-                                        $fullRemarks = $loanTx->remarks ?? '';
-                                        
-                                        // Attempt to parse
-                                        if (preg_match($pattern, $fullRemarks, $matches)) {
-                                            $takenByValue   = $matches[1];  // The captured group
-                                            // Remove the substring from remarks for display
-                                            $displayRemarks = trim(preg_replace($pattern, '', $fullRemarks));
-                                        } else {
-                                            // If no pattern found, just display full remarks
-                                            $displayRemarks = $fullRemarks;
-                                        }
-                                    }
-                                @endphp
-
-                                <tr class="border-b">
-                                    <td class="p-2">{{ $stock->serial_number }}</td>
-                                    <td class="p-2">{{ $stock->brand ?? 'N/A' }}</td>
-                                    <td class="p-2">{{ $stock->model }}</td>
-                                    <td class="p-2">{{ $stock->category }}</td>
-                                    <td class="p-2">{{ $stock->product_code ?? 'N/A' }}</td>
-                                    <td class="p-2">{{ $stock->requisition_no ?? 'N/A' }}</td>
-
-                                    <!-- "Taken by" column -->
-                                    <td class="p-2">{{ $takenByValue }}</td>
-
-                                    <!-- Display remarks (with the "(Taken by: ...)" substring removed) -->
-                                    <td class="p-2">{{ $displayRemarks }}</td>
-
-                                    <td class="p-2">
-                                        {{ \Carbon\Carbon::parse($stock->updated_at)->format('M d, Y h:i A') }}
-                                    </td>
-                                    <td class="p-2">
-                                        <button type="button"
-                                            class="bg-blue-600 text-white px-2 py-1 rounded btn-return"
-                                            data-stock-id="{{ $stock->id }}"
-                                            title="Mark as Returned">
-                                            Return
-                                        </button>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+            <div class="tab-pane fade" id="loanedTab" role="tabpanel" aria-labelledby="loaned-tab">
+                <div class="mt-4">
+                    @if($loanedStocks->isNotEmpty())
+                    <div class="card shadow-sm border-0" style="border-radius: 12px;">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table id="loanedStockTable" class="w-full border rounded-lg shadow-md bg-white">
+                                    <thead>
+                                        <tr class="bg-gray-200 text-left">
+                                            <th class="p-2">Serial Number</th>
+                                            <th class="p-2">Brand</th>
+                                            <th class="p-2">Model</th>
+                                            <th class="p-2">Category</th>
+                                            <th class="p-2">Product Code</th>
+                                            <th class="p-2">Requisition No.</th>
+                                            <th class="p-2">Taken by</th>
+                                            <th class="p-2">Remarks</th>
+                                            <th class="p-2">Updated At</th>
+                                            <th class="p-2">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($loanedStocks as $stock)
+                                            @php
+                                                // Grab the most recent LOAN transaction for this stock
+                                                $loanTx = $stock->transactions()
+                                                               ->where('type', 'LOAN')
+                                                               ->latest('transaction_date')
+                                                               ->first();
+                                                $takenByValue = 'N/A';
+                                                $displayRemarks = $stock->remarks;
+                                                if ($loanTx) {
+                                                    $pattern = '/\(Taken by:\s*(.*?)\)/i';
+                                                    $fullRemarks = $loanTx->remarks ?? '';
+                                                    if (preg_match($pattern, $fullRemarks, $matches)) {
+                                                        $takenByValue = $matches[1];
+                                                        $displayRemarks = trim(preg_replace($pattern, '', $fullRemarks));
+                                                    } else {
+                                                        $displayRemarks = $fullRemarks;
+                                                    }
+                                                }
+                                            @endphp
+                                            <tr class="border-b">
+                                                <td class="p-2">{{ $stock->serial_number }}</td>
+                                                <td class="p-2">{{ $stock->brand ?? 'N/A' }}</td>
+                                                <td class="p-2">{{ $stock->model }}</td>
+                                                <td class="p-2">{{ $stock->category }}</td>
+                                                <td class="p-2">{{ $stock->product_code ?? 'N/A' }}</td>
+                                                <td class="p-2">{{ $stock->requisition_no ?? 'N/A' }}</td>
+                                                <td class="p-2">{{ $takenByValue }}</td>
+                                                <td class="p-2">{{ $displayRemarks }}</td>
+                                                <td class="p-2">{{ \Carbon\Carbon::parse($stock->updated_at)->format('M d, Y h:i A') }}</td>
+                                                <td class="p-2">
+                                                    <button type="button" class="bg-blue-600 text-white px-2 py-1 rounded btn-return" data-stock-id="{{ $stock->id }}" title="Mark as Returned">
+                                                        Return
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        {!! $loanedStocks->appends(request()->all())->links('pagination::bootstrap-4') !!}
+                    </div>
+                    @else
+                        <p>No loaned stocks for this division.</p>
+                    @endif
                 </div>
             </div>
         </div>
-        <div class="mt-4">
-            {!! $loanedStocks->appends(request()->all())->links('pagination::bootstrap-4') !!}
-        </div>
-        @else
-            <p>No loaned stocks for this division.</p>
-        @endif
-    </div>
-</div>
     @endif
 </div>
 
@@ -305,7 +284,7 @@ $(document).ready(function(){
                 config.order = "desc";
                 break;
             case "updated_at_asc":
-                config.columnIndex = 8; // Updated At is column 8.
+                config.columnIndex = 8; // For available table, Updated At is column 8.
                 config.order = "asc";
                 config.isDate = true;
                 break;
@@ -319,7 +298,12 @@ $(document).ready(function(){
                 config.order = "asc";
         }
         sortTable(config.columnIndex, config.order, config.isDate);
-        sortLoanedTable(config.columnIndex, config.order, config.isDate);
+        // For the loaned table, if sorting by updated_at, increase the column index by 1 (because of extra "Taken by" column)
+        if(sortValue === "updated_at_asc" || sortValue === "updated_at_desc"){
+            sortLoanedTable(config.columnIndex + 1, config.order, config.isDate);
+        } else {
+            sortLoanedTable(config.columnIndex, config.order, config.isDate);
+        }
     }
 
     function sortTable(columnIndex, order, isDate) {
