@@ -13,19 +13,42 @@
     align-items: center;
   }
   .error-message i {
-    margin-right: 0.25rem; /* spacing between icon and text */
+    margin-right: 0.25rem;
   }
   /* When error is active, override the default focus ring with a red one */
   .error-active:focus {
     outline: none !important;
     box-shadow: 0 0 0 3px rgba(245, 101, 101, 0.75) !important;
   }
+  /* Progress bar styling */
+  .progress-container {
+    width: 100%;
+    background-color: #e5e7eb; /* Tailwind gray-200 */
+    border-radius: 9999px;
+    height: 0.5rem;
+  }
+  .progress-bar {
+    height: 100%;
+    background-color: #4f46e5; /* Tailwind indigo-600 */
+    border-radius: 9999px;
+    transition: width 0.3s ease;
+  }
+  /* Toggle password button styling */
+  .field-container {
+  position: relative;
+  }
+  .toggle-password {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  }
 </style>
 @endsection
 
 @section('content')
-<div class="container mx-auto px-4 py-4">
-  <div class="max-w-6xl mx-auto bg-white p-12 rounded-lg shadow-lg" x-data="tabForm()" x-init="init()">
+<div class="container mx-auto px-4 py-0">
+  <div class="max-w-6xl mx-auto bg-white p-12 rounded-lg shadow-lg mt-0" x-data="tabForm()" x-init="init()">
     <!-- Back Button -->
     <div class="mb-6">
       <a href="{{ route('users.index') }}" class="text-gray-600 hover:text-gray-800 flex items-center">
@@ -64,6 +87,16 @@
            :style="{ width: `${indicatorWidth}px`, transform: `translateX(${indicatorLeft}px)` }"></div>
     </div>
     
+    <!-- Enhanced Progress Indicator -->
+    <div class="mt-4">
+      <div class="text-center mb-2" x-text="`Step ${tabs.indexOf(activeTab)+1} of ${tabs.length}`"></div>
+      <div class="progress-container">
+        <div class="progress-bar" 
+             :style="{ width: ((tabs.indexOf(activeTab) + 1) / tabs.length * 100) + '%' }">
+        </div>
+      </div>
+    </div>
+    
     <!-- Form Content Container -->
     <form id="userForm" 
           novalidate 
@@ -71,15 +104,15 @@
           method="POST" 
           @submit.prevent="onSubmit" 
           class="mt-8 relative overflow-hidden tab-content-container" 
-          style="min-height: 350px;">
+          style="min-height: 300px;">
       @csrf
       
       <!-- Personal Information Tab -->
       <div data-tab="personal" x-show="activeTab === 'personal' && showContent" x-cloak
-           x-transition:enter="transition ease-out duration-400 delay-300"
+           x-transition:enter="transition ease-out duration-300 delay-200"
            x-transition:enter-start="opacity-0"
            x-transition:enter-end="opacity-100"
-           x-transition:leave="transition ease-in duration-300"
+           x-transition:leave="transition ease-in duration-300 delay-200"
            x-transition:leave-start="opacity-100"
            x-transition:leave-end="opacity-0"
            class="absolute inset-0 space-y-6">
@@ -103,7 +136,7 @@
                    required>
           </div>
         </div>
-        <!-- Navigation: Next Button (Always Visible) -->
+        <!-- Navigation: Next Button -->
         <div class="flex justify-end items-center mt-8">
           <button type="button" @click="setTab('org')" class="flex items-center bg-blue-600 text-white font-bold px-4 py-2 rounded shadow hover:bg-blue-700 transition duration-300">
             <span>Next</span>
@@ -114,10 +147,10 @@
       
       <!-- Organizational Details Tab -->
       <div data-tab="org" x-show="activeTab === 'org' && showContent" x-cloak
-           x-transition:enter="transition ease-out duration-400 delay-300"
+           x-transition:enter="transition ease-out duration-300 delay-200"
            x-transition:enter-start="opacity-0"
            x-transition:enter-end="opacity-100"
-           x-transition:leave="transition ease-in duration-300"
+           x-transition:leave="transition ease-in duration-300 delay-200"
            x-transition:leave-start="opacity-100"
            x-transition:leave-end="opacity-0"
            class="absolute inset-0 space-y-6">
@@ -142,12 +175,11 @@
                     required>
               <option value="">Select Role</option>
               <option value="Admin" {{ old('role') == 'Admin' ? 'selected' : '' }}>Admin</option>
-              <option value="User Manager" {{ old('role') == 'User Manager' ? 'selected' : '' }}>User Manager</option>
               <option value="Super Admin" {{ old('role') == 'Super Admin' ? 'selected' : '' }}>Super Admin</option>
             </select>
           </div>
         </div>
-        <!-- Navigation: Previous & Next Buttons (Next Button Remains Visible) -->
+        <!-- Navigation: Previous & Next Buttons -->
         <div class="flex justify-between items-center mt-8">
           <button type="button" @click="setTab('personal')" class="flex items-center bg-gray-600 text-white font-bold px-4 py-2 rounded shadow hover:bg-gray-700 transition duration-300">
             <i class="fa fa-long-arrow-left text-xl mr-2" aria-hidden="true"></i>
@@ -162,28 +194,38 @@
       
       <!-- Login Credentials Tab -->
       <div data-tab="credentials" x-show="activeTab === 'credentials' && showContent" x-cloak
-           x-transition:enter="transition ease-out duration-400 delay-300"
+           x-transition:enter="transition ease-out duration-300 delay-200"
            x-transition:enter-start="opacity-0"
            x-transition:enter-end="opacity-100"
-           x-transition:leave="transition ease-in duration-300"
+           x-transition:leave="transition ease-in duration-300 delay-200"
            x-transition:leave-start="opacity-100"
            x-transition:leave-end="opacity-0"
            class="absolute inset-0 space-y-6">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 p-4">
           <div class="field-container">
             <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-            <input type="password" name="password" id="password"
-                   class="mt-1 block w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                   required>
+            <div class="relative">
+              <input :type="showPassword ? 'text' : 'password'" name="password" id="password"
+                     class="mt-1 block w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                     required>
+              <button type="button" class="toggle-password absolute right-2 top-1/2 transform -translate-y-1/2" @click="showPassword = !showPassword">
+                <i :class="showPassword ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+              </button>
+            </div>
           </div>
           <div class="field-container">
             <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Confirm Password</label>
-            <input type="password" name="password_confirmation" id="password_confirmation"
-                   class="mt-1 block w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                   required>
+            <div class="relative">
+              <input :type="showConfirmPassword ? 'text' : 'password'" name="password_confirmation" id="password_confirmation"
+                     class="mt-1 block w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                     required>
+              <button type="button" class="toggle-password absolute right-2 top-1/2 transform -translate-y-1/2" @click="showConfirmPassword = !showConfirmPassword">
+                <i :class="showConfirmPassword ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+              </button>
+            </div>
           </div>
         </div>
-        <!-- Navigation: Previous & Create User Buttons (Next Button Always Visible) -->
+        <!-- Navigation: Previous & Create User Buttons -->
         <div class="flex justify-between items-center mt-8">
           <button type="button" @click="setTab('org')" class="flex items-center bg-gray-600 text-white font-bold px-4 py-2 rounded shadow hover:bg-gray-700 transition duration-300">
             <i class="fa fa-long-arrow-left text-xl mr-2" aria-hidden="true"></i>
@@ -209,6 +251,8 @@ function tabForm() {
     tabs: ['personal', 'org', 'credentials'],
     indicatorWidth: 0,
     indicatorLeft: 0,
+    showPassword: false,
+    showConfirmPassword: false,
 
     init() {
       this.setIndicator(this.$refs.personalBtn);
@@ -223,12 +267,22 @@ function tabForm() {
             el.classList.remove('error-active', 'border-red-500');
             let errorEl = el.parentNode.querySelector('.error-message');
             if (errorEl) errorEl.remove();
+            el.removeAttribute('aria-invalid');
+            el.removeAttribute('aria-describedby');
           }
         });
+        // For the email field, check format on blur.
+        if (el.id === 'email') {
+          el.addEventListener('blur', () => {
+            if (el.value.trim() !== "" && !this.isValidEmail(el.value.trim())) {
+              this.triggerFieldError(el, "Please enter a valid email address.");
+            }
+          });
+        }
       });
     },
 
-    // Intercept final form submission
+    // Intercept final form submission.
     onSubmit() {
       if (!this.validateCurrentTab(this.activeTab)) {
         return;
@@ -246,19 +300,24 @@ function tabForm() {
 
     // Helper to add error styling and inject a persistent error message element below the field.
     triggerFieldError(el, message) {
-      let errorEl = el.parentNode.querySelector('.error-message');
+      // Find the outer field container
+      let container = el.closest('.field-container');
+      // Look for an error element inside the container (but outside the relative wrapper)
+      let errorEl = container.querySelector('.error-message');
       if (!errorEl) {
         errorEl = document.createElement('div');
         errorEl.className = 'error-message';
-        el.parentNode.appendChild(errorEl);
+        // Append the error message at the end of the field container
+        container.appendChild(errorEl);
       }
-      // Prepend an icon to the error message using Font Awesome.
       errorEl.innerHTML = '<i class="fa fa-exclamation-circle" aria-hidden="true"></i> ' + message;
       
-      // Add red border and error-active class to ensure a red focus ring.
+      // Add red border and error-active class to the input.
       el.classList.add('border-red-500', 'error-active');
+      el.setAttribute('aria-invalid', 'true');
+      // Optionally set aria-describedby if needed.
       
-      // Scroll element into view, then focus it so the keyboard cursor is set.
+      // Scroll into view then focus the element.
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setTimeout(() => {
         el.focus();
@@ -269,6 +328,14 @@ function tabForm() {
     isValidEmail(emailValue) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       return emailRegex.test(emailValue);
+    },
+
+    // Enhanced password format validation.
+    // Password must be at least 8 characters long, contain at least one uppercase letter,
+    // one lowercase letter, one digit, and one special character from the set @$!%*?&.
+    isValidPassword(passwordValue) {
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+      return passwordRegex.test(passwordValue);
     },
 
     // Validate the fields of the current tab.
@@ -290,7 +357,6 @@ function tabForm() {
           this.triggerFieldError(email, "Please fill in your email.");
           return false;
         }
-        // Check email format.
         if (!this.isValidEmail(email.value.trim())) {
           this.triggerFieldError(email, "Please enter a valid email address.");
           return false;
@@ -317,6 +383,10 @@ function tabForm() {
           this.triggerFieldError(password, "Please enter your password.");
           return false;
         }
+        if (!this.isValidPassword(password.value)) {
+          this.triggerFieldError(password, "Password must be at least 8 characters long, include one uppercase letter, one lowercase letter, one digit, and one special character (allowed: @, $, !, %, *, ?, &). For example, 'Password1!'");
+          return false;
+        }
         if (!passwordConfirmation.value) {
           this.triggerFieldError(passwordConfirmation, "Please confirm your password.");
           return false;
@@ -332,7 +402,6 @@ function tabForm() {
     setTab(newTab) {
       const currentIndex = this.tabs.indexOf(this.activeTab);
       const newIndex = this.tabs.indexOf(newTab);
-      // Only validate when moving forward.
       if (newIndex > currentIndex && !this.validateCurrentTab(this.activeTab)) {
         return;
       }
