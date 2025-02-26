@@ -15,7 +15,7 @@
     <h2 class="text-center mb-4">
         Stock Transaction
         <span class="text-sm ml-2 text-gray-600">
-            (Division: {{ $division->name }})
+        (Division: {{ $selectedDivision === 'all' ? 'All Divisions' : $division->name }})
         </span>
     </h2>
 
