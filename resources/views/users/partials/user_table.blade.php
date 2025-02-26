@@ -1,4 +1,4 @@
-<table class="min-w-full mt-4 border rounded-lg shadow-md bg-white">
+<table class="min-w-full mt-4 border rounded-lg shadow-md bg-white mb-8">
     <thead>
         <tr class="bg-gray-200 text-left">
             <th class="p-2">Username</th>
