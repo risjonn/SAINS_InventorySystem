@@ -38,6 +38,7 @@
         <!-- Model Field (Text) -->
         <div class="mb-4">
             <label for="model" class="block text-sm font-medium text-gray-700">Model</label>
+            <!-- Notice: We use 'readonly' instead of 'disabled' so the field still submits -->
             <input type="text" name="model" id="model" class="mt-1 block w-full border rounded p-2" required>
         </div>
 
@@ -80,7 +81,7 @@
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script>
 $(document).ready(function(){
-    // Predefined product templates (unchanged from 19/2 logic)
+    // Predefined product templates
     var productTemplates = {
         "001": {
             brand: "Huawei",
@@ -90,20 +91,19 @@ $(document).ready(function(){
         // Add more product templates as needed
     };
 
-    // When a product code is selected, auto-fill Brand, Model, and Category.
     $("#product_code").on("change", function(){
         var code = $(this).val();
         if(productTemplates.hasOwnProperty(code)){
-            // For dropdown fields, set the matching option if it exists
-            $("#brand").val(productTemplates[code].brand);
-            $("#model").val(productTemplates[code].model);
-            $("#category").val(productTemplates[code].category);
-
-            // Optionally disable them if you want to prevent further editing
-            $("#brand, #model, #category").attr("disabled", true);
+            // For brand and category, keep them enabled if they are <select> elements.
+            // For model (text), set it to readonly so it still submits.
+            $("#brand").val(productTemplates[code].brand).prop("disabled", false);
+            $("#model").val(productTemplates[code].model).prop("readonly", true);
+            $("#category").val(productTemplates[code].category).prop("disabled", false);
         } else {
             // If no valid product code, clear fields and allow editing
-            $("#brand, #model, #category").val("").removeAttr("disabled");
+            $("#brand").val("").removeAttr("disabled");
+            $("#model").val("").removeAttr("readonly");
+            $("#category").val("").removeAttr("disabled");
         }
     });
 });
