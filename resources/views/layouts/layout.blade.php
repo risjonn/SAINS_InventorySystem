@@ -11,10 +11,12 @@
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- FontAwesome -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Alpine.js -->
   <script defer src="https://unpkg.com/alpinejs@3.10.5/dist/cdn.min.js"></script>
+  <!-- Include JS -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     document.addEventListener('alpine:init', () => {
       Alpine.store('activeTooltip', {
@@ -30,7 +32,7 @@
       });
     });
   </script>
-  @vite(['resources/css/app.css'])
+  @vite(['resources/css/app.css', 'resources/css/modal.css'])
   @yield('styles')
 </head>
 <body class="bg-light" x-data="{ 
@@ -378,98 +380,118 @@
   <!-- Main Content -->
   <main class="min-h-screen transition-[margin] duration-300 ease-in-out"
         :class="sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'">
-    <!-- Mobile Header -->
-    <header class="lg:hidden bg-white shadow-sm p-4 flex items-center justify-between">
-      <button @click="mobileSidebarOpen = true" class="text-gray-600">
-        <i class="fas fa-bars fa-lg"></i>
-      </button>
-      <h1 class="text-xl font-semibold">@yield('title')</h1>
-    </header>
 
     <!-- Content Container -->
     <div class="p-6">
-      @if (session('success'))
-        <div id="popup-message" class="alert alert-success alert-dismissible fade show shadow popup-center" role="alert">
-          <div class="d-flex flex-column align-items-center p-4">
-            @if (session('action') === 'add')
-              <i class="fas fa-check-circle fa-3x text-success tick-animation mb-3"></i>
-            @elseif (session('action') === 'edit')
-              <i class="fas fa-edit fa-3x text-primary edit-animation mb-3"></i>
-            @elseif (session('action') === 'delete')
-              <i class="fas fa-trash fa-3x text-danger trashShake mb-3"></i>
-            @endif
-            <h4 class="mb-0 text-center">
-              <strong>{{ session('success') }}</strong>
-            </h4>
-          </div>
-          <button type="button" class="btn-close position-absolute top-0 end-0 m-3" aria-label="Close"></button>
-        </div>
-        <div id="overlay" class="popup-overlay"></div>
-      @endif
-
+      
       @yield('content')
+      
+      <!-- Global Modals -->
+      @include('components.success-modal')
+      @include('components.delete-confirmation-modal')
+      
+      <!-- Custom JS to handle modals -->
+      <script>
+        // Success Modal Function
+        function showGlobalSuccessModal(type, customMessage = '', resource = '') {
+          let title, defaultMessage, headerClass, iconClass;
+          
+          switch (type) {
+            case 'created':
+              title = resource ? `New ${capitalize(resource)} Added` : 'Creation Successful!';
+              defaultMessage = resource ? `The new ${resource} has been created successfully.` : 'Operation completed successfully.';
+              headerClass = 'created';
+              iconClass = 'fa-check-circle';
+              break;
+            case 'updated':
+              title = resource ? `${capitalize(resource)} Updated` : 'Update Completed!';
+              defaultMessage = resource ? `The ${resource} has been updated successfully.` : 'Operation completed successfully.';
+              headerClass = 'updated';
+              iconClass = 'fa-sync-alt';
+              break;
+            case 'deleted':
+              title = resource ? `${capitalize(resource)} Removed` : 'Deletion Successful!';
+              defaultMessage = resource ? `The ${resource} has been deleted from the system.` : 'Operation completed successfully.';
+              headerClass = 'deleted';
+              iconClass = 'fa-trash-alt';
+              break;
+            default:
+              title = 'Success';
+              defaultMessage = 'Operation completed successfully.';
+              headerClass = 'default';
+              iconClass = 'fa-info-circle';
+          }
+          
+          // Use customMessage if provided; otherwise, use defaultMessage.
+          let message = customMessage || defaultMessage;
+          
+          $('#globalSuccessModalLabel').text(title);
+          $('#globalSuccessModal .modal-header')
+            .removeClass('default created updated deleted')
+            .addClass(headerClass);
+          $('#successModalIcon').removeClass().addClass('fas ' + iconClass + ' success-icon');
+          $('#globalSuccessModalBody').html(message);
+          $('#globalSuccessModal').modal('show');
+        }
+    
+        // Utility function to capitalize the first letter:
+        function capitalize(str) {
+          return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+        
+        // Delete Confirmation Modal Function
+        function showDeleteConfirmationModal(itemType, confirmCallback) {
+          var message = "Are you sure you want to delete this " + itemType + "?";
+          $('#deleteConfirmationMessage').html(message);
+          
+          $('#globalDeleteModal').modal('show');
+    
+          $('#confirmDeleteButton').off('click').on('click', function() {
+              confirmCallback(itemType);
+              $('#globalDeleteModal').modal('hide');
+          });
+        }
+      </script>
+
+      @if(session('success'))
+        <script>
+          $(document).ready(function(){
+            // Get the flash success message
+            let message = {!! json_encode(session('success')) !!};
+            // Determine the modal type based on message content
+            let type = 'created';
+            let lowerMsg = message.toLowerCase();
+            if(lowerMsg.indexOf('created') !== -1) {
+              type = 'created';
+            } else if(lowerMsg.indexOf('updated') !== -1) {
+              type = 'updated';
+            } else if(lowerMsg.indexOf('deleted') !== -1 || lowerMsg.indexOf('removed') !== -1) {
+              type = 'deleted';
+            }
+            // Dynamically get the resource type from session (default to 'resource' if not provided)
+            let resource = {!! json_encode(session('resource') ?? 'resource') !!};
+            // Show the global success modal using the dynamic resource type
+            showGlobalSuccessModal(type, message, resource);
+          });
+        </script>
+      @endif
     </div>
   </main>
 
-  <!-- Delete Modal -->
-  <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title text-danger" id="deleteModalLabel">Confirm Deletion</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          Are you sure you want to delete this item? This action cannot be undone.
-        </div>
-        <div class="modal-footer">
-          <form id="deleteForm" method="POST" action="">
-            @csrf
-            @method('DELETE')
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-danger">Delete</button>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-
-  @yield('scripts')
-
-  <!-- Scripts -->
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const popupMessage = document.getElementById('popup-message');
-      const overlay = document.getElementById('overlay');
-      if (popupMessage) {
-        overlay.style.display = 'block';
-        popupMessage.querySelector('.btn-close').addEventListener('click', () => {
-          popupMessage.remove();
-          overlay.remove();
+    $(document).on('click', '.delete-button', function(e) {
+        e.preventDefault();
+        console.log("Delete button clicked");  // Debug log
+        var action = $(this).data('action');
+        console.log("Action URL:", action);
+        showDeleteConfirmationModal('brand', function(itemType) {
+            console.log("Delete confirmed for", itemType);
+            $('#globalDeleteForm').attr('action', action).submit();
         });
-      }
-
-      const deleteModalElement = document.getElementById('deleteModal');
-      const deleteModal = new bootstrap.Modal(deleteModalElement, {
-        backdrop: 'static',
-        keyboard: false
-      });
-
-      const deleteButtons = document.querySelectorAll('.delete-button');
-      const deleteForm = document.getElementById('deleteForm');
-
-      deleteButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
-          e.preventDefault();
-          const action = button.getAttribute('data-action');
-          deleteForm.setAttribute('action', action);
-          deleteModal.show();
-        });
-      });
     });
   </script>
+
+  @yield('scripts')
+  
 </body>
 </html>

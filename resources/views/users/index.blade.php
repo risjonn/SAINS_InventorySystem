@@ -41,14 +41,16 @@
         @include('users.partials.user_table', ['users' => $users])
     </div>
 
-    @include('users/partials.edit-modal')
+    <form id="globalDeleteForm" method="POST" style="display: none;">
+        @csrf
+        @method('DELETE')
+    </form>
 
-    @include('users/partials.delete-confirmation-modal')
+    @include('users.partials.edit-modal')
 </div>
 @endsection
 
 @section('scripts')
-<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script>
 $(document).ready(function(){
     function fetchUsers(){
@@ -94,7 +96,7 @@ $(document).ready(function(){
           success: function(data){
              $('#users_table').html(data);
           }
-       });
+        });
     });
 
     // Use event delegation for edit buttons
@@ -115,11 +117,6 @@ $(document).ready(function(){
 
         // Dynamically set the form action URL; assuming your update route is /users/{id}
         $('#editUserForm').attr('action', '/users/' + userId);
-    });
-
-    $(document).on('click', '.delete-button', function() {
-        var action = $(this).data('action');
-        $('#deleteForm').attr('action', action);
     });
 });
 </script>

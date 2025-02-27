@@ -35,7 +35,10 @@ class BrandController extends Controller
             'active' => $request->has('active') ? true : false,
         ]);
 
-        return redirect()->route('brands.index')->with('success', 'Brand created successfully.');
+        return redirect()->route('brands.index')->with([
+            'success' => 'Brand Created Sucessfully.',
+            'resource' => 'brand'
+        ]);
     }
 
     public function edit(Brand $brand)
@@ -54,12 +57,18 @@ class BrandController extends Controller
             'active' => $request->input('active') == "1",
         ]);
 
-        return redirect()->route('brands.index')->with('success', 'Brand updated successfully.');
+        return redirect()->route('brands.index')->with([
+            'success' => 'Brand Updated Successfully.',
+            'resource' => 'brand'
+        ]);
     }
 
     public function destroy(Brand $brand)
     {
         $brand->delete();
-        return redirect()->route('brands.index')->with('success', 'Brand deleted successfully.');
+        return redirect()->route('brands.index')->with([
+            'success' => 'Brand Removed Successfully.',
+            'resource' => 'brand'
+        ]);
     }
 }

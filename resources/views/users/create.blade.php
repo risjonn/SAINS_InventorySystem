@@ -321,7 +321,7 @@ function tabForm() {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setTimeout(() => {
         el.focus();
-      }, 500);
+      },);
     },
 
     // Basic regex check for valid email format.
@@ -330,7 +330,6 @@ function tabForm() {
       return emailRegex.test(emailValue);
     },
 
-    // Enhanced password format validation.
     // Password must be at least 8 characters long, contain at least one uppercase letter,
     // one lowercase letter, one digit, and one special character from the set @$!%*?&.
     isValidPassword(passwordValue) {

@@ -46,7 +46,6 @@
                                     required>
                                 <option value="">Select Role</option>
                                 <option value="Admin">Admin</option>
-                                <option value="User Manager">User Manager</option>
                                 <option value="Super Admin">Super Admin</option>
                             </select>
                         </div>
