@@ -33,8 +33,6 @@
 
                 <button type="button" 
                         class="text-red-500 hover:text-red-700 delete-button"
-                        data-bs-toggle="modal" 
-                        data-bs-target="#deleteModal" 
                         data-action="{{ route('users.destroy', $user->id) }}">
                     <i class="fas fa-trash-alt"></i>
                 </button>

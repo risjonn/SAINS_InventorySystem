@@ -75,7 +75,10 @@ class UserManagementController extends Controller
             'role'       => $request->role,
         ]);
 
-        return redirect()->route('users.index')->with('success', 'User created successfully.');
+        return redirect()->route('users.index')->with([
+            'success'  => 'User Created Successfully.',
+            'resource' => 'user'
+        ]);
     }
 
     // Show the form to edit an existing user
@@ -98,13 +101,19 @@ class UserManagementController extends Controller
 
         $user->update($request->only('username', 'name', 'email', 'division_id', 'role'));
 
-        return redirect()->route('users.index')->with('success', 'User updated successfully.');
+        return redirect()->route('users.index')->with([
+            'success' => 'User Updated Successfully',
+            'resource' => 'user'
+        ]);
     }
 
     // Delete a user
     public function destroy(User $user)
     {
         $user->delete();
-        return redirect()->route('users.index')->with('success', 'User deleted successfully.');
+        return redirect()->route('users.index')->with([
+            'success' => 'User Removed Successfully.',
+            'resource' => 'user'
+        ]);
     }
 }

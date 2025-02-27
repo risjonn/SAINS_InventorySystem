@@ -35,7 +35,10 @@ class CategoryController extends Controller
             'active' => $request->input('active') == "1",
         ]);
 
-        return redirect()->route('category.index')->with('success', 'Category created successfully.');
+        return redirect()->route('category.index')->with([
+            'success' => 'Category Created Successfully.',
+            'resource' => 'category'
+        ]);
     }
 
     public function edit(Category $category)
@@ -54,12 +57,18 @@ class CategoryController extends Controller
             'active' => $request->input('active') == "1",
         ]);
 
-        return redirect()->route('category.index')->with('success', 'Category updated successfully.');
+        return redirect()->route('category.index')->with([
+            'success' => 'Category Updated Successfully',
+            'resource' => 'category'
+        ]);
     }
 
     public function destroy(Category $category)
     {
         $category->delete();
-        return redirect()->route('category.index')->with('success', 'Category deleted successfully.');
+        return redirect()->route('category.index')->with([
+            'success' => 'Category Removed Successfully.',
+            'resource' => 'category'
+        ]);
     }
 }

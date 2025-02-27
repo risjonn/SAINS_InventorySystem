@@ -88,6 +88,11 @@ Route::middleware(['auth'])->group(function () {
     
     // Route for showing a specific stock. This should come after the category route.
     Route::get('stocks/{stock}', [StockController::class, 'show'])->name('stocks.show');
+
+    //test route
+    Route::get('/test', function () {
+        return view('test');
+    });
 });
 
 // Logout route
