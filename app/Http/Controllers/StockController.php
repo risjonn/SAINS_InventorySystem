@@ -152,6 +152,7 @@ class StockController extends Controller
                 return $query->where('serial_number', 'LIKE', "%{$search}%")
                              ->orWhere('model', 'LIKE', "%{$search}%");
             })
+            ->orderBy('updated_at', 'desc')  // Add this line
             ->paginate(10, ['*'], 'available_page');
 
         // Loaned stocks (using a different pagination parameter)
@@ -207,6 +208,8 @@ class StockController extends Controller
                 'remarks'        => $validated['remarks'] ?? null,
                 // Optionally set status to 'available' so it appears under "Available Stocks"
                 'status'         => 'available',
+                'updated_at'     => now(),
+
             ]
         );
 

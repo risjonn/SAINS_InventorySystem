@@ -40,7 +40,7 @@
                 <a href="{{ route('stocks.transactions', ['filter' => 'LOAN']) }}"
                    class="inline-block border-l border-t border-r rounded-t px-4 py-2 
                           {{ request('filter') == 'LOAN' ? 'text-white font-bold bg-purple-600' : 'text-purple-800 font-bold bg-purple-100' }}">
-                    Loan
+                    LOAN
                 </a>
             </li>
         </ul>
@@ -97,14 +97,15 @@
             <tbody>
                 @forelse($transactions as $transaction)
                     <tr class="border-b hover:bg-gray-50">
-                        <td class="p-3">{{ $transaction->category }}</td>
-                        <td class="p-3">{{ $transaction->brand ?? 'N/A' }}</td>
-                        <td class="p-3">{{ $transaction->stock_model }}</td>
-                        <td class="p-3">{{ $transaction->serial_number }}</td>
-                        <td class="p-3">{{ $transaction->product_code ?? 'N/A' }}</td>
-                        <td class="p-3">{{ $transaction->requisition_no ?? 'N/A' }}</td>
-                        <td class="p-3">{{ $transaction->remarks }}</td>
-                        <td class="p-3">
+                        <!-- Notice the addition of 'whitespace-nowrap' to keep text in one line -->
+                        <td class="p-3 whitespace-nowrap">{{ $transaction->category }}</td>
+                        <td class="p-3 whitespace-nowrap">{{ $transaction->brand ?? 'N/A' }}</td>
+                        <td class="p-3 whitespace-nowrap">{{ $transaction->stock_model }}</td>
+                        <td class="p-3 whitespace-nowrap">{{ $transaction->serial_number }}</td>
+                        <td class="p-3 whitespace-nowrap">{{ $transaction->product_code ?? 'N/A' }}</td>
+                        <td class="p-3 whitespace-nowrap">{{ $transaction->requisition_no ?? 'N/A' }}</td>
+                        <td class="p-3 whitespace-nowrap">{{ $transaction->remarks }}</td>
+                        <td class="p-3 whitespace-nowrap">
                             {{ \Carbon\Carbon::parse($transaction->transaction_date)->format('M d, Y h:i A') }}
                         </td>
                     </tr>
@@ -120,73 +121,73 @@
     @else
         <!-- Original columns for OUT / LOAN, or any other type -->
         <table id="transactionsTable" class="w-full border rounded-lg shadow-md bg-white mt-4">
-    <thead>
-        <tr class="bg-gray-200 text-left">
-            <th class="p-3">Category</th> <!-- Added -->
-            <th class="p-3">Brand</th> <!-- Added -->
-            <th class="p-3">Serial Number</th>
-            <th class="p-3">Model</th>
-            <th class="p-3">Type (IN/OUT)</th>
-            <th class="p-3">
-                {{ in_array($currentFilter, ['OUT', 'LOAN']) ? 'Taken by' : 'Handled by' }}
-            </th>
-            <th class="p-3">Remarks</th>
-            <th class="p-3">Transaction Date</th>
-        </tr>
-    </thead>
-    <tbody>
-        @forelse($transactions as $transaction)
-            @php
-                $fullRemarks = $transaction->remarks ?? '';
-                $pattern = '/\(Taken by:\s*(.*?)\)/i';
-                $matches = [];
-                $takenByValue = '';
-                $displayRemarks = $fullRemarks;
+            <thead>
+                <tr class="bg-gray-200 text-left">
+                    <th class="p-3">Category</th> <!-- Added -->
+                    <th class="p-3">Brand</th> <!-- Added -->
+                    <th class="p-3">Serial Number</th>
+                    <th class="p-3">Model</th>
+                    <th class="p-3">Type (IN/OUT)</th>
+                    <th class="p-3">
+                        {{ in_array($currentFilter, ['OUT', 'LOAN']) ? 'Taken by' : 'Handled by' }}
+                    </th>
+                    <th class="p-3">Remarks</th>
+                    <th class="p-3">Transaction Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($transactions as $transaction)
+                    @php
+                        $fullRemarks = $transaction->remarks ?? '';
+                        $pattern = '/\(Taken by:\s*(.*?)\)/i';
+                        $matches = [];
+                        $takenByValue = '';
+                        $displayRemarks = $fullRemarks;
 
-                if (in_array($transaction->type, ['LOAN','OUT'])) {
-                    if (preg_match($pattern, $fullRemarks, $matches)) {
-                        $takenByValue = $matches[1];
-                    } else {
-                        $takenByValue = 'N/A';
-                    }
-                    $displayRemarks = trim(preg_replace($pattern, '', $fullRemarks));
-                }
-            @endphp
-            <tr class="border-b hover:bg-gray-50">
-                <td class="p-3">{{ $transaction->category }}</td> <!-- Added -->
-                <td class="p-3">{{ $transaction->brand ?? 'N/A' }}</td> <!-- Added -->
-                <td class="p-3">{{ $transaction->serial_number }}</td>
-                <td class="p-3">{{ $transaction->stock_model }}</td>
-                <td class="p-3 font-bold {{ $transaction->type == 'IN' ? 'text-green-600' : 'text-red-600' }}">
-                    {{ $transaction->type }}
-                </td>
-                <td class="p-3">
-                    @if(in_array($transaction->type, ['LOAN','OUT']))
-                        {{ $takenByValue }}
-                    @else
-                        {{ $transaction->handled_by_name }}
-                    @endif
-                </td>
-                <td class="p-3">
-                    @if(in_array($transaction->type, ['LOAN','OUT']))
-                        {{ $displayRemarks }}
-                    @else
-                        {{ $transaction->remarks }}
-                    @endif
-                </td>
-                <td class="p-3">
-                    {{ \Carbon\Carbon::parse($transaction->transaction_date)->format('M d, Y h:i A') }}
-                </td>
-            </tr>
-        @empty
-            <tr>
-                <td colspan="8" class="p-4 text-center text-gray-500">
-                    No transactions found.
-                </td>
-            </tr>
-        @endforelse
-    </tbody>
-</table>
+                        if (in_array($transaction->type, ['LOAN','OUT'])) {
+                            if (preg_match($pattern, $fullRemarks, $matches)) {
+                                $takenByValue = $matches[1];
+                            } else {
+                                $takenByValue = 'N/A';
+                            }
+                            $displayRemarks = trim(preg_replace($pattern, '', $fullRemarks));
+                        }
+                    @endphp
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-3">{{ $transaction->category }}</td> <!-- Added -->
+                        <td class="p-3">{{ $transaction->brand ?? 'N/A' }}</td> <!-- Added -->
+                        <td class="p-3">{{ $transaction->serial_number }}</td>
+                        <td class="p-3">{{ $transaction->stock_model }}</td>
+                        <td class="p-3 font-bold {{ $transaction->type == 'IN' ? 'text-green-600' : 'text-red-600' }}">
+                            {{ $transaction->type }}
+                        </td>
+                        <td class="p-3">
+                            @if(in_array($transaction->type, ['LOAN','OUT']))
+                                {{ $takenByValue }}
+                            @else
+                                {{ $transaction->handled_by_name }}
+                            @endif
+                        </td>
+                        <td class="p-3">
+                            @if(in_array($transaction->type, ['LOAN','OUT']))
+                                {{ $displayRemarks }}
+                            @else
+                                {{ $transaction->remarks }}
+                            @endif
+                        </td>
+                        <td class="p-3">
+                            {{ \Carbon\Carbon::parse($transaction->transaction_date)->format('M d, Y h:i A') }}
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="8" class="p-4 text-center text-gray-500">
+                            No transactions found.
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
     @endif
 
     <!-- Pagination Links -->
@@ -235,11 +236,11 @@ $(document).ready(function(){
     function sortTable(columnIndex, order, isDate) {
         var rows = $("#transactionsTable tbody tr").get();
         rows.sort(function(a, b) {
-            var A = $(a).children("td").eq(columnIndex).text().toUpperCase();
-            var B = $(b).children("td").eq(columnIndex).text().toUpperCase();
-            if(isDate) {
-                A = new Date(A);
-                B = new Date(B);
+            var A = $(a).children("td").eq(columnIndex).text().trim().toUpperCase();
+            var B = $(b).children("td").eq(columnIndex).text().trim().toUpperCase();
+            if (isDate) {
+                A = Date.parse(A) || 0;
+                B = Date.parse(B) || 0;
             }
             return order === "asc" 
                 ? (A < B ? -1 : (A > B ? 1 : 0))
