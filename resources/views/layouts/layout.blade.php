@@ -415,6 +415,24 @@
               headerClass = 'deleted';
               iconClass = 'fa-trash-alt';
               break;
+            case 'loan':
+              title = resource ? `${capitalize(resource)} Loaned` : 'Loan Successful!';
+              defaultMessage = resource ? `The ${resource} has been loaned successfully.` : 'Operation completed successfully.';
+              headerClass = 'loan';
+              iconClass = 'fa-hand-holding';
+              break;
+            case 'returned':
+              title = resource ? `${capitalize(resource)} Returned` : 'Return Successful!';
+              defaultMessage = resource ? `The ${resource} has been returned successfully.` : 'Operation completed successfully.';
+              headerClass = 'returned';
+              iconClass = 'fa-undo';
+              break;
+            case 'out':
+              title = resource ? `${capitalize(resource)} Out` : 'OUT Operation Successful!';
+              defaultMessage = resource ? `The ${resource} has been marked as OUT successfully.` : 'Operation completed successfully.';
+              headerClass = 'out';
+              iconClass = 'fa-arrow-right';
+              break;
             default:
               title = 'Success';
               defaultMessage = 'Operation completed successfully.';
@@ -427,7 +445,7 @@
           
           $('#globalSuccessModalLabel').text(title);
           $('#globalSuccessModal .modal-header')
-            .removeClass('default created updated deleted')
+            .removeClass('default created updated deleted loan returned out')
             .addClass(headerClass);
           $('#successModalIcon').removeClass().addClass('fas ' + iconClass + ' success-icon');
           $('#globalSuccessModalBody').html(message);
@@ -456,21 +474,25 @@
       @if(session('success'))
         <script>
           $(document).ready(function(){
-            // Get the flash success message
             let message = {!! json_encode(session('success')) !!};
-            // Determine the modal type based on message content
             let type = 'created';
             let lowerMsg = message.toLowerCase();
+            
             if(lowerMsg.indexOf('created') !== -1) {
               type = 'created';
             } else if(lowerMsg.indexOf('updated') !== -1) {
               type = 'updated';
+            } else if(lowerMsg.indexOf('loan') !== -1) {
+              type = 'loan';
+            } else if(lowerMsg.indexOf('returned') !== -1) {
+              type = 'returned';
+            } else if(lowerMsg.indexOf('out') !== -1) {
+              type = 'out';
             } else if(lowerMsg.indexOf('deleted') !== -1 || lowerMsg.indexOf('removed') !== -1) {
               type = 'deleted';
             }
-            // Dynamically get the resource type from session (default to 'resource' if not provided)
+            
             let resource = {!! json_encode(session('resource') ?? 'resource') !!};
-            // Show the global success modal using the dynamic resource type
             showGlobalSuccessModal(type, message, resource);
           });
         </script>
@@ -481,11 +503,8 @@
   <script>
     $(document).on('click', '.delete-button', function(e) {
         e.preventDefault();
-        console.log("Delete button clicked");  // Debug log
         var action = $(this).data('action');
-        console.log("Action URL:", action);
         showDeleteConfirmationModal('brand', function(itemType) {
-            console.log("Delete confirmed for", itemType);
             $('#globalDeleteForm').attr('action', action).submit();
         });
     });
