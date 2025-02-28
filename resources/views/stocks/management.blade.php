@@ -74,191 +74,27 @@
             <!-- Available Stocks Pane -->
             <div class="tab-pane fade show active" id="availableTab" role="tabpanel" aria-labelledby="available-tab">
                 <div class="mt-4">
-                    @if($availableStocks->isNotEmpty())
-                    <div class="card shadow-sm border-0" style="border-radius: 12px;">
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table id="availableStockTable" class="w-full border rounded-lg shadow-md bg-white">
-                                    <thead>
-                                        <tr class="bg-gray-200 text-left">
-                                            <th class="p-2">Serial Number</th>
-                                            <th class="p-2">Brand</th>
-                                            <th class="p-2">Model</th>
-                                            <th class="p-2">Category</th>
-                                            <th class="p-2">Product Code</th>
-                                            <th class="p-2">Requisition No.</th>
-                                            <th class="p-2">Remarks</th>
-                                            <th class="p-2">Updated At</th>
-                                            <th class="p-2">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($availableStocks as $stock)
-                                        <tr class="border-b">
-                                            <td class="p-2">{{ $stock->serial_number }}</td>
-                                            <td class="p-2">{{ $stock->brand ?? 'N/A' }}</td>
-                                            <td class="p-2">{{ $stock->model }}</td>
-                                            <td class="p-2">{{ $stock->category }}</td>
-                                            <td class="p-2">{{ $stock->product_code ?? 'N/A' }}</td>
-                                            <td class="p-2">{{ $stock->requisition_no ?? 'N/A' }}</td>
-                                            <td class="p-2">{{ $stock->remarks }}</td>
-                                            <td class="p-2">{{ \Carbon\Carbon::parse($stock->updated_at)->format('M d, Y h:i A') }}</td>
-                                            <td class="p-2">
-                                                <button type="button" class="bg-red-600 text-white px-2 py-1 rounded btn-out" data-stock-id="{{ $stock->id }}">
-                                                    OUT
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        {!! $availableStocks->appends(request()->all())->links('pagination::bootstrap-4') !!}
-                    </div>
-                    @else
-                        <p>No available stocks for this division.</p>
-                    @endif
+                    @include('stocks.partials.available-stock-table', ['availableStocks' => $availableStocks])
                 </div>
             </div>
 
             <!-- Loaned Stocks Pane -->
             <div class="tab-pane fade" id="loanedTab" role="tabpanel" aria-labelledby="loaned-tab">
                 <div class="mt-4">
-                    @if($loanedStocks->isNotEmpty())
-                    <div class="card shadow-sm border-0" style="border-radius: 12px;">
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table id="loanedStockTable" class="w-full border rounded-lg shadow-md bg-white">
-                                    <thead>
-                                        <tr class="bg-gray-200 text-left">
-                                            <th class="p-2">Serial Number</th>
-                                            <th class="p-2">Brand</th>
-                                            <th class="p-2">Model</th>
-                                            <th class="p-2">Category</th>
-                                            <th class="p-2">Product Code</th>
-                                            <th class="p-2">Requisition No.</th>
-                                            <th class="p-2">Taken by</th>
-                                            <th class="p-2">Remarks</th>
-                                            <th class="p-2">Updated At</th>
-                                            <th class="p-2">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($loanedStocks as $stock)
-                                            @php
-                                                // Grab the most recent LOAN transaction for this stock
-                                                $loanTx = $stock->transactions()
-                                                               ->where('type', 'LOAN')
-                                                               ->latest('transaction_date')
-                                                               ->first();
-                                                $takenByValue = 'N/A';
-                                                $displayRemarks = $stock->remarks;
-                                                if ($loanTx) {
-                                                    $pattern = '/\(Taken by:\s*(.*?)\)/i';
-                                                    $fullRemarks = $loanTx->remarks ?? '';
-                                                    if (preg_match($pattern, $fullRemarks, $matches)) {
-                                                        $takenByValue = $matches[1];
-                                                        $displayRemarks = trim(preg_replace($pattern, '', $fullRemarks));
-                                                    } else {
-                                                        $displayRemarks = $fullRemarks;
-                                                    }
-                                                }
-                                            @endphp
-                                            <tr class="border-b">
-                                                <td class="p-2">{{ $stock->serial_number }}</td>
-                                                <td class="p-2">{{ $stock->brand ?? 'N/A' }}</td>
-                                                <td class="p-2">{{ $stock->model }}</td>
-                                                <td class="p-2">{{ $stock->category }}</td>
-                                                <td class="p-2">{{ $stock->product_code ?? 'N/A' }}</td>
-                                                <td class="p-2">{{ $stock->requisition_no ?? 'N/A' }}</td>
-                                                <td class="p-2">{{ $takenByValue }}</td>
-                                                <td class="p-2">{{ $displayRemarks }}</td>
-                                                <td class="p-2">{{ \Carbon\Carbon::parse($stock->updated_at)->format('M d, Y h:i A') }}</td>
-                                                <td class="p-2">
-                                                    <button type="button" class="bg-blue-600 text-white px-2 py-1 rounded btn-return" data-stock-id="{{ $stock->id }}" title="Mark as Returned">
-                                                        Return
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        {!! $loanedStocks->appends(request()->all())->links('pagination::bootstrap-4') !!}
-                    </div>
-                    @else
-                        <p>No loaned stocks for this division.</p>
-                    @endif
+                    @include('stocks.partials.loaned-stock-table', ['loanedStocks' => $loanedStocks])
                 </div>
             </div>
         </div>
     @endif
 </div>
 
-@if($selectedDivision !== 'all')
-<!-- Modal for OUT/Loan/Return Operation -->
-<div class="modal fade" id="operationModal" tabindex="-1" aria-labelledby="operationModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <form id="operationForm" method="POST" action="{{ route('stocks.transactions.storeOutOrLoan') }}">
-        @csrf
-        <!-- Hidden field for Stock ID -->
-        <input type="hidden" name="stock_id" id="stock_id">
-        <!-- Hidden field to force operation type for returns -->
-        <input type="hidden" name="force_operation_type" id="force_operation_type" value="">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="operationModalLabel">Confirm Operation</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <!-- Operation Type (displayed only for OUT/Loan; hidden when processing return) -->
-            <div class="mb-3" id="operationTypeContainer">
-                <label class="form-label">Operation Type</label>
-                <div>
-                    <label class="form-check-label me-2">
-                        <input type="radio" name="operation_type" value="OUT" class="form-check-input" checked>
-                        OUT
-                    </label>
-                    <label class="form-check-label">
-                        <input type="radio" name="operation_type" value="LOAN" class="form-check-input">
-                        Loan
-                    </label>
-                </div>
-            </div>
-            <!-- Remarks Field -->
-            <div class="mb-3">
-                <label for="operationRemark" class="form-label">Remarks</label>
-                <textarea name="remarks" id="operationRemark" class="form-control" required></textarea>
-            </div>
-            <!-- Taken by Field (for BOTH OUT and LOAN) -->
-            <div class="mb-3" id="loanFields" style="display: none;">
-                <label for="taken_by" class="form-label">Taken by</label>
-                <input type="text" name="taken_by" id="taken_by" class="form-control">
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-danger">Confirm Operation</button>
-          </div>
-        </div>
-      </form>
-    </div>
-</div>
-@endif
+@include('stocks.partials.operation-modal')
 
 @endsection
 
 @section('scripts')
 <!-- Include jQuery once -->
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-<!-- Include Bootstrap Bundle for modal functionality -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 $(document).ready(function(){
 
@@ -395,7 +231,7 @@ $(document).ready(function(){
         $("#stock_id").val(stockId);
         var operationModalEl = document.getElementById('operationModal');
         var operationModal = new bootstrap.Modal(operationModalEl);
-        $("#operationModalLabel").text("Confirm Operation");
+        $("#operationModalLabel").text("Confirm Transaction Details");
         $("#operationTypeContainer").show();
         $("#force_operation_type").val('');
         // Reset the remarks and show the operation type radio
@@ -407,7 +243,7 @@ $(document).ready(function(){
     });
 
     /* ======================= Return Button Functionality ======================= */
-    $('.btn-return').on('click', function(){
+    $(document).on('click', '.btn-return', function(){
         var stockId = $(this).data('stock-id');
         $("#stock_id").val(stockId);
         var operationModalEl = document.getElementById('operationModal');
@@ -415,9 +251,11 @@ $(document).ready(function(){
         $("#operationModalLabel").text("Confirm Return");
         $("#operationTypeContainer").hide();
         $("#force_operation_type").val('RETURN');
-        // Reset the remarks
+        // Reset the remarks field
         $("#operationRemark").val('');
+        // Hide the "taken_by" field and remove required attribute for return mode
         $("#loanFields").hide();
+        $("#taken_by").prop('required', false);
         operationModal.show();
     });
 
@@ -435,9 +273,11 @@ $(document).ready(function(){
     $('#operationModal').on("hidden.bs.modal", function (e) {
         $(this).find('form')[0].reset();
         $("#loanFields").hide();
-        $("#operationModalLabel").text("Confirm Operation");
+        $("#operationModalLabel").text("Confirm Transaction Details");
         $("#operationTypeContainer").show();
         $("#force_operation_type").val('');
+        // Re-enable required attribute for taken_by (for future use in OUT/LOAN mode)
+        $("#taken_by").prop('required', true);
     });
 });
 </script>

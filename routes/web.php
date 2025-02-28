@@ -49,8 +49,7 @@ Route::middleware(['auth', 'role:Admin|Super Admin'])->group(function () {
          ->name('stocks.transactions.storeIn');
 
         // Inline OUT operation from the management page
-        Route::post('stocks/{stock}/out', [StockController::class, 'outOperation'])->name('stocks.out');
-        Route::post('/stocks/transactions/storeOutOrLoan', [StockController::class, 'storeOutOrLoan'])->name('stocks.transactions.storeOutOrLoan');
+        Route::post('/stocks/transactions/storeOutLoanReturn', [StockController::class, 'storeOutLoanReturn'])->name('stocks.transactions.storeOutLoanReturn');
         Route::get('stocks/loan', [StockController::class, 'loanedStocks'])->name('stocks.loan');
 
 
