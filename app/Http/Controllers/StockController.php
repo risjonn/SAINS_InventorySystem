@@ -85,13 +85,17 @@ class StockController extends Controller
 
         if ($filter !== 'all') {
             $transactionsQuery->where('stock_transactions.type', $filter);
+             if ($filter === 'IN') {
+            $transactionsQuery->where('stocks.status', 'available');
+        }
         }
 
         // Apply search filter
         if ($search) {
             $transactionsQuery->where(function($q) use ($search, $selectedDivision) {
                 $q->where('stock_transactions.serial_number', 'LIKE', $search.'%')
-                  ->orWhere('stock_transactions.stock_model', 'LIKE', $search.'%');
+                  ->orWhere('stock_transactions.stock_model', 'LIKE', $search.'%')
+                  ->orWhere('stock_transactions.requisition_no', 'LIKE', "%{$search}%");
                 if ($selectedDivision === 'all') {
                     $q->orWhereHas('stock.division', function($q2) use ($search) {
                         $q2->where('name', 'LIKE', $search.'%');
