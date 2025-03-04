@@ -75,11 +75,18 @@ $(document).ready(function(){
         });
     }
 
-    // Trigger live search when pressing Enter on the search field
-    $('#search').on('keyup', function(e){
-       if(e.keyCode === 13){
-           fetchUsers();
-       }
+    // Trigger live search 
+    var typingTimer;
+    var debounceInterval = 300;
+
+    $('#search').on('keyup', function(){
+        clearTimeout(typingTimer);
+        var searchValue = $(this).val();
+        if(searchValue.length >= 1){
+            typingTimer = setTimeout(fetchUsers, debounceInterval);
+        } else {
+            fetchUsers();
+        }
     });
 
     // Trigger filters on change
