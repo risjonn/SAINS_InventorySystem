@@ -3,7 +3,25 @@
 @section('title', 'Manage Brands')
 
 @section('content')
-<div class="container mx-auto px-4 my-5">
+<div class="container mx-auto px-4 my-5" x-data="{
+    searchQuery: '{{ request('q') }}', 
+    statusFilter: '{{ request('status') }}', 
+    fetchBrands() {
+        console.log('Fetching brands with search:', this.searchQuery, 'and status:', this.statusFilter);
+        
+        fetch('{{ route("brands.index") }}?q=' + this.searchQuery + '&status=' + this.statusFilter, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(response => response.text())
+            .then(data => {
+                console.log('AJAX response data:', data);
+                document.getElementById('brands_table').innerHTML = data;
+            })
+            .catch(error => console.error('Error fetching brands:', error));
+    }
+}">
     <h2 class="text-xl font-semibold mb-4">Manage Brands</h2>
 
     <!-- Button to trigger Create Brand modal -->
@@ -12,52 +30,41 @@
         <i class="fas fa-plus mr-1"></i> Add New Brand
     </button>
 
-    <!-- Brands Listing Table -->
-    <table class="min-w-full mt-4 border rounded-lg shadow-md bg-white">
-        <thead>
-            <tr class="bg-gray-200 text-left">
-                <th class="p-2">Brand Name</th>
-                <th class="p-2">Status</th>
-                <th class="p-2">Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($brands as $brand)
-            <tr class="border-b">
-                <td class="p-2">{{ $brand->name }}</td>
-                <td class="p-2">{{ $brand->active ? 'Active' : 'Inactive' }}</td>
-                <td class="p-2">
-                    <!-- Edit Button with data attributes -->
-                    <button type="button" class="text-blue-500 hover:text-blue-700 mr-2"
-                        data-bs-toggle="modal" data-bs-target="#editBrandModal"
-                        data-name="{{ $brand->name }}"
-                        data-active="{{ $brand->active }}"
-                        data-update-url="{{ route('brands.update', $brand->id) }}">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <!-- Delete Button triggers the Delete Modal -->
-                    <button type="button" class="text-red-500 hover:text-red-700 delete-button"
-                        data-action="{{ route('brands.destroy', $brand->id) }}">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
+    <!-- Search and Filter Card -->
+    <div class="bg-white p-4 rounded-md shadow mb-6">
+        <div class="flex flex-col sm:flex-row gap-4 items-center">
+            <!-- Search input -->
+            <input type="text" id="search" placeholder="Search by brand name" 
+                   class="w-full sm:w-1/3 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" 
+                   x-model="searchQuery" x-on:input.debounce.300ms="fetchBrands">
+            
+            <!-- Status filter dropdown -->
+            <select id="status_filter" class="w-full sm:w-1/4 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" 
+                    x-model="statusFilter" x-on:change="fetchBrands">
+                <option value="">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+            </select>
 
-    <!-- Pagination -->
-    <div class="mt-4">
-        {{ $brands->links() }}
+            <!-- Search button -->
+            <button type="button" class="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 transition-colors text-white px-4 py-2 rounded-md shadow flex items-center justify-center"
+                    @click="fetchBrands">
+                <i class="fas fa-search mr-1"></i> Search
+            </button>
+        </div>
     </div>
+
+    <!-- Brands Listing Table -->
+    <div id="brands_table">
+        @include('brands.partials.brand_table', ['brands' => $brands])
+    </div>
+
+    <form id="globalDeleteForm" method="POST" style="display: none;">
+        @csrf
+        @method('DELETE')
+    </form>
+
+    @include('brands.partials.create-modal')
+    @include('brands.partials.edit-modal')
 </div>
-
-<form id="globalDeleteForm" method="POST" style="display: none;">
-  @csrf
-  @method('DELETE')
-</form>
-
-@include('brands.partials.create-modal')
-@include('brands.partials.edit-modal')
-
 @endsection

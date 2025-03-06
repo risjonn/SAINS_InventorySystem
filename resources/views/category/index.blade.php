@@ -3,7 +3,25 @@
 @section('title', 'Manage Categories')
 
 @section('content')
-<div class="container mx-auto px-4 my-5">
+<div class="container mx-auto px-4 my-5" x-data="{
+    searchQuery: '{{ request('q') }}', 
+    statusFilter: '{{ request('status') }}', 
+    fetchCategories() {
+        console.log('Fetching categories with search:', this.searchQuery, 'and status:', this.statusFilter);
+        
+        fetch('{{ route("category.index") }}?q=' + this.searchQuery + '&status=' + this.statusFilter, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(response => response.text())
+            .then(data => {
+                console.log('AJAX response data:', data);
+                document.getElementById('category_table').innerHTML = data;
+            })
+            .catch(error => console.error('Error fetching categories:', error));
+    }
+}">
     <h2 class="text-xl font-semibold mb-4">Manage Categories</h2>
 
     <!-- Button to trigger Create Category modal -->
@@ -12,52 +30,41 @@
         <i class="fas fa-plus mr-1"></i> Add New Category
     </button>
 
-    <!-- Categories Listing Table -->
-    <table class="min-w-full mt-4 border rounded-lg shadow-md bg-white">
-        <thead>
-            <tr class="bg-gray-200 text-left">
-                <th class="p-2">Category Name</th>
-                <th class="p-2">Status</th>
-                <th class="p-2">Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($categories as $category)
-            <tr class="border-b">
-                <td class="p-2">{{ $category->name }}</td>
-                <td class="p-2">{{ $category->active ? 'Active' : 'Inactive' }}</td>
-                <td class="p-2">
-                    <!-- Edit Button with data attributes -->
-                    <button type="button" class="text-blue-500 hover:text-blue-700 mr-2"
-                        data-bs-toggle="modal" data-bs-target="#editCategoryModal"
-                        data-name="{{ $category->name }}"
-                        data-active="{{ $category->active }}"
-                        data-update-url="{{ route('category.update', $category->id) }}">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <!-- Delete Button triggers the Delete Modal -->
-                    <button type="button" class="text-red-500 hover:text-red-700 delete-button"
-                        data-action="{{ route('category.destroy', $category->id) }}">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
+    <!-- Search and Filter Card -->
+    <div class="bg-white p-4 rounded-md shadow mb-6">
+        <div class="flex flex-col sm:flex-row gap-4 items-center">
+            <!-- Search input -->
+            <input type="text" id="search" placeholder="Search by category name" 
+                   class="w-full sm:w-1/3 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" 
+                   x-model="searchQuery" x-on:input.debounce.300ms="fetchCategories">
+            
+            <!-- Status filter dropdown -->
+            <select id="status_filter" class="w-full sm:w-1/4 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" 
+                    x-model="statusFilter" x-on:change="fetchCategories">
+                <option value="">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+            </select>
 
-    <!-- Pagination -->
-    <div class="mt-4">
-        {{ $categories->links() }}
+            <!-- Search button -->
+            <button type="button" class="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 transition-colors text-white px-4 py-2 rounded-md shadow flex items-center justify-center"
+                    @click="fetchCategories">
+                <i class="fas fa-search mr-1"></i> Search
+            </button>
+        </div>
     </div>
+
+    <!-- Category Listing Table -->
+    <div id="category_table">
+        @include('category.partials.category_table', ['category' => $categories])
+    </div>
+
+    <form id="globalDeleteForm" method="POST" style="display: none;">
+        @csrf
+        @method('DELETE')
+    </form>
+
+    @include('category.partials.create-modal')
+    @include('category.partials.edit-modal')
 </div>
-
-<form id="globalDeleteForm" method="POST" style="display: none;">
-  @csrf
-  @method('DELETE')
-</form>
-
-@include('category.partials.create-modal')
-@include('category.partials.edit-modal')
-
 @endsection

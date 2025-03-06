@@ -19,21 +19,21 @@
             <td class="p-2">{{ $user->role }}</td>
             <td class="p-2">
                 <button type="button" 
-                    class="edit-user-btn text-blue-500 hover:text-blue-700"
-                    data-bs-toggle="modal" 
-                    data-bs-target="#editUserModal"
-                    data-id="{{ $user->id }}"
-                    data-username="{{ $user->username }}"
-                    data-name="{{ $user->name }}"
-                    data-email="{{ $user->email }}"
-                    data-division="{{ $user->division ? $user->division->id : '' }}"
-                    data-role="{{ $user->role }}">
+                    class="text-blue-500 hover:text-blue-700"
+                    @click="openModal({
+                        id: '{{ $user->id }}',
+                        username: '{{ addslashes($user->username) }}',
+                        name: '{{ addslashes($user->name) }}',
+                        email: '{{ addslashes($user->email) }}',
+                        division_id: '{{ $user->division?->id }}',
+                        role: '{{ addslashes($user->role) }}'
+                    })">
                     <i class="fas fa-edit"></i>
                 </button>
-
+                
                 <button type="button" 
                         class="text-red-500 hover:text-red-700 delete-button"
-                        data-action="{{ route('users.destroy', $user->id) }}">
+                        @click="deleteUser('{{ route('users.destroy', $user->id) }}')">
                     <i class="fas fa-trash-alt"></i>
                 </button>
             </td>
@@ -41,4 +41,9 @@
         @endforeach
     </tbody>
 </table>
-{{ $users->links() }}
+
+@if($users->hasPages())
+<div class="mt-4">
+    {{ $users->appends(request()->query())->links() }}
+</div>
+@endif  

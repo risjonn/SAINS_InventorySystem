@@ -13,9 +13,25 @@ class CategoryController extends Controller
         $this->middleware(['auth', 'role:Super Admin']);
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $categories = Category::orderBy('name')->paginate(10);
+        $query = Category::query();
+
+        if ($search = $request->query('q')) {
+            $query->where('name', 'LIKE', "%{$search}%");
+        }
+
+        if ($request->has('status') && $request->status != "") {
+            $status = $request->status === 'Active' ? true : false;
+            $query->where('active', $status);
+        }
+
+        $categories = $query->orderBy('name')->paginate(10);
+
+        if ($request->ajax()) {
+            return view('category.partials.category_table', compact('categories'))->render();
+        }
+
         return view('category.index', compact('categories'));
     }
 
