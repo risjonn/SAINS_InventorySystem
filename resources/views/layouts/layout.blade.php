@@ -86,7 +86,7 @@
             @mouseleave="iconHovered = false; clearActive()">
           <a href="{{ route('dashboard') }}" 
              :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
-             class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 {{ request()->routeIs('dashboard') ? 'bg-gray-100 text-blue-600' : 'text-gray-600' }}"
+             class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 {{ (request()->routeIs('dashboard') || request()->routeIs('stocks.low')) ? 'bg-gray-100 text-blue-600' : 'text-gray-600' }}"
              x-bind:class="($store.activeTooltip.current === 'dashboard') ? 'bg-gray-200 text-blue-600' : ''">
             <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center group-hover:text-blue-600">
               <i class="fas fa-home text-lg"></i>

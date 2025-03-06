@@ -90,7 +90,7 @@
 
     <!-- Filters -->
     <div class="bg-white p-4 rounded-md shadow mb-6">
-        <div class="flex flex-col sm:flex-row gap-4 items-center">
+        <div class="flex flex-col sm:flex-row gap-4 items-center justify-center">
             <input type="text" 
                    x-model="searchQuery" 
                    @input.debounce.300ms="fetchUsers()" 

@@ -22,17 +22,21 @@
             .catch(error => console.error('Error fetching brands:', error));
     }
 }">
-    <h2 class="text-xl font-semibold mb-4">Manage Brands</h2>
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">Manage Brands</h2>
+        <!-- Button to trigger Create Brand modal -->
+        <button type="button" class="bg-green-500 hover:bg-green-600 transition-colors text-white px-5 py-3 rounded-md shadow"
+        data-bs-toggle="modal" data-bs-target="#createBrandModal">
+            <i class="fas fa-plus mr-1"></i> Add New Brand
+        </button>
+    </div>
 
-    <!-- Button to trigger Create Brand modal -->
-    <button type="button" class="bg-green-600 text-white px-4 py-2 rounded mb-4"
-            data-bs-toggle="modal" data-bs-target="#createBrandModal">
-        <i class="fas fa-plus mr-1"></i> Add New Brand
-    </button>
+
 
     <!-- Search and Filter Card -->
     <div class="bg-white p-4 rounded-md shadow mb-6">
-        <div class="flex flex-col sm:flex-row gap-4 items-center">
+        <div class="flex flex-col sm:flex-row gap-4 items-center justify-center">
             <!-- Search input -->
             <input type="text" id="search" placeholder="Search by brand name" 
                    class="w-full sm:w-1/3 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" 
