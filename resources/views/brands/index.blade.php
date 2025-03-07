@@ -81,19 +81,25 @@
         <table class="min-w-full mt-4 border rounded-lg shadow-md bg-white">
             <thead>
                 <tr class="bg-gray-200 text-left">
-                    <th class="p-2 cursor-pointer" x-on:click.stop="sortTable('name')">
+                    <th class="p-2 cursor-pointer" x-on:click="sortTable('name')">
                         <div class="flex items-center">
                             <span>Brand Name</span>
-                            <span class="inline-block w-4 text-center" x-on:click.stop>
-                                <span x-show="sortBy === 'name'" x-text="sortDirection === 'asc' ? '▲' : '▼'"></span>
+                            <span class="flex flex-col items-center justify-center w-6 gap-0">
+                                <i class="fas fa-sort-up m-0 leading-none -mb-1.5"
+                                   :class="{'text-blue-700': sortBy === 'name' && sortDirection === 'asc', 'text-gray-400': !(sortBy === 'name' && sortDirection === 'asc')}"></i>
+                                <i class="fas fa-sort-down m-0 leading-none -mt-1.5"
+                                   :class="{'text-blue-700': sortBy === 'name' && sortDirection === 'desc', 'text-gray-400': !(sortBy === 'name' && sortDirection === 'desc')}"></i>
                             </span>
                         </div>
                     </th>
-                    <th class="p-2 cursor-pointer" x-on:click.stop="sortTable('active')">
+                    <th class="p-2 cursor-pointer" x-on:click="sortTable('active')">
                         <div class="flex items-center">
                             <span>Status</span>
-                            <span class="inline-block w-4 text-center" x-on:click.stop>
-                                <span x-show="sortBy === 'active'" x-text="sortDirection === 'asc' ? '▲' : '▼'"></span>
+                            <span class="flex flex-col items-center justify-center w-6 gap-0">
+                                <i class="fas fa-sort-up m-0 leading-none -mb-1.5"
+                                   :class="{'text-blue-700': sortBy === 'active' && sortDirection === 'asc', 'text-gray-400': !(sortBy === 'active' && sortDirection === 'asc')}"></i>
+                                <i class="fas fa-sort-down m-0 leading-none -mt-1.5"
+                                   :class="{'text-blue-700': sortBy === 'active' && sortDirection === 'desc', 'text-gray-400': !(sortBy === 'active' && sortDirection === 'desc')}"></i>
                             </span>
                         </div>
                     </th>
