@@ -13,9 +13,28 @@ class BrandController extends Controller
         $this->middleware(['auth', 'role:Super Admin']);
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $brands = Brand::orderBy('name')->paginate(10);
+        $query = Brand::query();
+        
+        if ($search = $request->query('q')) {
+            $query->where('name', 'LIKE', "%{$search}%");
+        }
+        
+        if ($request->has('status') && $request->status != "") {
+            $status = $request->status === 'Active' ? true : false;
+            $query->where('active', $status);
+        }
+    
+        $sortBy = $request->query('sort_by', 'name');
+        $sortDirection = $request->query('sort_direction', 'asc');
+    
+        $brands = $query->orderBy($sortBy, $sortDirection)->paginate(10);
+        
+        if ($request->ajax()) {
+            return view('brands.partials.brand_table_body', compact('brands'))->render();
+        }
+        
         return view('brands.index', compact('brands'));
     }
 

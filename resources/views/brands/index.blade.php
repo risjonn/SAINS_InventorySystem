@@ -3,61 +3,124 @@
 @section('title', 'Manage Brands')
 
 @section('content')
-<div class="container mx-auto px-4 my-5">
-    <h2 class="text-xl font-semibold mb-4">Manage Brands</h2>
+<div class="container mx-auto px-4 my-5" x-data="{
+    searchQuery: '{{ request('q') }}',
+    statusFilter: '{{ request('status') }}',
+    sortBy: '{{ request('sort_by', 'name') }}',
+    sortDirection: '{{ request('sort_direction', 'asc') }}',
 
-    <!-- Button to trigger Create Brand modal -->
-    <button type="button" class="bg-green-600 text-white px-4 py-2 rounded mb-4"
-            data-bs-toggle="modal" data-bs-target="#createBrandModal">
-        <i class="fas fa-plus mr-1"></i> Add New Brand
-    </button>
+    fetchBrands() {
+        console.log('Fetching brands with search:', this.searchQuery, 'status:', this.statusFilter, 'sortBy:', this.sortBy, 'sortDirection:', this.sortDirection);
+        
+        fetch('{{ route("brands.index") }}?' + new URLSearchParams({
+            q: this.searchQuery,
+            status: this.statusFilter,
+            sort_by: this.sortBy,
+            sort_direction: this.sortDirection
+        }), {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(response => response.text())
+            .then(data => {
+                console.log('AJAX response data:', data);
+                document.getElementById('brands_tbody').innerHTML = data;
+            })
+            .catch(error => console.error('Error fetching brands:', error));
+    },
+
+    sortTable(column) {
+        if (this.sortBy === column) {
+            this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.sortBy = column;
+            this.sortDirection = 'asc';
+        }
+        this.fetchBrands();
+    }
+}">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">Manage Brands</h2>
+        <!-- Button to trigger Create Brand modal -->
+        <button type="button" class="bg-green-500 hover:bg-green-600 transition-colors text-white px-5 py-3 rounded-md shadow"
+        data-bs-toggle="modal" data-bs-target="#createBrandModal">
+            <i class="fas fa-plus mr-1"></i> Add New Brand
+        </button>
+    </div>
+
+
+
+    <!-- Search and Filter Card -->
+    <div class="bg-white p-4 rounded-md shadow mb-6">
+        <div class="flex flex-col sm:flex-row gap-4 items-center justify-center">
+            <!-- Search input -->
+            <input type="text" id="search" placeholder="Search by brand name" 
+                   class="w-full sm:w-1/3 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" 
+                   x-model="searchQuery" x-on:input.debounce.300ms="fetchBrands">
+            
+            <!-- Status filter dropdown -->
+            <select id="status_filter" class="w-full sm:w-1/4 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" 
+                    x-model="statusFilter" x-on:change="fetchBrands">
+                <option value="">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+            </select>
+
+            <!-- Search button -->
+            <button type="button" class="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 transition-colors text-white px-4 py-2 rounded-md shadow flex items-center justify-center"
+                    @click="fetchBrands">
+                <i class="fas fa-search mr-1"></i> Search
+            </button>
+        </div>
+    </div>
 
     <!-- Brands Listing Table -->
-    <table class="min-w-full mt-4 border rounded-lg shadow-md bg-white">
-        <thead>
-            <tr class="bg-gray-200 text-left">
-                <th class="p-2">Brand Name</th>
-                <th class="p-2">Status</th>
-                <th class="p-2">Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($brands as $brand)
-            <tr class="border-b">
-                <td class="p-2">{{ $brand->name }}</td>
-                <td class="p-2">{{ $brand->active ? 'Active' : 'Inactive' }}</td>
-                <td class="p-2">
-                    <!-- Edit Button with data attributes -->
-                    <button type="button" class="text-blue-500 hover:text-blue-700 mr-2"
-                        data-bs-toggle="modal" data-bs-target="#editBrandModal"
-                        data-name="{{ $brand->name }}"
-                        data-active="{{ $brand->active }}"
-                        data-update-url="{{ route('brands.update', $brand->id) }}">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <!-- Delete Button triggers the Delete Modal -->
-                    <button type="button" class="text-red-500 hover:text-red-700 delete-button"
-                        data-action="{{ route('brands.destroy', $brand->id) }}">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
-
-    <!-- Pagination -->
-    <div class="mt-4">
-        {{ $brands->links() }}
+    <div id="brands_table">
+        <table class="min-w-full mt-4 border rounded-lg shadow-md bg-white">
+            <thead>
+                <tr class="bg-gray-200 text-left">
+                    <th class="p-2 cursor-pointer" x-on:click="sortTable('name')">
+                        <div class="flex items-center">
+                            <span>Brand Name</span>
+                            <span class="flex flex-col items-center justify-center w-6 gap-0">
+                                <i class="fas fa-sort-up m-0 leading-none -mb-1.5"
+                                   :class="{'text-blue-700': sortBy === 'name' && sortDirection === 'asc', 'text-gray-400': !(sortBy === 'name' && sortDirection === 'asc')}"></i>
+                                <i class="fas fa-sort-down m-0 leading-none -mt-1.5"
+                                   :class="{'text-blue-700': sortBy === 'name' && sortDirection === 'desc', 'text-gray-400': !(sortBy === 'name' && sortDirection === 'desc')}"></i>
+                            </span>
+                        </div>
+                    </th>
+                    <th class="p-2 cursor-pointer" x-on:click="sortTable('active')">
+                        <div class="flex items-center">
+                            <span>Status</span>
+                            <span class="flex flex-col items-center justify-center w-6 gap-0">
+                                <i class="fas fa-sort-up m-0 leading-none -mb-1.5"
+                                   :class="{'text-blue-700': sortBy === 'active' && sortDirection === 'asc', 'text-gray-400': !(sortBy === 'active' && sortDirection === 'asc')}"></i>
+                                <i class="fas fa-sort-down m-0 leading-none -mt-1.5"
+                                   :class="{'text-blue-700': sortBy === 'active' && sortDirection === 'desc', 'text-gray-400': !(sortBy === 'active' && sortDirection === 'desc')}"></i>
+                            </span>
+                        </div>
+                    </th>
+                    <th class="p-2">Action</th>
+                </tr>
+            </thead>
+            <tbody id="brands_tbody">
+                @include('brands.partials.brand_table_body', ['brands' => $brands])
+            </tbody>
+        </table>
+        <div class="mt-4">
+            {{ $brands->appends(request()->query())->links() }}
+        </div>
     </div>
+
+    <form id="globalDeleteForm" method="POST" style="display: none;">
+        @csrf
+        @method('DELETE')
+    </form>
+
+    @include('brands.partials.create-modal')
+    @include('brands.partials.edit-modal')
 </div>
-
-<form id="globalDeleteForm" method="POST" style="display: none;">
-  @csrf
-  @method('DELETE')
-</form>
-
-@include('brands.partials.create-modal')
-@include('brands.partials.edit-modal')
-
 @endsection
