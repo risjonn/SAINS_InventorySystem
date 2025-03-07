@@ -86,7 +86,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/stocks/transactions/search', [StockController::class, 'ajaxSearch'])->name('stocks.transactions.search');
     
     // Route for showing a specific stock. This should come after the category route.
-    Route::get('stocks/{stock}', [StockController::class, 'show'])->name('stocks.show');
+    Route::get('stocks/show/{category}/{division}', [StockController::class, 'show'])->name('stocks.show');
+
+
+    Route::get('/transactions/details', [StockController::class, 'getTransactionDetails'])
+    ->name('transactions.details');
 
     //test route
     Route::get('/test', function () {
