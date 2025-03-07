@@ -20,18 +20,21 @@ class BrandController extends Controller
         if ($search = $request->query('q')) {
             $query->where('name', 'LIKE', "%{$search}%");
         }
-    
+        
         if ($request->has('status') && $request->status != "") {
             $status = $request->status === 'Active' ? true : false;
             $query->where('active', $status);
         }
     
-        $brands = $query->orderBy('name')->paginate(10);
+        $sortBy = $request->query('sort_by', 'name');
+        $sortDirection = $request->query('sort_direction', 'asc');
     
+        $brands = $query->orderBy($sortBy, $sortDirection)->paginate(10);
+        
         if ($request->ajax()) {
-            return view('brands.partials.brand_table', compact('brands'))->render();
+            return view('brands.partials.brand_table_body', compact('brands'))->render();
         }
-    
+        
         return view('brands.index', compact('brands'));
     }
 

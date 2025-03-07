@@ -16,22 +16,25 @@ class CategoryController extends Controller
     public function index(Request $request)
     {
         $query = Category::query();
-
+    
         if ($search = $request->query('q')) {
             $query->where('name', 'LIKE', "%{$search}%");
         }
-
+    
         if ($request->has('status') && $request->status != "") {
             $status = $request->status === 'Active' ? true : false;
             $query->where('active', $status);
         }
-
-        $categories = $query->orderBy('name')->paginate(10);
-
+    
+        $sortBy = $request->query('sort_by', 'name');
+        $sortDirection = $request->query('sort_direction', 'asc');
+    
+        $categories = $query->orderBy($sortBy, $sortDirection)->paginate(10);
+    
         if ($request->ajax()) {
-            return view('category.partials.category_table', compact('categories'))->render();
+            return view('category.partials.category_table_body', compact('categories'))->render();
         }
-
+    
         return view('category.index', compact('categories'));
     }
 

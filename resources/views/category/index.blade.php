@@ -4,12 +4,20 @@
 
 @section('content')
 <div class="container mx-auto px-4 my-5" x-data="{
-    searchQuery: '{{ request('q') }}', 
-    statusFilter: '{{ request('status') }}', 
+    searchQuery: '{{ request('q') }}',
+    statusFilter: '{{ request('status') }}',
+    sortBy: '{{ request('sort_by', 'name') }}',
+    sortDirection: '{{ request('sort_direction', 'asc') }}',
+
     fetchCategories() {
-        console.log('Fetching categories with search:', this.searchQuery, 'and status:', this.statusFilter);
+        console.log('Fetching categories with search:', this.searchQuery, 'status:', this.statusFilter, 'sortBy:', this.sortBy, 'sortDirection:', this.sortDirection);
         
-        fetch('{{ route("category.index") }}?q=' + this.searchQuery + '&status=' + this.statusFilter, {
+        fetch('{{ route("category.index") }}?' + new URLSearchParams({
+            q: this.searchQuery,
+            status: this.statusFilter,
+            sort_by: this.sortBy,
+            sort_direction: this.sortDirection
+        }), {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
             }
@@ -17,9 +25,19 @@
             .then(response => response.text())
             .then(data => {
                 console.log('AJAX response data:', data);
-                document.getElementById('category_table').innerHTML = data;
+                document.getElementById('category_tbody').innerHTML = data;
             })
             .catch(error => console.error('Error fetching categories:', error));
+    },
+
+    sortTable(column) {
+        if (this.sortBy === column) {
+            this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.sortBy = column;
+            this.sortDirection = 'asc';
+        }
+        this.fetchCategories();
     }
 }">
     <!-- Header -->
@@ -57,8 +75,37 @@
     </div>
 
     <!-- Category Listing Table -->
+
     <div id="category_table">
-        @include('category.partials.category_table', ['category' => $categories])
+        <table class="min-w-full mt-4 border rounded-lg shadow-md bg-white">
+            <thead>
+                <tr class="bg-gray-200 text-left">
+                    <th class="p-2 cursor-pointer" x-on:click.stop="sortTable('name')">
+                        <div class="flex items-center">
+                            <span>Category Name</span>
+                            <span class="inline-block w-4 text-center" x-on:click.stop>
+                                <span x-show="sortBy === 'name'" x-text="sortDirection === 'asc' ? '▲' : '▼'"></span>
+                            </span>
+                        </div>
+                    </th>
+                    <th class="p-2 cursor-pointer" x-on:click.stop="sortTable('active')">
+                        <div class="flex items-center">
+                            <span>Status</span>
+                            <span class="inline-block w-4 text-center" x-on:click.stop>
+                                <span x-show="sortBy === 'active'" x-text="sortDirection === 'asc' ? '▲' : '▼'"></span>
+                            </span>
+                        </div>
+                    </th>
+                    <th class="p-2">Action</th>
+                </tr>
+            </thead>
+            <tbody id="category_tbody">
+                @include('category.partials.category_table_body', ['categories' => $categories])
+            </tbody>
+        </table>
+        <div class="mt-4">
+            {{ $categories->appends(request()->query())->links() }}
+        </div>
     </div>
 
     <form id="globalDeleteForm" method="POST" style="display: none;">
