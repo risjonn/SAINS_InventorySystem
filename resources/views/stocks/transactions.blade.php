@@ -54,7 +54,7 @@
                 <div class="input-group">
                     <input type="text" id="searchInput" name="search" 
                            value="{{ request('search') }}"
-                           placeholder="Search transactions... (Serial Number, Model)"
+                           placeholder="Search transactions... (Serial Number, Model, Requisition No.)"
                            class="form-control">
                     <div class="input-group-append">
                         <button type="submit" class="btn btn-primary ml-2">Apply</button>
@@ -97,7 +97,6 @@
             <tbody>
                 @forelse($transactions as $transaction)
                     <tr class="border-b hover:bg-gray-50">
-                        <!-- Notice the addition of 'whitespace-nowrap' to keep text in one line -->
                         <td class="p-3 whitespace-nowrap">{{ $transaction->category }}</td>
                         <td class="p-3 whitespace-nowrap">{{ $transaction->brand ?? 'N/A' }}</td>
                         <td class="p-3 whitespace-nowrap">{{ $transaction->stock_model }}</td>
@@ -119,12 +118,12 @@
             </tbody>
         </table>
     @else
-        <!-- Original columns for OUT / LOAN, or any other type -->
+        <!-- Original columns for OUT / LOAN -->
         <table id="transactionsTable" class="w-full border rounded-lg shadow-md bg-white mt-4">
             <thead>
                 <tr class="bg-gray-200 text-left">
-                    <th class="p-3">Category</th> <!-- Added -->
-                    <th class="p-3">Brand</th> <!-- Added -->
+                    <th class="p-3">Category</th>
+                    <th class="p-3">Brand</th>
                     <th class="p-3">Serial Number</th>
                     <th class="p-3">Model</th>
                     <th class="p-3">Type (IN/OUT)</th>
@@ -143,7 +142,6 @@
                         $matches = [];
                         $takenByValue = '';
                         $displayRemarks = $fullRemarks;
-
                         if (in_array($transaction->type, ['LOAN','OUT'])) {
                             if (preg_match($pattern, $fullRemarks, $matches)) {
                                 $takenByValue = $matches[1];
@@ -154,8 +152,8 @@
                         }
                     @endphp
                     <tr class="border-b hover:bg-gray-50">
-                        <td class="p-3">{{ $transaction->category }}</td> <!-- Added -->
-                        <td class="p-3">{{ $transaction->brand ?? 'N/A' }}</td> <!-- Added -->
+                        <td class="p-3">{{ $transaction->category }}</td>
+                        <td class="p-3">{{ $transaction->brand ?? 'N/A' }}</td>
                         <td class="p-3">{{ $transaction->serial_number }}</td>
                         <td class="p-3">{{ $transaction->stock_model }}</td>
                         <td class="p-3 font-bold {{ $transaction->type == 'IN' ? 'text-green-600' : 'text-red-600' }}">
@@ -259,18 +257,32 @@ $(document).ready(function(){
     /* ===================== Search Filter Functionality ===================== */
     $("#searchInput").on("keyup", function() {
         var value = $(this).val().toLowerCase();
-        var $rows = $("#transactionsTable tbody tr").not(".no-record");
-        $rows.each(function() {
-            var serial = $(this).find("td:nth-child(1)").text().toLowerCase();
-            var model  = $(this).find("td:nth-child(2)").text().toLowerCase();
-            var showRow = (serial.indexOf(value) !== -1 || model.indexOf(value) !== -1);
+        // Determine which filter we're using by checking a PHP variable passed to JS.
+        var currentFilter = "{{ $currentFilter }}";
+        $("#transactionsTable tbody tr").each(function() {
+            var showRow = false;
+            if (currentFilter === 'IN') {
+                // For IN transactions: column indices: 4=Serial, 3=Model, 6=Requisition No.
+                var serial = $(this).find("td:nth-child(4)").text().toLowerCase();
+                var model = $(this).find("td:nth-child(3)").text().toLowerCase();
+                var requisition = $(this).find("td:nth-child(6)").text().toLowerCase();
+                showRow = (serial.indexOf(value) !== -1 || model.indexOf(value) !== -1 || requisition.indexOf(value) !== -1);
+            } else {
+                // For OUT/LOAN transactions: assume Serial is column 3 and Model is column 4.
+                var serial = $(this).find("td:nth-child(3)").text().toLowerCase();
+                var model = $(this).find("td:nth-child(4)").text().toLowerCase();
+                showRow = (serial.indexOf(value) !== -1 || model.indexOf(value) !== -1);
+            }
             $(this).toggle(showRow);
         });
+
         if($("#transactionsTable tbody tr:visible").length === 0) {
             var colspan = $("#transactionsTable thead tr th").length;
-            $("#transactionsTable tbody").append(
-                '<tr class="no-record"><td colspan="'+colspan+'" class="text-center py-3">No matching records found</td></tr>'
-            );
+            if($("#transactionsTable tbody .no-record").length === 0){
+                $("#transactionsTable tbody").append(
+                    '<tr class="no-record"><td colspan="'+colspan+'" class="text-center py-3">No matching records found</td></tr>'
+                );
+            }
         } else {
             $("#transactionsTable tbody tr.no-record").remove();
         }
