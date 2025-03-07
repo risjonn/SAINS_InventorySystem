@@ -38,7 +38,6 @@
         <!-- Model Field (Text) -->
         <div class="mb-4">
             <label for="model" class="block text-sm font-medium text-gray-700">Model</label>
-            <!-- Notice: We use 'readonly' instead of 'disabled' so the field still submits -->
             <input type="text" name="model" id="model" class="mt-1 block w-full border rounded p-2" required>
         </div>
 
@@ -59,11 +58,8 @@
             <input type="text" name="serial_number" id="serial_number" class="mt-1 block w-full border rounded p-2" required>
         </div>
 
-        <!-- Requisition No. Field -->
-        <div class="mb-4">
-            <label for="requisition_no" class="block text-sm font-medium text-gray-700">Requisition No.</label>
-            <input type="text" name="requisition_no" id="requisition_no" class="mt-1 block w-full border rounded p-2">
-        </div>
+        <!-- Hidden Requisition No. Field (Auto-generated) -->
+        <input type="hidden" name="requisition_no" id="requisition_no" readonly>
 
         <!-- Remarks Field -->
         <div class="mb-4">
@@ -94,18 +90,29 @@ $(document).ready(function(){
     $("#product_code").on("change", function(){
         var code = $(this).val();
         if(productTemplates.hasOwnProperty(code)){
-            // For brand and category, keep them enabled if they are <select> elements.
-            // For model (text), set it to readonly so it still submits.
             $("#brand").val(productTemplates[code].brand).prop("disabled", false);
             $("#model").val(productTemplates[code].model).prop("readonly", true);
             $("#category").val(productTemplates[code].category).prop("disabled", false);
         } else {
-            // If no valid product code, clear fields and allow editing
             $("#brand").val("").removeAttr("disabled");
             $("#model").val("").removeAttr("readonly");
             $("#category").val("").removeAttr("disabled");
         }
     });
+    
+    // Auto-generate requisition number in format: REQ-YYYYMMDD-XXXX
+    function generateRequisitionNumber() {
+        var today = new Date();
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = String(today.getMonth() + 1).padStart(2, '0');
+        var yyyy = today.getFullYear();
+        // Generate a random 4-digit number (could be replaced with a sequential generator if needed)
+        var randomDigits = Math.floor(Math.random() * 9000) + 1000;
+        return 'REQ-' + yyyy + mm + dd + '-' + randomDigits;
+    }
+
+    // Set the requisition number on page load
+    $("#requisition_no").val(generateRequisitionNumber());
 });
 </script>
 @endsection
