@@ -13,8 +13,8 @@
     <div class="mb-4 text-center">
         <h2 class="fw-bold">Stock Overview</h2>
         <p class="text-muted">
-    (Division: {{ $division ? $division->name : 'All Divisions' }} | Category: {{ $category }})
-</p>
+            (Division: {{ $division ? $division->name : 'All Divisions' }} | Category: {{ $category }})
+        </p>
         <a href="{{ route('stocks.overview') }}" class="btn btn-outline-secondary rounded-pill">
             Back to Overview
         </a>
@@ -24,21 +24,16 @@
         <!-- Search Input -->
         <div class="col-md-8">
             <form id="searchForm" method="GET"
-                action="{{ route('stocks.show', ['category' => $category, 'division' => $selectedDivision]) }}">
-
+                  action="{{ route('stocks.show', ['category' => $category, 'division' => $selectedDivision]) }}">
                 <input type="hidden" name="division" value="{{ $selectedDivision }}">
                 <input type="hidden" name="category" value="{{ $category }}">
                 <input type="hidden" name="page" id="currentPage" value="{{ request('page', 1) }}">
-
+                <!-- Hidden sort input always set -->
+                <input type="hidden" name="sort" id="sortInput" value="{{ request('sort', 'updated_at_desc') }}">
                 <div class="input-group">
-                    <input 
-                        type="text" 
-                        id="searchInput" 
-                        name="search" 
-                        value="{{ request('search') }}" 
-                        placeholder="Search stocks... (Serial Number, Model, Division, Requisition No.)" 
-                        class="form-control form-control-sm"
-                    >
+                    <input type="text" id="searchInput" name="search" value="{{ request('search') }}"
+                           placeholder="Search stocks... (Serial Number, Model, Division, Requisition No.)"
+                           class="form-control form-control-sm">
                     <div class="input-group-append">
                         <button type="submit" class="btn btn-primary ml-2">Apply</button>
                         <a href="{{ route('stocks.show', [
@@ -53,20 +48,13 @@
         <!-- Sorting Dropdown -->
         <div class="col-md-4 d-flex align-items-center justify-content-md-end mt-3 mt-md-0">
             <label for="sortOption" class="me-2 fw-bold mb-0">Sort by:</label>
-            <select id="sortOption" name="sort" class="form-select form-select-sm w-50">
-    <option value="model_asc" {{ request('sort', 'updated_at_desc') == 'model_asc' ? 'selected' : '' }}>
-        Model (A-Z)
-    </option>
-    <option value="model_desc" {{ request('sort', 'updated_at_desc') == 'model_desc' ? 'selected' : '' }}>
-        Model (Z-A)
-    </option>
-    <option value="updated_at_asc" {{ request('sort', 'updated_at_desc') == 'updated_at_asc' ? 'selected' : '' }}>
-        Updated At (Oldest)
-    </option>
-    <option value="updated_at_desc" {{ request('sort', 'updated_at_desc') == 'updated_at_desc' ? 'selected' : '' }}>
-        Updated At (Newest)
-    </option>
-</select>
+            <select id="sortOption" class="form-select form-select-sm w-50"
+                    onchange="document.getElementById('sortInput').value = this.value; document.getElementById('searchForm').submit();">
+                <option value="model_asc"    {{ request('sort', 'updated_at_desc') == 'model_asc' ? 'selected' : '' }}>Model (A-Z)</option>
+                <option value="model_desc"   {{ request('sort', 'updated_at_desc') == 'model_desc' ? 'selected' : '' }}>Model (Z-A)</option>
+                <option value="updated_at_asc" {{ request('sort', 'updated_at_desc') == 'updated_at_asc' ? 'selected' : '' }}>Updated At (Oldest)</option>
+                <option value="updated_at_desc"{{ request('sort', 'updated_at_desc') == 'updated_at_desc' ? 'selected' : '' }}>Updated At (Newest)</option>
+            </select>
         </div>
     </div>
 
@@ -102,9 +90,9 @@
                                     @endif
                                     <td class="text-center py-2">
                                         @if($stock->requisition_no)
-                                            <a href="#" class="req-detail text-decoration-underline" 
-                                            data-req="{{ $stock->requisition_no }}" 
-                                            data-serial="{{ $stock->serial_number }}">
+                                            <a href="#" class="req-detail text-decoration-underline"
+                                               data-req="{{ $stock->requisition_no }}"
+                                               data-serial="{{ $stock->serial_number }}">
                                                 {{ $stock->requisition_no }}
                                             </a>
                                         @else
@@ -131,14 +119,13 @@
 
         <!-- Pagination Links -->
         <div class="mt-4">
-    {!! $stocks->appends([
-        'search' => request('search'),
-        'division' => $selectedDivision,
-        'category' => $category,
-        'sort' => request('sort', 'updated_at_desc')  // Ensure the sort stays intact
-    ])->links() !!}
-</div>
-
+            {!! $stocks->appends([
+                'search'   => request('search'),
+                'division' => $selectedDivision,
+                'category' => $category,
+                'sort'     => request('sort', 'updated_at_desc')
+            ])->links() !!}
+        </div>
     </div>
 </div>
 @endsection
@@ -153,52 +140,6 @@
 
 <script>
 $(function(){
-    // Client-side sorting logic
-    function sortTableByOption() {
-        var sortValue = $("#sortOption").val();
-        var config = { columnIndex: 2, order: "asc", isDate: false };
-
-        if (sortValue === "updated_at_asc") {
-            config.columnIndex = $("table thead tr th").length; 
-            config.order = "asc";
-            config.isDate = true;
-        } else if (sortValue === "updated_at_desc") {
-            config.columnIndex = $("table thead tr th").length;
-            config.order = "desc";
-            config.isDate = true;
-        } else if (sortValue === "model_asc") {
-            config.columnIndex = 3; 
-            config.order = "asc";
-        } else if (sortValue === "model_desc") {
-            config.columnIndex = 3;
-            config.order = "desc";
-        }
-        sortTable(config.columnIndex, config.order, config.isDate);
-    }
-
-    function sortTable(columnIndex, order, isDate) {
-        var rows = $("#stockTable tbody tr").get();
-        rows.sort(function(a, b) {
-            var A = $(a).children("td").eq(columnIndex - 1).text().trim().toUpperCase();
-            var B = $(b).children("td").eq(columnIndex - 1).text().trim().toUpperCase();
-
-            if (isDate) {
-                A = Date.parse(A) || 0;
-                B = Date.parse(B) || 0;
-            }
-
-            if (A < B) return order === "asc" ? -1 : 1;
-            if (A > B) return order === "asc" ? 1 : -1;
-            return 0;
-        });
-        $.each(rows, function(index, row) {
-            $("#stockTable tbody").append(row);
-        });
-    }
-
-    $("#sortOption").on("change", sortTableByOption);
-    sortTableByOption(); // initial sort
-
     // AJAX for Requisition details
     $(".req-detail").on("click", function(e){
         e.preventDefault();
@@ -227,18 +168,18 @@ $(function(){
 
 <!-- Modal for Requisition Details -->
 <div class="modal fade" id="reqModal" tabindex="-1" aria-labelledby="reqModalLabel" aria-hidden="true">
-<div class="modal-dialog modal-lg"><!-- Larger modal -->
-    <div class="modal-content">
-    <div class="modal-header">
-        <h5 class="modal-title" id="reqModalLabel">Transaction Details</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-    </div>
-    <div class="modal-body" id="reqDetails">
-        Loading details...
-    </div>
-    <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-    </div>
+    <div class="modal-dialog modal-lg"><!-- Larger modal -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reqModalLabel">Transaction Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="reqDetails">
+                Loading details...
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
     </div>
 </div>
-</div> 
