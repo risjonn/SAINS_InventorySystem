@@ -42,12 +42,11 @@ class StockController extends Controller
     public function lowStock(Request $request)
     {
         $selectedDivision = session('selectedDivision', auth()->user()->division_id);
-
+    
         if ($selectedDivision === 'all') {
             $stocks = Stock::where('status', 'available')
                 ->select('category', DB::raw('COUNT(*) as total'))
                 ->groupBy('category')
-                ->havingRaw('COUNT(*) < 5')
                 ->get();
             $division = null;
         } else {
@@ -56,10 +55,13 @@ class StockController extends Controller
                 ->where('status', 'available')
                 ->select('category', DB::raw('COUNT(*) as total'))
                 ->groupBy('category')
-                ->havingRaw('COUNT(*) < 5')
                 ->get();
         }
-        return view('stocks.low', compact('stocks', 'division'));
+        
+        $categoriesLabels = $stocks->pluck('category')->toArray();
+        $categoriesData = $stocks->pluck('total')->toArray();
+        
+        return view('stocks.low', compact('stocks', 'division', 'categoriesLabels', 'categoriesData'));
     }
 
     public function transactions(Request $request)
