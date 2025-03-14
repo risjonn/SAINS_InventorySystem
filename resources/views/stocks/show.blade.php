@@ -3,14 +3,19 @@
 @section('title', 'Stock Details')
 
 @section('content')
-<div class="container my-5">
+<div class="container my-3"><!-- Less vertical margin -->
     @php
         // Get the selected division value from the query or session.
         $selectedDivision = request()->query('division', session('selectedDivision', 'all'));
+
+        // Decide on the placeholder text dynamically
+        $searchPlaceholder = ($selectedDivision === 'all')
+            ? "Search stocks... (Serial Number, Model, Division, Requisition No.)"
+            : "Search stocks... (Serial Number, Model, Requisition No.)";
     @endphp
 
     <!-- Page Header -->
-    <div class="mb-4 text-center">
+    <div class="mb-2 text-center"><!-- Smaller margin -->
         <h2 class="fw-bold">Stock Overview</h2>
         <p class="text-muted">
             (Division: {{ $division ? $division->name : 'All Divisions' }} | Category: {{ $category }})
@@ -20,8 +25,8 @@
         </a>
     </div>
 
-    <div class="row mb-4">
-        <!-- Search Input -->
+    <div class="row mb-2">
+        <!-- Search Input (col-md-8) -->
         <div class="col-md-8">
             <form id="searchForm" method="GET"
                   action="{{ route('stocks.show', ['category' => $category, 'division' => $selectedDivision]) }}">
@@ -30,9 +35,13 @@
                 <input type="hidden" name="page" id="currentPage" value="{{ request('page', 1) }}">
                 <!-- Hidden sort input always set -->
                 <input type="hidden" name="sort" id="sortInput" value="{{ request('sort', 'updated_at_desc') }}">
+
                 <div class="input-group">
-                    <input type="text" id="searchInput" name="search" value="{{ request('search') }}"
-                           placeholder="Search stocks... (Serial Number, Model, Division, Requisition No.)"
+                    <input type="text"
+                           id="searchInput"
+                           name="search"
+                           value="{{ request('search') }}"
+                           placeholder="{{ $searchPlaceholder }}"
                            class="form-control form-control-sm">
                     <div class="input-group-append">
                         <button type="submit" class="btn btn-primary ml-2">Apply</button>
@@ -45,8 +54,8 @@
             </form>
         </div>
 
-        <!-- Sorting Dropdown -->
-        <div class="col-md-4 d-flex align-items-center justify-content-md-end mt-3 mt-md-0">
+        <!-- Sorting Dropdown (col-md-4) -->
+        <div class="col-md-4 d-flex align-items-center justify-content-md-end">
             <label for="sortOption" class="me-2 fw-bold mb-0">Sort by:</label>
             <select id="sortOption" class="form-select form-select-sm w-50"
                     onchange="document.getElementById('sortInput').value = this.value; document.getElementById('searchForm').submit();">
