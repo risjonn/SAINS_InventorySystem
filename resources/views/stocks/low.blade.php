@@ -68,24 +68,24 @@
     
     .critical-glow {
         position: relative;
-        animation: sync-glow-pulse 2s infinite ease-in-out;
+        animation: sync-glow-pulse 1.5s infinite ease-in-out;
         border-radius: 9999px;
     }
     
     .pulse-fade {
         display: inline-block;
-        animation: pulse-fade 2s infinite ease-in-out;
+        animation: pulse-fade 1.5s infinite ease-in-out;
         transform-origin: center;
     }
     
     .subtle-shake {
         display: inline-block;
-        animation: subtle-shake 2s infinite ease-in-out;
+        animation: subtle-shake 1.5s infinite ease-in-out;
     }
     
     .glow-blink {
         display: inline-block;
-        animation: glow-blink 2s infinite ease-in-out;
+        animation: glow-blink 1.5s infinite ease-in-out;
     }
 </style>
 
@@ -97,7 +97,7 @@
             Back to Dashboard
         </a>
     </div>
-    
+
     <h2 class="text-2xl font-semibold mt-4">Low Stock Items</h2>
     
     <div class="mt-4 bg-white rounded-xl shadow-lg p-6">
@@ -128,7 +128,7 @@
                                 
                                 <!-- Progress bar container -->
                                 <div class="w-24 h-3 bg-gray-200 rounded-full overflow-hidden {{ $stock->total <= 5 ? 'critical-glow' : '' }}">
-                                    <!-- Inner bar: initially 0%, target width in data attribute. -->
+                                    <!-- Inner bar -->
                                     <div class="h-full rounded-full animate-progress 
                                          {{ $stock->total <= 5 ? 'bg-red-600' : ($stock->total < 10 ? 'bg-amber-500' : 'bg-green-500') }}"
                                          data-target-width="{{ min(($stock->total / 10) * 100, 100) }}%"
@@ -136,7 +136,7 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Status indicator - with modern pulse animation instead of bounce -->
+                                <!-- Status indicator -->
                                 @if($stock->total <= 5)
                                     <i class="fas fa-exclamation-triangle text-red-600 pulse-fade" title="Critical Stock Level"></i>
                                 @elseif($stock->total < 10)
@@ -153,7 +153,7 @@
                                         {{ $stock->total <= 5 ? 'Critical' : ($stock->total < 10 ? 'Low' : 'OK') }}
                                     </span>
                                     
-                                    <!-- Tooltip as sibling rather than child -->
+                                    <!-- Tooltip -->
                                     <div class="opacity-0 group-hover:opacity-100 absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-white shadow-lg p-3 rounded-md text-xs z-20 transition-opacity duration-200 min-w-[200px] text-gray-800">
                                         <p class="mb-1"><strong>Category:</strong> {{ $stock->category }}</p>
                                         <p class="mb-1"><strong>Current Stock:</strong> {{ $stock->total }}</p>
@@ -186,7 +186,7 @@
         data: {
             labels: {!! json_encode($categoriesLabels) !!},
             datasets: [{
-                label: 'Low Stock Count',
+                label: 'Stock Count',
                 data: {!! json_encode($categoriesData) !!},
                 backgroundColor: [
                     'rgba(248, 113, 113, 0.7)',
