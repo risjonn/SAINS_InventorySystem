@@ -272,7 +272,9 @@ class StockController extends Controller
         }
     
         // Build the query to filter stocks by category, division, and search
-        $stocksQuery = Stock::where('category', $category)
+        // Added: ->with('division') to allow searching division name
+        $stocksQuery = Stock::with('division')
+            ->where('category', $category)
             ->where('status', 'available')  // Only available stocks
             ->when($divisionId !== 'all', function ($query) use ($divisionId) {
                 return $query->where('division_id', $divisionId);
@@ -282,7 +284,11 @@ class StockController extends Controller
                     $q->where('serial_number', 'LIKE', "%{$search}%")
                       ->orWhere('model', 'LIKE', "%{$search}%")
                       ->orWhere('category', 'LIKE', "%{$search}%")
-                      ->orWhere('requisition_no', 'LIKE', "%{$search}%");
+                      ->orWhere('requisition_no', 'LIKE', "%{$search}%")
+                      // NEW: Search by division name as well
+                      ->orWhereHas('division', function($q2) use ($search) {
+                          $q2->where('name', 'LIKE', "%{$search}%");
+                      });
                 });
             });
     
@@ -300,7 +306,7 @@ class StockController extends Controller
                 break;
             case 'updated_at_desc':
             default:
-            $stocksQuery->orderBy('updated_at', 'desc')->orderBy('id', 'desc');
+                $stocksQuery->orderBy('updated_at', 'desc')->orderBy('id', 'desc');
                 break;
         }
     
@@ -313,9 +319,8 @@ class StockController extends Controller
         // Pass the sort value to the view as well (if needed)
         return view('stocks.show', compact('stocks', 'category', 'division', 'divisionName'))
                ->with('sort', $sort);
-    }
+    }    
     
-
     public function overview(Request $request)
     {
         // Get division from request or session; default to first division or 'all'

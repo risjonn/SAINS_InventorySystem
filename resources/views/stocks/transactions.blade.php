@@ -39,7 +39,7 @@
             <li class="mr-1">
                 <a href="{{ route('stocks.transactions', ['filter' => 'LOAN']) }}"
                    class="inline-block border-l border-t border-r rounded-t px-4 py-2 
-                          {{ request('filter') == 'LOAN' ? 'text-white font-bold bg-purple-600' : 'text-purple-800 font-bold bg-purple-100' }}">
+                          {{ request('filter') == 'LOAN' ? 'text-white font-bold bg-yellow-600' : 'text-yellow-800 font-bold bg-yellow-100' }}">
                     LOAN
                 </a>
             </li>
@@ -126,7 +126,7 @@
                     <th class="p-3">Brand</th>
                     <th class="p-3">Serial Number</th>
                     <th class="p-3">Model</th>
-                    <th class="p-3">Type (IN/OUT)</th>
+                    <th class="p-3">Type (OUT/LOAN)</th>
                     <th class="p-3">
                         {{ in_array($currentFilter, ['OUT', 'LOAN']) ? 'Taken by' : 'Handled by' }}
                     </th>
