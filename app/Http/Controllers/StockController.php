@@ -596,32 +596,32 @@ class StockController extends Controller
     {
         $requisitionNo = $request->input('requisition_no');
         $serial        = $request->input('serial');
-
+    
         if (!$requisitionNo || !$serial) {
             return response()->json(['error' => 'Invalid parameters.'], 400);
         }
-
+    
         // Retrieve the latest transaction matching both requisition_no & serial_number
         $transaction = StockTransaction::where('requisition_no', $requisitionNo)
             ->where('serial_number', $serial)
             ->orderBy('transaction_date', 'desc')
             ->first();
-
+    
         if (!$transaction) {
-            return response()->json(['error' => 'Transaction not found.'], 404);
+            return '<div class="alert alert-warning">Transaction not found.</div>';
         }
-
+    
         // Retrieve ONLY the history for the same requisition_no & serial_number
         $history = StockTransaction::where('requisition_no', $requisitionNo)
             ->where('serial_number', $serial)
             ->orderBy('transaction_date', 'desc')
             ->get();
-
+    
         // Optionally load the stock record by both requisition_no & serial
         $stock = Stock::where('requisition_no', $requisitionNo)
             ->where('serial_number', $serial)
             ->first();
-
-        return view('stocks.partials.transaction_details', compact('transaction', 'stock', 'history'));
+    
+        return view('stocks.partials.req_modal', compact('transaction', 'stock', 'history'));
     }
 }

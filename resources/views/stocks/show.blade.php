@@ -155,19 +155,24 @@ $(function(){
         var reqNo = $(this).data("req");
         var serial = $(this).data("serial");
 
+        // Show loading indicator in the modal body
+        $("#reqDetailsContent").html('<div class="d-flex justify-content-center align-items-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+        
+        // Show the modal first with loading state
+        var reqModal = new bootstrap.Modal(document.getElementById("reqModal"));
+        reqModal.show();
+
+        // Then fetch the actual data
         $.ajax({
             url: "{{ route('transactions.details') }}",
             type: "GET",
             data: { requisition_no: reqNo, serial: serial },
             success: function(response){
-                $("#reqDetails").html(response);
-                var reqModal = new bootstrap.Modal(document.getElementById("reqModal"));
-                reqModal.show();
+                // Update only the modal body content
+                $("#reqDetailsContent").html(response);
             },
             error: function(){
-                $("#reqDetails").html("<p class='text-danger'>Unable to load details.</p>");
-                var reqModal = new bootstrap.Modal(document.getElementById("reqModal"));
-                reqModal.show();
+                $("#reqDetailsContent").html('<div class="alert alert-danger">Unable to load transaction details.</div>');
             }
         });
     });
@@ -175,20 +180,27 @@ $(function(){
 </script>
 @endsection
 
-<!-- Modal for Requisition Details -->
+<!-- Create an empty modal structure with a content container -->
 <div class="modal fade" id="reqModal" tabindex="-1" aria-labelledby="reqModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg"><!-- Larger modal -->
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="reqModalLabel">Transaction Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="reqDetails">
-                Loading details...
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content shadow-xl rounded-lg overflow-hidden">
+        <!-- Modal Header with Gradient Background -->
+        <div class="modal-header p-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+          <h5 class="modal-title text-lg font-bold" id="reqModalLabel">
+            <i class="fas fa-info-circle mr-2"></i> Transaction Details
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+        
+        <!-- Content container that will be updated by AJAX -->
+        <div id="reqDetailsContent" class="modal-body">
+          <!-- Content will be loaded here -->
+        </div>
+        
+        <!-- Modal Footer -->
+        <div class="modal-footer bg-gray-100 p-4">
+          <button type="button" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
     </div>
 </div>
