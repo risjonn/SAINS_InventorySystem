@@ -40,27 +40,47 @@ class StockController extends Controller
 
     public function lowStock(Request $request)
     {
-        $selectedDivision = session('selectedDivision', auth()->user()->division_id);
+        // If the logged-in user is NOT a Super Admin, force their assigned division.
+        if (auth()->user()->role !== 'Super Admin') {
+            $selectedDivision = auth()->user()->division_id;
+        } else {
+            $selectedDivision = $request->query('division', session('selectedDivision', 'all'));
+        }
     
         if ($selectedDivision === 'all') {
+            // Summary view: Group low-stock items by division (for Super Admin)
             $stocks = Stock::where('status', 'available')
-                ->select('category', DB::raw('COUNT(*) as total'))
-                ->groupBy('category')
+                ->select('division_id', DB::raw('COUNT(DISTINCT category) as total'))
+                ->groupBy('division_id')
                 ->get();
-            $division = null;
-        } else {
+    
+            $divisionsSummary = $stocks->map(function ($item) {
+                $division = Division::find($item->division_id);
+                return [
+                    'id'    => $item->division_id,
+                    'name'  => $division ? $division->name : 'Unknown',
+                    'total' => $item->total,
+                ];
+            });
+    
+            return view('stocks.low_summary', compact('divisionsSummary', 'selectedDivision'));
+        } else {    
+            // Detailed view: For a specific division, group low-stock items by category.
             $division = Division::find($selectedDivision);
             $stocks = Stock::where('division_id', $selectedDivision)
                 ->where('status', 'available')
                 ->select('category', DB::raw('COUNT(*) as total'))
                 ->groupBy('category')
                 ->get();
+            
+            // Create arrays for chart data
+            $categoriesLabels = $stocks->pluck('category')->toArray();
+            $categoriesData = $stocks->pluck('total')->toArray();
+            
+            $divisions = Division::all();
+            
+            return view('stocks.low', compact('stocks', 'division', 'categoriesLabels', 'categoriesData', 'divisions', 'selectedDivision'));
         }
-        
-        $categoriesLabels = $stocks->pluck('category')->toArray();
-        $categoriesData = $stocks->pluck('total')->toArray();
-        
-        return view('stocks.low', compact('stocks', 'division', 'categoriesLabels', 'categoriesData'));
     }
 
     public function transactions(Request $request)
