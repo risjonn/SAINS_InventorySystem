@@ -58,8 +58,17 @@
             <input type="text" name="serial_number" id="serial_number" class="mt-1 block w-full border rounded p-2" required>
         </div>
 
-        <!-- Hidden Requisition No. Field (Auto-generated) -->
-        <input type="hidden" name="requisition_no" id="requisition_no" readonly>
+        <!-- Requisition No. Field (Manually Entered) -->
+        <div class="mb-2">
+            <label for="requisition_no" class="block text-sm font-medium text-gray-700">Requisition No.</label>
+            <input type="text" name="requisition_no" id="requisition_no" class="mt-1 block w-full border rounded p-2" required>
+        </div>
+
+        <!-- Requisition/ERP Number Field (New Manual Field) -->
+        <div class="mb-4">
+            <label for="erp_number" class="block text-sm font-medium text-gray-700">Requisition/ERP Number</label>
+            <input type="text" name="erp_number" id="erp_number" class="mt-1 block w-full border rounded p-2">
+        </div>
 
         <!-- Remarks Field -->
         <div class="mb-4">
@@ -100,19 +109,7 @@ $(document).ready(function(){
         }
     });
     
-    // Auto-generate requisition number in format: REQ-YYYYMMDD-XXXX
-    function generateRequisitionNumber() {
-        var today = new Date();
-        var dd = String(today.getDate()).padStart(2, '0');
-        var mm = String(today.getMonth() + 1).padStart(2, '0');
-        var yyyy = today.getFullYear();
-        // Generate a random 4-digit number (could be replaced with a sequential generator if needed)
-        var randomDigits = Math.floor(Math.random() * 9000) + 1000;
-        return 'REQ-' + yyyy + mm + dd + '-' + randomDigits;
-    }
-
-    // Set the requisition number on page load
-    $("#requisition_no").val(generateRequisitionNumber());
+    // Removed auto-generation of requisition number so user can manually input it.
 });
 </script>
 @endsection

@@ -200,6 +200,7 @@ class StockController extends Controller
             'brand'           => 'nullable|string',
             'product_code'    => 'nullable|string',
             'requisition_no'  => 'nullable|string',
+            'erp_number'     => 'nullable|string',
             'model'           => 'required|string',
             'category'        => 'required|string',
             'remarks'         => 'nullable|string',
@@ -213,6 +214,7 @@ class StockController extends Controller
                 'brand'           => $validated['brand'] ?? null,
                 'product_code'    => $validated['product_code'] ?? null,
                 'requisition_no'  => $validated['requisition_no'] ?? null,
+                'erp_number'      => $validated['erp_number'] ?? null,
                 'model'           => $validated['model'],
                 'category'        => $validated['category'],
                 'division_id'     => $selectedDivision,
@@ -594,16 +596,14 @@ class StockController extends Controller
 
     public function getTransactionDetails(Request $request)
     {
-        $requisitionNo = $request->input('requisition_no');
-        $serial        = $request->input('serial');
+        $serial = $request->input('serial');
     
-        if (!$requisitionNo || !$serial) {
+        if (!$serial) {
             return response()->json(['error' => 'Invalid parameters.'], 400);
         }
     
-        // Retrieve the latest transaction matching both requisition_no & serial_number
-        $transaction = StockTransaction::where('requisition_no', $requisitionNo)
-            ->where('serial_number', $serial)
+        // Retrieve the latest transaction matching the serial number
+        $transaction = StockTransaction::where('serial_number', $serial)
             ->orderBy('transaction_date', 'desc')
             ->first();
     
@@ -611,16 +611,13 @@ class StockController extends Controller
             return '<div class="alert alert-warning">Transaction not found.</div>';
         }
     
-        // Retrieve ONLY the history for the same requisition_no & serial_number
-        $history = StockTransaction::where('requisition_no', $requisitionNo)
-            ->where('serial_number', $serial)
+        // Retrieve the transaction history for the same serial number
+        $history = StockTransaction::where('serial_number', $serial)
             ->orderBy('transaction_date', 'desc')
             ->get();
     
-        // Optionally load the stock record by both requisition_no & serial
-        $stock = Stock::where('requisition_no', $requisitionNo)
-            ->where('serial_number', $serial)
-            ->first();
+        // Retrieve the stock record by serial number
+        $stock = Stock::where('serial_number', $serial)->first();
     
         return view('stocks.partials.req_modal', compact('transaction', 'stock', 'history'));
     }

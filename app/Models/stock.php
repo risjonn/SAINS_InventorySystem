@@ -18,7 +18,8 @@ class Stock extends Model
         'status',
         'brand',         // New field for brand
         'product_code',  // New field for product code
-        'requisition_no' // New field for requisition number
+        'requisition_no', // New field for requisition number
+        'erp_number'
     ];
 
     public function division()

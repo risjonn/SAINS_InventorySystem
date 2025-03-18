@@ -3,7 +3,7 @@
 @section('title', 'Stock Details')
 
 @section('content')
-<div class="container my-3"><!-- Less vertical margin -->
+<div class="container my-3">
     @php
         // Get the selected division value from the query or session.
         $selectedDivision = request()->query('division', session('selectedDivision', 'all'));
@@ -15,7 +15,7 @@
     @endphp
 
     <!-- Page Header -->
-    <div class="mb-2 text-center"><!-- Smaller margin -->
+    <div class="mb-2 text-center">
         <h2 class="fw-bold">Stock Overview</h2>
         <p class="text-muted">
             (Division: {{ $division ? $division->name : 'All Divisions' }} | Category: {{ $category }})
@@ -35,7 +35,6 @@
                 <input type="hidden" name="page" id="currentPage" value="{{ request('page', 1) }}">
                 <!-- Hidden sort input always set -->
                 <input type="hidden" name="sort" id="sortInput" value="{{ request('sort', 'updated_at_desc') }}">
-
                 <div class="input-group">
                     <input type="text"
                            id="searchInput"
@@ -78,10 +77,12 @@
                                 <th class="text-center py-3">Category</th>
                                 <th class="text-center py-3">Brand</th>
                                 <th class="text-center py-3">Model</th>
+                                <!-- Make Serial Number column clickable -->
                                 <th class="text-center py-3">Serial Number</th>
                                 @if($selectedDivision === 'all')
                                     <th class="text-center py-3">Division</th>
                                 @endif
+                                <!-- Requisition No. column now displays plain text -->
                                 <th class="text-center py-3">Requisition No.</th>
                                 <th class="text-center py-3">Remarks</th>
                                 <th class="text-center py-3">Updated At</th>
@@ -93,21 +94,17 @@
                                     <td class="text-center py-2">{{ $stock->category }}</td>
                                     <td class="text-center py-2">{{ $stock->brand ?? 'N/A' }}</td>
                                     <td class="text-center py-2">{{ $stock->model }}</td>
-                                    <td class="text-center py-2">{{ $stock->serial_number }}</td>
+                                    <!-- Make serial number clickable -->
+                                    <td class="text-center py-2">
+                                        <a href="#" class="req-detail text-decoration-underline"
+                                           data-serial="{{ $stock->serial_number }}">
+                                            {{ $stock->serial_number }}
+                                        </a>
+                                    </td>
                                     @if($selectedDivision === 'all')
                                         <td class="text-center py-2">{{ $stock->division->name }}</td>
                                     @endif
-                                    <td class="text-center py-2">
-                                        @if($stock->requisition_no)
-                                            <a href="#" class="req-detail text-decoration-underline"
-                                               data-req="{{ $stock->requisition_no }}"
-                                               data-serial="{{ $stock->serial_number }}">
-                                                {{ $stock->requisition_no }}
-                                            </a>
-                                        @else
-                                            N/A
-                                        @endif
-                                    </td>
+                                    <td class="text-center py-2">{{ $stock->requisition_no ?? 'N/A' }}</td>
                                     <td class="text-center py-2">{{ $stock->remarks }}</td>
                                     <td class="text-center py-2">
                                         {{ \Carbon\Carbon::parse($stock->updated_at)->format('Y-m-d H:i:s') }}
@@ -149,26 +146,25 @@
 
 <script>
 $(function(){
-    // AJAX for Requisition details
+    // AJAX for Serial Number click (used to fetch transaction history)
     $(".req-detail").on("click", function(e){
         e.preventDefault();
-        var reqNo = $(this).data("req");
+        // Since we're now using serial number only, retrieve it
         var serial = $(this).data("serial");
 
-        // Show loading indicator in the modal body
+        // Show a loading indicator in the modal body
         $("#reqDetailsContent").html('<div class="d-flex justify-content-center align-items-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>');
-        
-        // Show the modal first with loading state
+
+        // Show the modal with the loading state
         var reqModal = new bootstrap.Modal(document.getElementById("reqModal"));
         reqModal.show();
 
-        // Then fetch the actual data
+        // Fetch transaction details using the serial number
         $.ajax({
             url: "{{ route('transactions.details') }}",
             type: "GET",
-            data: { requisition_no: reqNo, serial: serial },
+            data: { serial: serial },
             success: function(response){
-                // Update only the modal body content
                 $("#reqDetailsContent").html(response);
             },
             error: function(){
@@ -180,7 +176,7 @@ $(function(){
 </script>
 @endsection
 
-<!-- Create an empty modal structure with a content container -->
+<!-- Modal for Transaction Details -->
 <div class="modal fade" id="reqModal" tabindex="-1" aria-labelledby="reqModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content shadow-xl rounded-lg overflow-hidden">

@@ -74,14 +74,88 @@
             <!-- Available Stocks Pane -->
             <div class="tab-pane fade show active" id="availableTab" role="tabpanel" aria-labelledby="available-tab">
                 <div class="mt-4">
-                    @include('stocks.partials.available-stock-table', ['availableStocks' => $availableStocks])
+                    <table id="availableStockTable" class="table table-hover mb-0" style="border-collapse: separate; border-spacing: 0;">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="text-center py-3">Category</th>
+                                <th class="text-center py-3">Brand</th>
+                                <th class="text-center py-3">Model</th>
+                                <th class="text-center py-3">Serial Number</th>
+                                <th class="text-center py-3">Requisition No.</th>
+                                <th class="text-center py-3">Requisition/ERP Number</th>
+                                <th class="text-center py-3">Remarks</th>
+                                <th class="text-center py-3">Updated At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($availableStocks as $stock)
+                                <tr class="border-bottom">
+                                    <td class="text-center py-2">{{ $stock->category }}</td>
+                                    <td class="text-center py-2">{{ $stock->brand ?? 'N/A' }}</td>
+                                    <td class="text-center py-2">{{ $stock->model }}</td>
+                                    <td class="text-center py-2">{{ $stock->serial_number }}</td>
+                                    <td class="text-center py-2">{{ $stock->requisition_no ?? 'N/A' }}</td>
+                                    <td class="text-center py-2">{{ $stock->erp_number ?? 'N/A' }}</td>
+                                    <td class="text-center py-2">{{ $stock->remarks }}</td>
+                                    <td class="text-center py-2">
+                                        {{ \Carbon\Carbon::parse($stock->updated_at)->format('Y-m-d H:i:s') }}
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="text-center py-3 text-muted">
+                                        No matching records found
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                    {!! $availableStocks->appends(request()->all())->links() !!}
                 </div>
             </div>
 
             <!-- Loaned Stocks Pane -->
             <div class="tab-pane fade" id="loanedTab" role="tabpanel" aria-labelledby="loaned-tab">
                 <div class="mt-4">
-                    @include('stocks.partials.loaned-stock-table', ['loanedStocks' => $loanedStocks])
+                    <table id="loanedStockTable" class="table table-hover mb-0" style="border-collapse: separate; border-spacing: 0;">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="text-center py-3">Category</th>
+                                <th class="text-center py-3">Brand</th>
+                                <th class="text-center py-3">Model</th>
+                                <th class="text-center py-3">Serial Number</th>
+                                <th class="text-center py-3">Requisition No.</th>
+                                <th class="text-center py-3">Requisition/ERP Number</th>
+                                <th class="text-center py-3">Remarks</th>
+                                <th class="text-center py-3">Updated At</th>
+                                <th class="text-center py-3">Taken By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($loanedStocks as $stock)
+                                <tr class="border-bottom">
+                                    <td class="text-center py-2">{{ $stock->category }}</td>
+                                    <td class="text-center py-2">{{ $stock->brand ?? 'N/A' }}</td>
+                                    <td class="text-center py-2">{{ $stock->model }}</td>
+                                    <td class="text-center py-2">{{ $stock->serial_number }}</td>
+                                    <td class="text-center py-2">{{ $stock->requisition_no ?? 'N/A' }}</td>
+                                    <td class="text-center py-2">{{ $stock->erp_number ?? 'N/A' }}</td>
+                                    <td class="text-center py-2">{{ $stock->remarks }}</td>
+                                    <td class="text-center py-2">
+                                        {{ \Carbon\Carbon::parse($stock->updated_at)->format('Y-m-d H:i:s') }}
+                                    </td>
+                                    <td class="text-center py-2">{{ $stock->taken_by ?? 'N/A' }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="9" class="text-center py-3 text-muted">
+                                        No matching records found
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                    {!! $loanedStocks->appends(request()->all())->links() !!}
                 </div>
             </div>
         </div>
