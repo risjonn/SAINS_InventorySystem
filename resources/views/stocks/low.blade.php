@@ -89,6 +89,10 @@
     }
 </style>
 
+<script>
+    window.categories = {!! json_encode($distinctCategories) !!};
+</script>
+
 <div class="container mx-auto px-4 my-5">
     <!-- Back to Summary/Dashboard Button -->
     @if(auth()->user()->role === 'Super Admin')
@@ -104,6 +108,34 @@
     @endif
 
     <h2 class="text-2xl font-semibold mt-4">Low Stock Items</h2>
+
+    <div class="container mx-auto px-4 my-5" x-data="thresholdSettings()" x-init="init()">
+        <!-- Your threshold settings panel and other content here -->
+        <h3 class="text-lg font-semibold mb-4">Threshold Settings (per Category)</h3>
+        <template x-for="(setting, index) in thresholds" :key="setting.category">
+            <div class="flex items-center space-x-4 mb-3">
+                <div class="w-1/3">
+                    <span x-text="setting.category" class="font-medium text-gray-700"></span>
+                </div>
+                <div class="w-1/3">
+                    <label class="text-sm font-medium text-gray-600">Low Threshold:</label>
+                    <select x-model="setting.low_threshold" @change="updateThreshold(setting)" class="mt-1 block w-full border rounded p-1">
+                        <template x-for="i in 11" :key="i">
+                            <option :value="i-1" x-text="i-1"></option>
+                        </template>
+                    </select>
+                </div>
+                <div class="w-1/3">
+                    <label class="text-sm font-medium text-gray-600">Critical Level:</label>
+                    <select x-model="setting.critical_threshold" @change="updateThreshold(setting)" class="mt-1 block w-full border rounded p-1">
+                        <template x-for="i in 4" :key="i">
+                            <option :value="i-1" x-text="i-1"></option>
+                        </template>
+                    </select>
+                </div>
+            </div>
+        </template>
+    </div>
 
     <!-- For Super Admin, add a division selection dropdown -->
     @if(auth()->user()->role === 'Super Admin' && isset($divisions))
@@ -201,6 +233,63 @@
 @endsection
 
 @section('scripts')
+<script>
+    function thresholdSettings() {
+        return {
+            thresholds: [],
+            init() {
+                console.log('Alpine init triggered');
+                // Load thresholds for the logged-in user.
+                fetch('{{ route('thresholds.user') }}', {
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Fetched thresholds:', data);
+                    let fetched = Object.values(data);
+                    // Ensure window.categories is defined (should be set in your Blade file)
+                    if (window.categories && window.categories.length > 0) {
+                        // For each category, if a threshold exists in fetched, use it; otherwise, use default values.
+                        this.thresholds = window.categories.map(cat => {
+                            let found = fetched.find(item => item.category === cat);
+                            return found ? found : {
+                                category: cat,
+                                low_threshold: 10,
+                                critical_threshold: 3
+                            };
+                        });
+                    } else {
+                        this.thresholds = fetched;
+                    }
+                })
+                .catch(error => console.error('Error fetching thresholds:', error));
+            },
+            updateThreshold(setting) {
+                // Send an AJAX request to update a single threshold.
+                fetch('{{ route('thresholds.update') }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        category: setting.category,
+                        low_threshold: setting.low_threshold,
+                        critical_threshold: setting.critical_threshold
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Threshold updated for ' + setting.category);
+                    }
+                })
+                .catch(error => console.error('Error updating threshold:', error));
+            }
+        }
+    }
+</script>
 <script>
     const ctx = document.getElementById('lowStockChart').getContext('2d');
     const lowStockChart = new Chart(ctx, {

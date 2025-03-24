@@ -78,8 +78,10 @@ class StockController extends Controller
             $categoriesData = $stocks->pluck('total')->toArray();
             
             $divisions = Division::all();
+
+            $distinctCategories = \App\Models\Product::distinct()->pluck('category');
             
-            return view('stocks.low', compact('stocks', 'division', 'categoriesLabels', 'categoriesData', 'divisions', 'selectedDivision'));
+            return view('stocks.low', compact('stocks', 'division', 'categoriesLabels', 'categoriesData', 'distinctCategories', 'divisions', 'selectedDivision'));
         }
     }
 

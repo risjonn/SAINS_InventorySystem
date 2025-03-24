@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ThresholdController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -106,6 +107,8 @@ Route::middleware(['auth'])->group(function () {
     // Route for showing a specific stock. This should come after the category route.
     Route::get('stocks/show/{category}/{division}', [StockController::class, 'show'])->name('stocks.show');
 
+    Route::get('/thresholds/user', [ThresholdController::class, 'getUserThresholds'])->name('thresholds.user');
+    Route::post('/thresholds/update', [ThresholdController::class, 'updateThreshold'])->name('thresholds.update');
 
     Route::get('/transactions/details', [StockController::class, 'getTransactionDetails'])
     ->name('transactions.details');
