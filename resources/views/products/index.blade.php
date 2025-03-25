@@ -4,10 +4,16 @@
 <div class="container mx-auto px-4 my-5">
     <h2 class="text-2xl font-semibold mb-4">Manage Products</h2>
     
-    <!-- Button to trigger Create Product Modal -->
-    <button type="button" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded mb-4" data-bs-toggle="modal" data-bs-target="#createProductModal">
-        <i class="fas fa-plus mr-2"></i> Add New Product
-    </button>
+    <div class="flex flex-wrap gap-4 mb-4">
+        <!-- Add New Product Button -->
+        <button type="button" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded" data-bs-toggle="modal" data-bs-target="#createProductModal">
+            <i class="fas fa-plus mr-2"></i> Add New Product
+        </button>
+        <!-- Manage Categories Button -->
+        <a href="{{ route('category.index') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition-colors">
+            Manage Categories
+        </a>
+    </div>
     
     <table class="min-w-full border rounded shadow bg-white">
         <thead class="bg-gray-200">

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\Category;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -10,8 +11,9 @@ class ProductController extends Controller
     // Display a listing of products.
     public function index()
     {
-        $products = Product::orderBy('product_code')->paginate(10);
-        return view('products.index', compact('products'));
+        $products = Product::paginate(10);
+        $activeCategories = Category::where('active', 1)->get(); // or if you merged categories into products, adjust accordingly
+        return view('products.index', compact('products', 'activeCategories'));
     }
 
     // Show the form for creating a new product.

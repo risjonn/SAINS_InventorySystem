@@ -41,6 +41,9 @@
     }
 }">
     <!-- Header -->
+    <a href="{{ route('products.index') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded transition-colors">
+        <i class="fas fa-arrow-left mr-2"></i> Back to Products
+    </a>
     <div class="flex flex-col sm:flex-row items-center justify-between mb-6">
         <h2 class="text-2xl font-bold text-gray-800">Manage Categories</h2>
         <!-- Button to trigger Create Brand modal -->

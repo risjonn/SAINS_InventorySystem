@@ -19,6 +19,7 @@ class StockTransaction extends Model
         'category',
         'brand',
         'product_code',
+        'product_id',
         'requisition_no',
         'stock_model',
         'type',

@@ -12,26 +12,32 @@ class StockTransactionSeeder extends Seeder
 {
     public function run()
     {
-        // A list of remark phrases for transactions
+        // Expanded remark phrases for transactions
         $remarksOptions = [
             'Initial stock received',
             'New shipment arrived',
             'Delivered to branch office',
             'Routine restock completed',
-            'Emergency purchase executed'
+            'Emergency purchase executed',
+            'Stock adjustment after audit',
+            'Manual entry for low stock',
+            'Replenishment confirmed',
+            'Returned from maintenance',
+            'Discrepancy resolved'
         ];
 
         // Get all stocks
         $stocks = Stock::all();
 
         foreach ($stocks as $stock) {
+            logger()->info('Stock product_id', ['product_id' => $stock->product_id]);
             // Find a random admin in the stock's division
             $admin = User::where('division_id', $stock->division_id)
                          ->where('role', 'Admin')
                          ->inRandomOrder()
                          ->first();
 
-            // If no admin is found in that division, fallback to any admin (ignoring the user manager)
+            // Fallback to any admin if needed
             if (!$admin) {
                 $admin = User::where('role', 'Admin')->first();
             }
@@ -42,6 +48,9 @@ class StockTransactionSeeder extends Seeder
                 'serial_number'    => $stock->serial_number,
                 'stock_model'      => $stock->model,
                 'category'         => $stock->category,
+                'brand'            => $stock->brand,
+                'product_code'     => $stock->product_code,
+                'product_id'       => $stock->product_id,
                 'type'             => 'IN',
                 'handled_by'       => $admin ? $admin->id : null,
                 'remarks'          => $remarks,
