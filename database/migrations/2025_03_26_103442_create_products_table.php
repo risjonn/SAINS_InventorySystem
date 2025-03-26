@@ -11,8 +11,8 @@ class CreateProductsTable extends Migration
         Schema::create('products', function (Blueprint $table) {
             $table->id();
             $table->string('product_code')->unique();
-            $table->string('category'); // You can use a string or reference a categories table if you want more normalization.
-            $table->string('brand');    // Similarly, a string field.
+            $table->string('category');
+            $table->string('brand');
             $table->string('model');
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();

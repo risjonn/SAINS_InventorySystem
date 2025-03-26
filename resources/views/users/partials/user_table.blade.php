@@ -31,9 +31,9 @@
                     <i class="fas fa-edit"></i>
                 </button>
                 
-                <button type="button" 
-                        class="text-red-500 hover:text-red-700 delete-button"
-                        @click="deleteUser('{{ route('users.destroy', $user->id) }}')">
+                <button type="button" class="text-red-500 hover:text-red-700 delete-button"
+                    data-action="{{ route('users.destroy', $user->id) }}"
+                    data-type="user">
                     <i class="fas fa-trash-alt"></i>
                 </button>
             </td>

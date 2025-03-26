@@ -40,9 +40,9 @@
                             @endphp
                             <tr class="border-b">
                                 <td class="p-2">{{ $stock->serial_number }}</td>
-                                <td class="p-2">{{ $stock->brand ?? 'N/A' }}</td>
-                                <td class="p-2">{{ $stock->model }}</td>
-                                <td class="p-2">{{ $stock->category }}</td>
+                                <td class="p-2">{{ $stock->product->brand ?? 'N/A' }}</td>
+                                <td class="p-2">{{ $stock->product->model }}</td>
+                                <td class="p-2">{{ $stock->product->category }}</td>
                                 <td class="p-2">{{ $stock->product_code ?? 'N/A' }}</td>
                                 <td class="p-2">{{ $stock->requisition_no ?? 'N/A' }}</td>
                                 <td class="p-2">{{ $takenByValue }}</td>

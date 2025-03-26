@@ -12,7 +12,6 @@ class StockTransactionSeeder extends Seeder
 {
     public function run()
     {
-        // Expanded remark phrases for transactions
         $remarksOptions = [
             'Initial stock received',
             'New shipment arrived',
@@ -26,35 +25,34 @@ class StockTransactionSeeder extends Seeder
             'Discrepancy resolved'
         ];
 
-        // Get all stocks
         $stocks = Stock::all();
 
         foreach ($stocks as $stock) {
-            logger()->info('Stock product_id', ['product_id' => $stock->product_id]);
-            // Find a random admin in the stock's division
-            $admin = User::where('division_id', $stock->division_id)
+            // Find a random admin in the stock's division.
+            $admin = \App\Models\User::where('division_id', $stock->division_id)
                          ->where('role', 'Admin')
                          ->inRandomOrder()
                          ->first();
 
-            // Fallback to any admin if needed
+            // Fallback to any admin if not found.
             if (!$admin) {
-                $admin = User::where('role', 'Admin')->first();
+                $admin = \App\Models\User::where('role', 'Admin')->first();
             }
 
-            $remarks = $remarksOptions[array_rand($remarksOptions)] . " - " . $stock->model;
+            $remarks = $remarksOptions[array_rand($remarksOptions)] . " - " . $stock->product->model;
 
             StockTransaction::create([
                 'serial_number'    => $stock->serial_number,
-                'stock_model'      => $stock->model,
-                'category'         => $stock->category,
-                'brand'            => $stock->brand,
-                'product_code'     => $stock->product_code,
-                'product_id'       => $stock->product_id,
                 'type'             => 'IN',
                 'handled_by'       => $admin ? $admin->id : null,
                 'remarks'          => $remarks,
                 'transaction_date' => Carbon::now()->subDays(rand(1, 30)),
+                'product_id'       => $stock->product_id,
+                'product_code'     => $stock->product_code,
+                // Optionally, if you need to store category or brand:
+                // 'category'         => $stock->product ? $stock->product->category : null,
+                // 'brand'            => $stock->product ? $stock->product->brand : null,
+                // 'stock_model'      => $stock->product ? $stock->product->model : $stock->model,
             ]);
         }
     }

@@ -16,7 +16,6 @@ class StockSeeder extends Seeder
         DB::table('stocks')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1');
 
-        // Expanded remark options for stocks
         $remarksOptions = [
             'Installed in main office',
             'Deployed in data center',
@@ -31,30 +30,29 @@ class StockSeeder extends Seeder
         ];
 
         $divisions = [1, 2, 3, 4, 5, 6];
-        $numStocks = 60; // Total stocks to generate
 
-        // Get all products
+        // Generate a random number of stocks between 60 and 100.
+        $numStocks = rand(60, 100);
+
+        // Get all products from the database.
         $products = Product::all();
 
         for ($i = 1; $i <= $numStocks; $i++) {
-            // Randomly choose a product
             $product = $products->random();
             $remarks = $remarksOptions[array_rand($remarksOptions)];
             $divisionId = $divisions[array_rand($divisions)];
-            
-            // Create a unique serial number (e.g., SN001, SN002, etc.)
+
+            // Create a unique serial number (e.g. SN001, SN002, etc.)
             $serialNumber = 'SN' . str_pad($i, 3, '0', STR_PAD_LEFT);
 
             Stock::create([
                 'serial_number' => $serialNumber,
-                'model'         => $product->model,
-                'category'      => $product->category,
-                'brand'         => $product->brand,
-                'product_code'  => $product->product_code,
-                'product_id'    => $product->id,
                 'division_id'   => $divisionId,
                 'remarks'       => $remarks,
                 'status'        => 'available',
+                'product_id'    => $product->id,
+                // Optionally, you can also store product_code from the product:
+                'product_code'  => $product->product_code,
             ]);
         }
     }

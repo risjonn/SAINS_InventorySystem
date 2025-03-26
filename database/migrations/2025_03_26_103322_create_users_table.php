@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+class CreateUsersTable extends Migration
 {
     public function up()
     {
@@ -12,9 +12,10 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
+            $table->string('username')->unique();
             $table->string('password');
-            $table->enum('role', ['Admin', 'User'])->default('User');
-            $table->foreignId('division_id')->nullable()->constrained('divisions')->onDelete('set null');
+            $table->foreignId('division_id')->constrained()->onDelete('cascade');
+            $table->enum('role', ['Admin', 'Super Admin']);
             $table->timestamps();
         });
     }
@@ -23,4 +24,4 @@ return new class extends Migration
     {
         Schema::dropIfExists('users');
     }
-};
+}

@@ -31,8 +31,8 @@
         @foreach($stocks as $stock)
         <tr class="border-b">
             <td class="p-2">{{ $stock->serial_number }}</td>
-            <td class="p-2">{{ $stock->model }}</td>
-            <td class="p-2">{{ $stock->category }}</td>
+            <td class="p-2">{{ $stock->product->model }}</td>
+            <td class="p-2">{{ $stock->product->category }}</td>
             <td class="p-2">{{ $stock->division->name }}</td>
             <td class="p-2">{{ $stock->remarks }}</td>
             <td class="p-2">

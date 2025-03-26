@@ -16,31 +16,27 @@ class StockTransaction extends Model
   
     protected $fillable = [
         'serial_number',
-        'category',
-        'brand',
         'product_code',
         'product_id',
         'requisition_no',
-        'stock_model',
         'type',
         'handled_by',
         'remarks',
         'transaction_date',
     ];
 
-    /**
-     * Relationship to the Stock model, matching 'serial_number'.
-     */
     public function stock()
     {
         return $this->belongsTo(Stock::class, 'serial_number', 'serial_number');
     }
 
-    /**
-     * Relationship to the User model (who handled this transaction).
-     */
     public function user()
     {
         return $this->belongsTo(User::class, 'handled_by');
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
     }
 }

@@ -27,33 +27,37 @@ class StockController extends Controller
     {
         $category = $request->get('category');
         $sortBy   = $request->query('sort', 'updated_at_desc');
-        
-        $stocks = Stock::with('division')
-            ->when($category, function ($query, $category) {
-                return $query->where('category', $category);
-            })
-            ->orderBy('updated_at', 'desc') // Ensure proper sorting
-            ->paginate(10);
+    
+        $stocksQuery = Stock::with(['division', 'product']);
+    
+        if ($category) {
+            $stocksQuery->whereHas('product', function($query) use ($category) {
+                $query->where('category', $category);
+            });
+        }
+    
+        $stocks = $stocksQuery->orderBy('updated_at', 'desc')->paginate(10);
     
         return view('stocks.index', compact('stocks'));
     }
 
     public function lowStock(Request $request)
     {
-        // If the logged-in user is NOT a Super Admin, force their assigned division.
+        // Force regular admins to use their assigned division
         if (auth()->user()->role !== 'Super Admin') {
             $selectedDivision = auth()->user()->division_id;
         } else {
             $selectedDivision = $request->query('division', session('selectedDivision', 'all'));
         }
-    
+
         if ($selectedDivision === 'all') {
-            // Summary view: Group low-stock items by division (for Super Admin)
-            $stocks = Stock::where('status', 'available')
-                ->select('division_id', DB::raw('COUNT(DISTINCT category) as total'))
+            // Summary view for Super Admin: Group by division
+            $stocks = Stock::with('product')
+                ->where('status', 'available')
+                ->select('division_id', DB::raw('COUNT(DISTINCT product_id) as total'))
                 ->groupBy('division_id')
                 ->get();
-    
+
             $divisionsSummary = $stocks->map(function ($item) {
                 $division = Division::find($item->division_id);
                 return [
@@ -62,26 +66,48 @@ class StockController extends Controller
                     'total' => $item->total,
                 ];
             });
-    
+
             return view('stocks.low_summary', compact('divisionsSummary', 'selectedDivision'));
-        } else {    
-            // Detailed view: For a specific division, group low-stock items by category.
+        } else {
+            // Detailed view for a specific division:
             $division = Division::find($selectedDivision);
-            $stocks = Stock::where('division_id', $selectedDivision)
+            $divisions = Division::all();
+            $stocks = Stock::with('product')
+                ->where('division_id', $selectedDivision)
                 ->where('status', 'available')
-                ->select('category', DB::raw('COUNT(*) as total'))
-                ->groupBy('category')
                 ->get();
             
-            // Create arrays for chart data
-            $categoriesLabels = $stocks->pluck('category')->toArray();
-            $categoriesData = $stocks->pluck('total')->toArray();
+            // Group stocks by product category via the product relationship
+            $stocksGrouped = $stocks->groupBy(function ($stock) {
+                // Normalize the category string (trim and lowercase) to avoid duplicates due to casing or spaces
+                return strtolower(trim(optional($stock->product)->category ?? 'Unknown'));
+            });
             
-            $divisions = Division::all();
+            // Aggregate data per category so each category appears only once
+            $aggregatedStocks = $stocksGrouped->map(function ($group, $category) {
+                return (object)[
+                    'category' => ucfirst($category), // Capitalize for display
+                    'total' => $group->count(),
+                    'updated_at' => $group->first()->updated_at ?? null, // Optionally, take the first updated_at for tooltip
+                ];
+            })->values();
 
-            $distinctCategories = \App\Models\Product::distinct()->pluck('category');
+            $distinctCategories = $aggregatedStocks->pluck('category')->toArray();
             
-            return view('stocks.low', compact('stocks', 'division', 'categoriesLabels', 'categoriesData', 'distinctCategories', 'divisions', 'selectedDivision'));
+            // Prepare chart data arrays based on the aggregated data
+            $categoriesLabels = $aggregatedStocks->pluck('category')->toArray();
+            $categoriesData = $aggregatedStocks->pluck('total')->toArray();
+            
+            return view('stocks.low', compact(
+                'stocks', 
+                'division', 
+                'aggregatedStocks', 
+                'categoriesLabels', 
+                'categoriesData', 
+                'distinctCategories',
+                'divisions',
+                'selectedDivision'
+            ));
         }
     }
 
@@ -91,113 +117,138 @@ class StockController extends Controller
         $search           = $request->query('search', '');
         $sortBy           = $request->query('sortBy', 'transaction_date');
         $sortOrder        = $request->query('sortOrder', 'desc');
-
+    
         if ($selectedDivision === 'all') {
-            $transactionsQuery = StockTransaction::join('stocks', 'stock_transactions.serial_number', '=', 'stocks.serial_number')
-                ->join('users', 'stock_transactions.handled_by', '=', 'users.id')
-                ->select('stock_transactions.*', 'users.name as handled_by_name', 'stocks.division_id');
+            $transactionsQuery = StockTransaction::leftJoin('stocks', 'stock_transactions.serial_number', '=', 'stocks.serial_number')
+                ->leftJoin('users', 'stock_transactions.handled_by', '=', 'users.id')
+                ->leftJoin('products', 'stock_transactions.product_id', '=', 'products.id')
+                ->select(
+                    'stock_transactions.*',
+                    'users.name as handled_by_name',
+                    'stocks.division_id',
+                    'products.category as product_category',
+                    'products.brand as product_brand',
+                    'products.model as product_model'
+                );
             $division = null;
         } else {
             $division = Division::find($selectedDivision);
-            $transactionsQuery = StockTransaction::join('stocks', 'stock_transactions.serial_number', '=', 'stocks.serial_number')
-                ->join('users', 'stock_transactions.handled_by', '=', 'users.id')
+            $transactionsQuery = StockTransaction::leftJoin('stocks', 'stock_transactions.serial_number', '=', 'stocks.serial_number')
+                ->leftJoin('users', 'stock_transactions.handled_by', '=', 'users.id')
+                ->leftJoin('products', 'stock_transactions.product_id', '=', 'products.id')
                 ->where('stocks.division_id', $selectedDivision)
-                ->select('stock_transactions.*', 'users.name as handled_by_name', 'stocks.division_id');
+                ->select(
+                    'stock_transactions.*',
+                    'users.name as handled_by_name',
+                    'stocks.division_id',
+                    'products.category as product_category',
+                    'products.brand as product_brand',
+                    'products.model as product_model'
+                );
         }
-
+    
         // Force filter to be IN, OUT, or LOAN; default to IN if missing/invalid
         $filter = $request->query('filter', 'IN');
         if (! in_array($filter, ['IN', 'OUT', 'LOAN'])) {
             $filter = 'IN';
         }
-
+    
         if ($filter !== 'all') {
             $transactionsQuery->where('stock_transactions.type', $filter);
             if ($filter === 'IN') {
                 $transactionsQuery->where('stocks.status', 'available');
             }
         }
-
-        // Apply search filter
+    
+        // Apply search filter on serial number, stock_model, requisition no, and optionally product fields.
         if ($search) {
-            $transactionsQuery->where(function($q) use ($search, $selectedDivision) {
+            $transactionsQuery->where(function ($q) use ($search, $selectedDivision) {
                 $q->where('stock_transactions.serial_number', 'LIKE', $search.'%')
                   ->orWhere('stock_transactions.stock_model', 'LIKE', $search.'%')
-                  ->orWhere('stock_transactions.requisition_no', 'LIKE', "%{$search}%");
+                  ->orWhere('stock_transactions.requisition_no', 'LIKE', "%{$search}%")
+                  ->orWhere('products.category', 'LIKE', "%{$search}%")
+                  ->orWhere('products.model', 'LIKE', "%{$search}%");
                 if ($selectedDivision === 'all') {
-                    $q->orWhereHas('stock.division', function($q2) use ($search) {
+                    $q->orWhereHas('stock.division', function ($q2) use ($search) {
                         $q2->where('name', 'LIKE', $search.'%');
                     });
                 }
             });
         }
-
+    
         $transactionsQuery->orderBy($sortBy, $sortOrder);
         $transactions = $transactionsQuery->paginate(10)->appends($request->all());
-
+    
         return view('stocks.transactions', compact('transactions', 'division'));
     }
 
     public function management(Request $request)
     {
-        // If this is a POST request for returning a loaned item
+        // Check if this is a POST request to return a loaned item
         if ($request->isMethod('post') && $request->input('force_operation_type') === 'RETURN') {
             $stockId = $request->input('stock_id');
             $stock = Stock::findOrFail($stockId);
-
+    
             // Verify that the stock is currently on loan
             if ($stock->status !== 'LOAN') {
                 return redirect()->route('stocks.management')->with('error', 'This item is not on loan.');
             }
-
+    
             $validated = $request->validate([
                 'remarks' => 'required|string',
             ]);
-
-            // Create a transaction record of type "RETURN"
+    
+            // Create a transaction record of type "RETURN" using product details
             StockTransaction::create([
                 'serial_number'    => $stock->serial_number,
-                'stock_model'      => $stock->model,
-                'category'         => $stock->category,
-                'type'             => 'RETURN', // or "IN" if you prefer
+                'stock_model'      => optional($stock->product)->model,
+                'category'         => optional($stock->product)->category,
+                'brand'            => optional($stock->product)->brand,
+                'product_code'     => optional($stock->product)->product_code,
+                'product_id'       => $stock->product_id,
+                'type'             => 'RETURN',
                 'handled_by'       => auth()->id(),
                 'remarks'          => $validated['remarks'],
                 'transaction_date' => now(),
             ]);
-
-            // Update the stock status back to "IN" (or 'available' as needed)
+    
+            // Update the stock status back to "IN" (or available)
             $stock->status = 'IN';
             $stock->save();
-
+    
             return redirect()->route('stocks.management')->with('success', 'Stock returned successfully.');
         }
-
-        // Otherwise, process the GET request to display management page
+    
+        // Process GET request to display the management page.
         $selectedDivision = session('selectedDivision', auth()->user()->division_id);
         $division = Division::find($selectedDivision);
         $search = $request->query('search');
-
-        // Available stocks (using a unique pagination parameter)
-        $availableStocks = Stock::with('division')
+    
+        // Retrieve available stocks (with related product and division)
+        $availableStocks = Stock::with(['division', 'product'])
             ->where('division_id', $selectedDivision)
             ->where('status', 'available')
             ->when($search, function ($query, $search) {
                 return $query->where('serial_number', 'LIKE', "%{$search}%")
-                             ->orWhere('model', 'LIKE', "%{$search}%");
+                             ->orWhereHas('product', function ($q) use ($search) {
+                                 $q->where('model', 'LIKE', "%{$search}%");
+                             });
             })
-            ->orderBy('updated_at', 'desc')  // Sort by newest updated first
+            ->orderBy('updated_at', 'desc')
             ->paginate(10, ['*'], 'available_page');
-
-        // Loaned stocks (using a different pagination parameter)
-        $loanedStocks = Stock::with('division')
+    
+        // Retrieve loaned stocks (with related product and division)
+        $loanedStocks = Stock::with(['division', 'product'])
             ->where('division_id', $selectedDivision)
             ->where('status', 'LOAN')
             ->when($search, function ($query, $search) {
                 return $query->where('serial_number', 'LIKE', "%{$search}%")
-                             ->orWhere('model', 'LIKE', "%{$search}%");
+                             ->orWhereHas('product', function ($q) use ($search) {
+                                 $q->where('model', 'LIKE', "%{$search}%");
+                             });
             })
             ->paginate(10, ['*'], 'loan_page');
-
+    
         return view('stocks.management', compact('availableStocks', 'loanedStocks', 'division'));
     }
 
@@ -205,20 +256,24 @@ class StockController extends Controller
     {
         $selectedDivision = session('selectedDivision', auth()->user()->division_id);
         $division = Division::find($selectedDivision);
-        // Fetch active brands and categories sorted by name
-        $brands = \App\Models\Brand::where('active', true)->orderBy('name')->get();
-        $categories = \App\Models\Category::where('active', true)->orderBy('name')->get();
-
-        return view('stocks.transaction_in', compact('division', 'brands', 'categories'));
+        
+        // Retrieve active products from the products table
+        $products = \App\Models\Product::where('status', 'active')->orderBy('product_code')->get();
+    
+        // Optionally, if you still need separate lists for brands and categories (for manual entry),
+        // you can extract them from the products collection:
+        $brands = $products->pluck('brand')->unique();
+        $categories = $products->pluck('category')->unique();
+    
+        return view('stocks.transaction_in', compact('division', 'products', 'brands', 'categories'));
     }
-
+    
     public function storeTransactionIn(Request $request)
     {
         $selectedDivision = session('selectedDivision', auth()->user()->division_id);
-
-        // 1) Expand validation to include new fields (brand, product_code, requisition_no, etc.)
+    
         $validated = $request->validate([
-            'serial_number'   => 'required|string', // Ensure serial_number is provided
+            'serial_number'   => 'required|string',
             'brand'           => 'nullable|string',
             'product_code'    => 'nullable|string',
             'requisition_no'  => 'nullable|string',
@@ -226,12 +281,20 @@ class StockController extends Controller
             'category'        => 'required|string',
             'remarks'         => 'nullable|string',
         ]);
-
-        // 2) Update or create the Stock record with new fields
+    
+        // Look up the product based on the provided product_code.
+        $product = \App\Models\Product::where('product_code', $validated['product_code'])->first();
+    
+        // Optionally, handle the case where the product isn't found.
+        if (!$product) {
+            return redirect()->back()->withErrors(['product_code' => 'Product not found.']);
+        }
+    
+        // Update or create Stock record including product_id.
         $stock = Stock::updateOrCreate(
             ['requisition_no' => trim($validated['requisition_no'])],
             [
-                'serial_number'   => trim($validated['serial_number']), // Ensure serial_number is saved
+                'serial_number'   => trim($validated['serial_number']),
                 'brand'           => $validated['brand'] ?? null,
                 'product_code'    => $validated['product_code'] ?? null,
                 'requisition_no'  => $validated['requisition_no'] ?? null,
@@ -241,27 +304,27 @@ class StockController extends Controller
                 'remarks'         => $validated['remarks'] ?? null,
                 'status'          => 'available',
                 'updated_at'      => now(),
+                'product_id'      => $product->id, // Set the related product_id here.
             ]
         );
-
-        // Ensure the stock is marked as available (this line is optional if updateOrCreate sets it correctly)
+    
         $stock->status = 'available';
         $stock->save();
-
-        // 3) Create a matching transaction record with new fields
+    
+        // Create Stock Transaction record.
         StockTransaction::create([
-            'serial_number'   => trim($validated['serial_number']),
-            'stock_model'     => $validated['model'],
-            'brand'           => $validated['brand'] ?? null,
-            'product_code'    => $validated['product_code'] ?? null,
-            'requisition_no'  => $validated['requisition_no'] ?? null,
-            'category'        => $validated['category'],
-            'type'            => 'IN', // Or use 'IN' based on your system's logic
-            'handled_by'      => auth()->id(),
-            'remarks'         => $validated['remarks'],
-            'transaction_date'=> now(),
+            'serial_number'    => trim($validated['serial_number']),
+            'stock_model'      => $validated['model'],
+            'brand'            => $validated['brand'] ?? null,
+            'product_code'     => $validated['product_code'] ?? null,
+            'requisition_no'   => $validated['requisition_no'] ?? null,
+            'category'         => $validated['category'],
+            'type'             => 'IN',
+            'handled_by'       => auth()->id(),
+            'remarks'          => $validated['remarks'],
+            'transaction_date' => now(),
         ]);
-
+    
         return redirect()->route('stocks.management')->with([
             'success'  => 'Stock Added In Inventory Successfully.',
             'resource' => 'stock'
@@ -350,7 +413,7 @@ class StockController extends Controller
         // Get division from request or session; default to first division or 'all'
         $divisionId = $request->get('division_id') ?? session('selectedDivision', 'all');
         $selectedDivision = $divisionId;
-
+    
         if ($divisionId === 'all') {
             $divisionName = 'All Divisions';
             $division = null;
@@ -361,25 +424,26 @@ class StockController extends Controller
             }
             $divisionName = $division->name;
         }
-
+    
         $search = $request->get('search', '');
-
-        // Group stocks by category and count the total for each group.
-        $groupedStocks = Stock::select('category', DB::raw('COUNT(*) as total'))
-            ->where('status', 'available')
+    
+        // Build a query by joining products to stocks to access product details.
+        $groupedStocks = \App\Models\Stock::join('products', 'stocks.product_id', '=', 'products.id')
+            ->select('products.category as category', DB::raw('COUNT(*) as total'))
+            ->where('stocks.status', 'available')
             ->when($divisionId !== 'all', function ($query) use ($divisionId) {
-                return $query->where('division_id', $divisionId);
+                return $query->where('stocks.division_id', $divisionId);
             })
             ->when($search, function ($query, $search) {
                 return $query->where(function ($q) use ($search) {
-                    $q->where('serial_number', 'LIKE', "%{$search}%")
-                      ->orWhere('model', 'LIKE', "%{$search}%")
-                      ->orWhere('category', 'LIKE', "%{$search}%");
+                    $q->where('stocks.serial_number', 'LIKE', "%{$search}%")
+                      ->orWhere('products.model', 'LIKE', "%{$search}%")
+                      ->orWhere('products.category', 'LIKE', "%{$search}%");
                 });
             })
-            ->groupBy('category')
+            ->groupBy('products.category')
             ->paginate(10);
-
+    
         return view('stocks.overview', compact(
             'groupedStocks',
             'divisionName',
@@ -392,41 +456,37 @@ class StockController extends Controller
     public function showByCategory(Request $request, $category, $division)
     {
         $search = $request->query('search');
-        
-        if ($division === 'all') {
-            // Retrieve stocks by category across all divisions.
-            $stocks = Stock::where('category', $category)
-                ->where('status', 'available')
-                ->orderBy('updated_at', 'desc') // newest first
-                ->orderBy('id', 'desc')         // secondary ordering for stability
-                ->when($search, function ($query, $search) {
-                    $query->where(function ($q) use ($search) {
-                        $q->where('serial_number', 'LIKE', "%{$search}%")
-                          ->orWhere('model', 'LIKE', "%{$search}%")
-                          ->orWhere('category', 'LIKE', "%{$search}%");
-                    });
-                })
-                ->paginate(10);
     
-            $divisionModel = null;
-        } else {
+        // Build a query for stocks with related product data.
+        $stocksQuery = Stock::with(['division', 'product'])
+            ->where('status', 'available')
+            ->whereHas('product', function ($q) use ($category) {
+                $q->where('category', $category);
+            })
+            ->orderBy('updated_at', 'desc')
+            ->orderBy('id', 'desc');
+    
+        // If a specific division is provided, filter by division_id.
+        if ($division !== 'all') {
             $divisionModel = Division::find($division);
-            $stocks = Stock::with('division') // eager load division
-                ->where('category', $category)
-                ->where('division_id', $division)
-                ->where('status', 'available')
-                ->orderBy('updated_at', 'desc') // newest first
-                ->orderBy('id', 'desc')         // secondary ordering for stability
-                ->when($search, function ($query, $search) {
-                    $query->where(function ($q) use ($search) {
-                        $q->where('serial_number', 'LIKE', "%{$search}%")
-                          ->orWhere('model', 'LIKE', "%{$search}%")
-                          ->orWhere('category', 'LIKE', "%{$search}%");
-                    });
-                })
-                ->paginate(10);
+            $stocksQuery->where('division_id', $division);
+        } else {
+            $divisionModel = null;
         }
-        
+    
+        // Apply search filtering on serial_number and product fields.
+        if ($search) {
+            $stocksQuery->where(function ($q) use ($search) {
+                $q->where('serial_number', 'LIKE', "%{$search}%")
+                  ->orWhereHas('product', function ($q) use ($search) {
+                      $q->where('model', 'LIKE', "%{$search}%")
+                        ->orWhere('category', 'LIKE', "%{$search}%");
+                  });
+            });
+        }
+    
+        $stocks = $stocksQuery->paginate(10);
+    
         return view('stocks.show', [
             'stocks'   => $stocks,
             'category' => $category,

@@ -107,6 +107,22 @@
         </a>
     @endif
 
+    @if(auth()->user()->role === 'Super Admin' && isset($divisions))
+        <div class="mb-4">
+            <form method="GET" action="{{ route('stocks.low') }}">
+                <label for="division" class="block text-sm font-medium text-gray-700">Select Division:</label>
+                <select name="division" id="division" onchange="this.form.submit()" class="block w-full mt-1 border rounded p-2">
+                    <option value="all" {{ $selectedDivision === 'all' ? 'selected' : '' }}>All Divisions</option>
+                    @foreach($divisions as $div)
+                        <option value="{{ $div->id }}" {{ $selectedDivision == $div->id ? 'selected' : '' }}>
+                            {{ $div->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </form>
+        </div>
+    @endif
+
     <h2 class="text-2xl font-semibold mt-4">Low Stock Items</h2>
 
     <div class="container mx-auto px-4 my-5" x-data="thresholdSettings()" x-init="init()">
@@ -137,23 +153,6 @@
         </template>
     </div>
 
-    <!-- For Super Admin, add a division selection dropdown -->
-    @if(auth()->user()->role === 'Super Admin' && isset($divisions))
-        <div class="mb-4">
-            <form method="GET" action="{{ route('stocks.low') }}">
-                <label for="division" class="block text-sm font-medium text-gray-700">Select Division:</label>
-                <select name="division" id="division" onchange="this.form.submit()" class="block w-full mt-1 border rounded p-2">
-                    <option value="all" {{ $selectedDivision === 'all' ? 'selected' : '' }}>All Divisions</option>
-                    @foreach($divisions as $div)
-                        <option value="{{ $div->id }}" {{ $selectedDivision == $div->id ? 'selected' : '' }}>
-                            {{ $div->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </form>
-        </div>
-    @endif
-
     <div class="mt-4 bg-white rounded-xl shadow-lg p-6">
         @if(isset($division))
             <p class="text-lg text-gray-700 mb-2">Division: {{ $division->name }}</p>
@@ -169,58 +168,55 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($stocks as $stock)
-                <tr class="border-b odd:bg-white even:bg-gray-50 hover:bg-gray-100 transition-all duration-150 relative group">
-                    <td class="p-3 border-b">{{ $stock->category }}</td>
-                    <td class="p-3 border-b text-left">
-                        <div class="flex items-center space-x-2">
-                            <!-- Fixed-width container for number -->
-                            <span class="text-left w-6 inline-block font-medium
-                                {{ $stock->total <= 5 ? 'text-red-600' : ($stock->total < 10 ? 'text-amber-600' : 'text-green-600') }}">
-                                {{ $stock->total }}
-                            </span>
-                            
-                            <!-- Progress bar container -->
-                            <div class="w-24 h-3 bg-gray-200 rounded-full overflow-hidden {{ $stock->total <= 5 ? 'critical-glow' : '' }}">
-                                <!-- Inner bar -->
-                                <div class="h-full rounded-full animate-progress 
-                                     {{ $stock->total <= 5 ? 'bg-red-600' : ($stock->total < 10 ? 'bg-amber-500' : 'bg-green-500') }}"
-                                     data-target-width="{{ min(($stock->total / 10) * 100, 100) }}%"
-                                     style="width: 0%;">
-                                </div>
-                            </div>
-                            
-                            <!-- Status indicator -->
-                            @if($stock->total <= 5)
-                                <i class="fas fa-exclamation-triangle text-red-600 pulse-fade" title="Critical Stock Level"></i>
-                            @elseif($stock->total < 10)
-                                <i class="fas fa-exclamation-circle text-amber-500" title="Low Stock"></i>
-                            @else
-                                <i class="fas fa-check-circle text-green-500" title="Adequate Stock"></i>
-                            @endif
-                            
-                            <!-- Container for status text and tooltip -->
-                            <div class="relative inline-flex items-center">
-                                <!-- Text label for stock status -->
-                                <span class="text-xs font-medium
-                                    {{ $stock->total <= 5 ? 'text-red-600 glow-blink' : ($stock->total < 10 ? 'text-amber-500' : 'text-green-500') }}">
-                                    {{ $stock->total <= 5 ? 'Critical' : ($stock->total < 10 ? 'Low' : 'OK') }}
+                @foreach($aggregatedStocks as $stockGroup)
+                    <tr class="border-b odd:bg-white even:bg-gray-50 hover:bg-gray-100 transition-all duration-150 relative group">
+                        <td class="p-3 border-b">{{ $stockGroup->category }}</td>
+                        <td class="p-3 border-b text-left">
+                            <div class="flex items-center space-x-2">
+                                <!-- Fixed-width container for number -->
+                                <span class="text-left w-6 inline-block font-medium
+                                    {{ $stockGroup->total <= 5 ? 'text-red-600' : ($stockGroup->total < 10 ? 'text-amber-600' : 'text-green-600') }}">
+                                    {{ $stockGroup->total }}
                                 </span>
                                 
-                                <!-- Tooltip -->
-                                <div class="opacity-0 group-hover:opacity-100 absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-white shadow-lg p-3 rounded-md text-xs z-20 transition-opacity duration-200 min-w-[200px] text-gray-800">
-                                    <p class="mb-1"><strong>Category:</strong> {{ $stock->category }}</p>
-                                    <p class="mb-1"><strong>Current Stock:</strong> {{ $stock->total }}</p>
-                                    <p class="mb-1"><strong>Status:</strong> {{ $stock->total <= 5 ? 'Critical' : ($stock->total < 10 ? 'Low' : 'Adequate') }}</p>
-                                    @if(isset($stock->updated_at))
-                                        <p class="mb-1"><strong>Last Updated:</strong> {{ $stock->updated_at->format('M d, Y') }}</p>
-                                    @endif
+                                <!-- Progress bar container -->
+                                <div class="w-24 h-3 bg-gray-200 rounded-full overflow-hidden {{ $stockGroup->total <= 5 ? 'critical-glow' : '' }}">
+                                    <!-- Inner bar: Calculate width based on your threshold logic (example: using 10 as the maximum) -->
+                                    <div class="h-full rounded-full animate-progress 
+                                        {{ $stockGroup->total <= 5 ? 'bg-red-600' : ($stockGroup->total < 10 ? 'bg-amber-500' : 'bg-green-500') }}"
+                                        data-target-width="{{ min(($stockGroup->total / 10) * 100, 100) }}%"
+                                        style="width: 0%;">
+                                    </div>
+                                </div>
+                                
+                                <!-- Status indicator -->
+                                @if($stockGroup->total <= 5)
+                                    <i class="fas fa-exclamation-triangle text-red-600 pulse-fade" title="Critical Stock Level"></i>
+                                @elseif($stockGroup->total < 10)
+                                    <i class="fas fa-exclamation-circle text-amber-500" title="Low Stock"></i>
+                                @else
+                                    <i class="fas fa-check-circle text-green-500" title="Adequate Stock"></i>
+                                @endif
+                                
+                                <!-- Container for status text and tooltip -->
+                                <div class="relative inline-flex items-center">
+                                    <span class="text-xs font-medium
+                                        {{ $stockGroup->total <= 5 ? 'text-red-600 glow-blink' : ($stockGroup->total < 10 ? 'text-amber-500' : 'text-green-500') }}">
+                                        {{ $stockGroup->total <= 5 ? 'Critical' : ($stockGroup->total < 10 ? 'Low' : 'OK') }}
+                                    </span>
+                                    
+                                    <div class="opacity-0 group-hover:opacity-100 absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-white shadow-lg p-3 rounded-md text-xs z-20 transition-opacity duration-200 min-w-[200px] text-gray-800">
+                                        <p class="mb-1"><strong>Category:</strong> {{ $stockGroup->category }}</p>
+                                        <p class="mb-1"><strong>Current Stock:</strong> {{ $stockGroup->total }}</p>
+                                        <p class="mb-1"><strong>Status:</strong> {{ $stockGroup->total <= 5 ? 'Critical' : ($stockGroup->total < 10 ? 'Low' : 'Adequate') }}</p>
+                                        @if($stockGroup->updated_at)
+                                            <p class="mb-1"><strong>Last Updated:</strong> {{ \Carbon\Carbon::parse($stockGroup->updated_at)->format('M d, Y') }}</p>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
-
-                        </div>
-                    </td>                   
-                </tr>
+                        </td>                   
+                    </tr>
                 @endforeach
             </tbody>
         </table>

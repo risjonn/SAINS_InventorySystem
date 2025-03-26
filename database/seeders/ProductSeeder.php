@@ -15,82 +15,64 @@ class ProductSeeder extends Seeder
         DB::table('products')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1');
 
-        // Sample products with additional product codes
-        $products = [
-            [
-                'product_code' => 'RO001',
-                'category'     => 'Router',
-                'brand'        => 'Huawei',
-                'model'        => 'MA5600T',
-                'status'       => 'active'
+        // Define products data for each category.
+        // Adjust or add more as needed.
+        $productsData = [
+            'Router' => [
+                ['brand' => 'Huawei', 'model' => 'MA5600T'],
+                ['brand' => 'Cisco', 'model' => 'Cisco ISR 4000'],
             ],
-            [
-                'product_code' => 'SW001',
-                'category'     => 'Switch',
-                'brand'        => 'Cisco',
-                'model'        => 'Cisco Catalyst 2960',
-                'status'       => 'active'
+            'Switch' => [
+                ['brand' => 'Cisco', 'model' => 'Cisco Catalyst 2960'],
+                ['brand' => 'HP', 'model' => 'HP ProCurve 5400'],
+                ['brand' => 'Dell EMC', 'model' => 'Dell EMC Networking N1548'],
             ],
-            [
-                'product_code' => 'MD001',
-                'category'     => 'Modem',
-                'brand'        => 'Netgear',
-                'model'        => 'Netgear Nighthawk',
-                'status'       => 'active'
+            'Modem' => [
+                ['brand' => 'Netgear', 'model' => 'Nighthawk CM1200'],
+                ['brand' => 'Arris', 'model' => 'Surfboard SB8200'],
             ],
-            [
-                'product_code' => 'RO002',
-                'category'     => 'Router',
-                'brand'        => 'Juniper',
-                'model'        => 'Juniper MX480',
-                'status'       => 'inactive'
+            'Firewall' => [
+                ['brand' => 'Fortinet', 'model' => 'FortiGate 60F'],
+                ['brand' => 'Palo Alto', 'model' => 'PA-220'],
             ],
-            [
-                'product_code' => 'SW002',
-                'category'     => 'Switch',
-                'brand'        => 'Dell EMC',
-                'model'        => 'Dell EMC Networking N1548',
-                'status'       => 'active'
+            'Server' => [
+                ['brand' => 'Dell', 'model' => 'PowerEdge R740'],
+                ['brand' => 'HP', 'model' => 'ProLiant DL380 Gen10'],
             ],
-            [
-                'product_code' => 'AR001',
-                'category'     => 'Router',
-                'brand'        => 'Arista',
-                'model'        => 'Arista 7050X',
-                'status'       => 'active'
+            'Laptop' => [
+                ['brand' => 'Dell', 'model' => 'XPS 13'],
+                ['brand' => 'Apple', 'model' => 'MacBook Pro 13'],
+                ['brand' => 'Lenovo', 'model' => 'ThinkPad X1 Carbon'],
             ],
-            [
-                'product_code' => 'HP001',
-                'category'     => 'Switch',
-                'brand'        => 'HP ProCurve',
-                'model'        => 'HP ProCurve 5400',
-                'status'       => 'active'
+            'Printer' => [
+                ['brand' => 'HP', 'model' => 'OfficeJet Pro 9015'],
+                ['brand' => 'Canon', 'model' => 'PIXMA TS9120'],
             ],
-            [
-                'product_code' => 'EX001',
-                'category'     => 'Switch',
-                'brand'        => 'Extreme Networks',
-                'model'        => 'Extreme Networks Summit X450-G2',
-                'status'       => 'active'
+            'Storage' => [
+                ['brand' => 'Seagate', 'model' => 'Barracuda 4TB'],
+                ['brand' => 'Western Digital', 'model' => 'WD Blue 4TB'],
             ],
-            [
-                'product_code' => 'NG001',
-                'category'     => 'Switch',
-                'brand'        => 'Netgear',
-                'model'        => 'Netgear ProSAFE M4300',
-                'status'       => 'inactive'
+            'Access Point' => [
+                ['brand' => 'Ubiquiti', 'model' => 'UniFi AC Pro'],
+                ['brand' => 'Cisco', 'model' => 'Aironet 2800'],
             ],
-            [
-                'product_code' => 'BR001',
-                'category'     => 'Router',
-                'brand'        => 'Brocade',
-                'model'        => 'Brocade ICX 6610',
-                'status'       => 'active'
+            'UPS' => [
+                ['brand' => 'APC', 'model' => 'Back-UPS Pro 1500VA'],
+                ['brand' => 'CyberPower', 'model' => 'CP1500PFCLCD'],
             ],
         ];
 
-        foreach ($products as $productData) {
-            Product::create($productData);
+        // We'll generate a unique product code for each product. For example, use the first two letters of the category in uppercase plus a sequential number.
+        foreach ($productsData as $category => $products) {
+            $prefix = strtoupper(substr($category, 0, 2));
+            $seq = 1;
+            foreach ($products as $data) {
+                $data['product_code'] = $prefix . str_pad($seq, 3, '0', STR_PAD_LEFT);
+                $data['category'] = $category;
+                $data['status'] = 'active';
+                Product::create($data);
+                $seq++;
+            }
         }
     }
 }

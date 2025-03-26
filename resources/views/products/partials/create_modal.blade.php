@@ -16,10 +16,10 @@
            <div class="mb-3">
              <label for="category" class="form-label">Category</label>
              <select class="form-select" id="category" name="category" required>
-               @foreach($activeCategories as $category)
-                 <option value="{{ $category->name }}">{{ $category->name }}</option>
-               @endforeach
-             </select>
+                @foreach($allCategories as $category)
+                    <option value="{{ $category->name }}">{{ $category->name }}</option>
+                @endforeach
+            </select>
            </div>
            <div class="mb-3">
              <label for="brand" class="form-label">Brand</label>

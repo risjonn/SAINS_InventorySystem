@@ -80,8 +80,8 @@
             <tbody>
                 @foreach($stockSummary as $stock)
                     <tr class="border-b">
-                        <td class="p-2">{{ $stock->category }}</td>
-                        <td class="p-2">{{ $stock->quantity }}</td>
+                        <td class="p-2">{{ $stock['category'] }}</td>
+                        <td class="p-2">{{ $stock['quantity'] }}</td>
                     </tr>
                 @endforeach
             </tbody>

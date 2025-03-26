@@ -8,18 +8,25 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    // Display a listing of products.
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::paginate(10);
-        $activeCategories = Category::where('active', 1)->get(); // or if you merged categories into products, adjust accordingly
-        return view('products.index', compact('products', 'activeCategories'));
+        $products = Product::where('status', 'active')->paginate(10);
+        $productCategories = Product::where('status', 'active')->distinct()->pluck('category');
+        $activeCategories = collect($productCategories)->map(function($cat) {
+            return (object)['name' => $cat];
+        });
+    
+        // Fetch all categories from the categories table as well.
+        $allCategories = Category::all();
+    
+        return view('products.index', compact('products', 'activeCategories', 'allCategories'));
     }
 
     // Show the form for creating a new product.
     public function create()
     {
-        return view('products.create');
+        $categories = Category::all();
+        return view('products.create', compact('categories'));
     }
 
     // Store a newly created product in storage.

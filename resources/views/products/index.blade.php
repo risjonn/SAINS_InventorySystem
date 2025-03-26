@@ -50,7 +50,9 @@
                     <form action="{{ route('products.destroy', $product->id) }}" method="POST" class="inline-block">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="text-red-500 hover:text-red-700">
+                        <button type="button" class="text-red-500 hover:text-red-700 delete-button"
+                            data-action="{{ route('products.destroy', $product->id) }}"
+                            data-type="product">
                             <i class="fas fa-trash-alt"></i>
                         </button>
                     </form>
@@ -62,6 +64,11 @@
     
     {{ $products->links() }}
 </div>
+
+<form id="globalDeleteForm" method="POST" style="display: none;">
+    @csrf
+    @method('DELETE')
+</form>
 
 <!-- Include the Create and Edit modals -->
 @include('products.partials.create_modal')
