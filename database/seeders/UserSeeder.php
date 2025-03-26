@@ -10,14 +10,14 @@ class UserSeeder extends Seeder
 {
     public function run()
     {
-        // Create a User Manager
+        // Create a Super Admin
         User::create([
-            'username'    => 'usermanager',
-            'name'        => 'User Manager',
-            'email'       => 'manager@example.com',
+            'username'    => 'superadmin',
+            'name'        => 'Super Admin',
+            'email'       => 'superadmin@example.com',
             'password'    => Hash::make('password'),
             'division_id' => 1,
-            'role'        => 'User Manager',
+            'role'        => 'Super Admin',
         ]);
 
         // Create Admins (one per division for example)

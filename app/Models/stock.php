@@ -11,14 +11,12 @@ class Stock extends Model
 
     protected $fillable = [
         'serial_number',
-        'model',
-        'category',
         'division_id',
         'remarks',
         'status',
-        'brand',         // New field for brand
-        'product_code',  // New field for product code
-        'requisition_no' // New field for requisition number
+        'product_code',
+        'product_id',
+        'requisition_no'
     ];
 
     public function division()
@@ -29,5 +27,10 @@ class Stock extends Model
     public function transactions()
     {
         return $this->hasMany(StockTransaction::class, 'serial_number', 'serial_number');
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
     }
 }

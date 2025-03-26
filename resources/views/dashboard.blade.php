@@ -29,7 +29,7 @@
     <!-- Summary Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
     <!-- Low Stock Items Card (Clickable) -->
-    <a href="{{ route('stocks.low') }}" class="block">
+    <a href="{{ route('stocks.low', ['division' => 'all']) }}" class="block">
         <div class="relative p-6 rounded-xl shadow-lg bg-yellow-100 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl">
             <!-- Glowing border layer (only when low stock exists) -->
             @if($lowStockItems > 0)
@@ -80,8 +80,8 @@
             <tbody>
                 @foreach($stockSummary as $stock)
                     <tr class="border-b">
-                        <td class="p-2">{{ $stock->category }}</td>
-                        <td class="p-2">{{ $stock->quantity }}</td>
+                        <td class="p-2">{{ $stock['category'] }}</td>
+                        <td class="p-2">{{ $stock['quantity'] }}</td>
                     </tr>
                 @endforeach
             </tbody>

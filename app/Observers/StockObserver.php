@@ -11,27 +11,27 @@ class StockObserver
     public function created(Stock $stock)
     {
         // Track the creation of a stock
-        StockUpdate::create([
-            'stock_id' => $stock->id,
-            'type' => 'created',
-        ]);
+        // StockUpdate::create([
+        //     'stock_id' => $stock->id,
+        //     'type' => 'created',
+        // ]);
     }
 
     public function updated(Stock $stock)
     {
         // Track the update of a stock
-        StockUpdate::create([
-            'stock_id' => $stock->id,
-            'type' => 'updated',
-        ]);
+        // StockUpdate::create([
+        //     'stock_id' => $stock->id,
+        //     'type' => 'updated',
+        // ]);
     }
 
     public function deleting(Stock $stock)
     {
         // Track the deletion of a stock
-        StockUpdate::create([
-            'stock_id' => $stock->id,
-            'type' => 'deleted',
-        ]);
+        // StockUpdate::create([
+        //     'stock_id' => $stock->id,
+        //     'type' => 'deleted',
+        // ]);
     }
 }

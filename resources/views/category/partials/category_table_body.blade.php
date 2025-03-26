@@ -13,7 +13,8 @@
                     <i class="fas fa-edit"></i>
             </button>
             <button type="button" class="text-red-500 hover:text-red-700 delete-button"
-                    data-action="{{ route('category.destroy', $category->id) }}">
+                    data-action="{{ route('category.destroy', $category->id) }}"
+                    data-type="category">
                 <i class="fas fa-trash-alt"></i>
             </button>
         </td>
