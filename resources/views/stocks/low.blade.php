@@ -89,19 +89,72 @@
     }
 </style>
 
-<div class="container mx-auto px-4">
-    <!-- Back to Dashboard Button -->
-    <div class="my-4">
+<script>
+    window.categories = {!! json_encode($distinctCategories) !!};
+</script>
+
+<div class="container mx-auto px-4 my-5">
+    <!-- Back to Summary/Dashboard Button -->
+    @if(auth()->user()->role === 'Super Admin')
+        <a href="{{ route('stocks.low', ['division' => 'all']) }}" class="inline-flex items-center px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-colors duration-150">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to Summary
+        </a>
+    @else
         <a href="{{ route('dashboard') }}" class="inline-flex items-center px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-colors duration-150">
             <i class="fas fa-arrow-left mr-2"></i>
-            Back to Dashboard
+            Back
         </a>
-    </div>
+    @endif
+
+    @if(auth()->user()->role === 'Super Admin' && isset($divisions))
+        <div class="mb-4">
+            <form method="GET" action="{{ route('stocks.low') }}">
+                <label for="division" class="block text-sm font-medium text-gray-700">Select Division:</label>
+                <select name="division" id="division" onchange="this.form.submit()" class="block w-full mt-1 border rounded p-2">
+                    <option value="all" {{ $selectedDivision === 'all' ? 'selected' : '' }}>All Divisions</option>
+                    @foreach($divisions as $div)
+                        <option value="{{ $div->id }}" {{ $selectedDivision == $div->id ? 'selected' : '' }}>
+                            {{ $div->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </form>
+        </div>
+    @endif
 
     <h2 class="text-2xl font-semibold mt-4">Low Stock Items</h2>
-    
+
+    <div class="container mx-auto px-4 my-5" x-data="thresholdSettings()" x-init="init()">
+        <!-- Your threshold settings panel and other content here -->
+        <h3 class="text-lg font-semibold mb-4">Threshold Settings (per Category)</h3>
+        <template x-for="(setting, index) in thresholds" :key="setting.category">
+            <div class="flex items-center space-x-4 mb-3">
+                <div class="w-1/3">
+                    <span x-text="setting.category" class="font-medium text-gray-700"></span>
+                </div>
+                <div class="w-1/3">
+                    <label class="text-sm font-medium text-gray-600">Low Threshold:</label>
+                    <select x-model="setting.low_threshold" @change="updateThreshold(setting)" class="mt-1 block w-full border rounded p-1">
+                        <template x-for="i in 11" :key="i">
+                            <option :value="i-1" x-text="i-1"></option>
+                        </template>
+                    </select>
+                </div>
+                <div class="w-1/3">
+                    <label class="text-sm font-medium text-gray-600">Critical Level:</label>
+                    <select x-model="setting.critical_threshold" @change="updateThreshold(setting)" class="mt-1 block w-full border rounded p-1">
+                        <template x-for="i in 4" :key="i">
+                            <option :value="i-1" x-text="i-1"></option>
+                        </template>
+                    </select>
+                </div>
+            </div>
+        </template>
+    </div>
+
     <div class="mt-4 bg-white rounded-xl shadow-lg p-6">
-        @if($division)
+        @if(isset($division))
             <p class="text-lg text-gray-700 mb-2">Division: {{ $division->name }}</p>
         @else
             <p class="text-lg text-gray-700 mb-2">All Divisions</p>
@@ -115,31 +168,31 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($stocks as $stock)
-                <tr class="border-b odd:bg-white even:bg-gray-50 hover:bg-gray-100 transition-all duration-150 relative group">
-                        <td class="p-3 border-b">{{ $stock->category }}</td>
+                @foreach($aggregatedStocks as $stockGroup)
+                    <tr class="border-b odd:bg-white even:bg-gray-50 hover:bg-gray-100 transition-all duration-150 relative group">
+                        <td class="p-3 border-b">{{ $stockGroup->category }}</td>
                         <td class="p-3 border-b text-left">
                             <div class="flex items-center space-x-2">
                                 <!-- Fixed-width container for number -->
                                 <span class="text-left w-6 inline-block font-medium
-                                    {{ $stock->total <= 5 ? 'text-red-600' : ($stock->total < 10 ? 'text-amber-600' : 'text-green-600') }}">
-                                    {{ $stock->total }}
+                                    {{ $stockGroup->total <= 5 ? 'text-red-600' : ($stockGroup->total < 10 ? 'text-amber-600' : 'text-green-600') }}">
+                                    {{ $stockGroup->total }}
                                 </span>
                                 
                                 <!-- Progress bar container -->
-                                <div class="w-24 h-3 bg-gray-200 rounded-full overflow-hidden {{ $stock->total <= 5 ? 'critical-glow' : '' }}">
-                                    <!-- Inner bar -->
+                                <div class="w-24 h-3 bg-gray-200 rounded-full overflow-hidden {{ $stockGroup->total <= 5 ? 'critical-glow' : '' }}">
+                                    <!-- Inner bar: Calculate width based on your threshold logic (example: using 10 as the maximum) -->
                                     <div class="h-full rounded-full animate-progress 
-                                         {{ $stock->total <= 5 ? 'bg-red-600' : ($stock->total < 10 ? 'bg-amber-500' : 'bg-green-500') }}"
-                                         data-target-width="{{ min(($stock->total / 10) * 100, 100) }}%"
-                                         style="width: 0%;">
+                                        {{ $stockGroup->total <= 5 ? 'bg-red-600' : ($stockGroup->total < 10 ? 'bg-amber-500' : 'bg-green-500') }}"
+                                        data-target-width="{{ min(($stockGroup->total / 10) * 100, 100) }}%"
+                                        style="width: 0%;">
                                     </div>
                                 </div>
                                 
                                 <!-- Status indicator -->
-                                @if($stock->total <= 5)
+                                @if($stockGroup->total <= 5)
                                     <i class="fas fa-exclamation-triangle text-red-600 pulse-fade" title="Critical Stock Level"></i>
-                                @elseif($stock->total < 10)
+                                @elseif($stockGroup->total < 10)
                                     <i class="fas fa-exclamation-circle text-amber-500" title="Low Stock"></i>
                                 @else
                                     <i class="fas fa-check-circle text-green-500" title="Adequate Stock"></i>
@@ -147,23 +200,20 @@
                                 
                                 <!-- Container for status text and tooltip -->
                                 <div class="relative inline-flex items-center">
-                                    <!-- Text label for stock status -->
                                     <span class="text-xs font-medium
-                                        {{ $stock->total <= 5 ? 'text-red-600 glow-blink' : ($stock->total < 10 ? 'text-amber-500' : 'text-green-500') }}">
-                                        {{ $stock->total <= 5 ? 'Critical' : ($stock->total < 10 ? 'Low' : 'OK') }}
+                                        {{ $stockGroup->total <= 5 ? 'text-red-600 glow-blink' : ($stockGroup->total < 10 ? 'text-amber-500' : 'text-green-500') }}">
+                                        {{ $stockGroup->total <= 5 ? 'Critical' : ($stockGroup->total < 10 ? 'Low' : 'OK') }}
                                     </span>
                                     
-                                    <!-- Tooltip -->
                                     <div class="opacity-0 group-hover:opacity-100 absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-white shadow-lg p-3 rounded-md text-xs z-20 transition-opacity duration-200 min-w-[200px] text-gray-800">
-                                        <p class="mb-1"><strong>Category:</strong> {{ $stock->category }}</p>
-                                        <p class="mb-1"><strong>Current Stock:</strong> {{ $stock->total }}</p>
-                                        <p class="mb-1"><strong>Status:</strong> {{ $stock->total <= 5 ? 'Critical' : ($stock->total < 10 ? 'Low' : 'Adequate') }}</p>
-                                        @if(isset($stock->updated_at))
-                                            <p class="mb-1"><strong>Last Updated:</strong> {{ $stock->updated_at->format('M d, Y') }}</p>
+                                        <p class="mb-1"><strong>Category:</strong> {{ $stockGroup->category }}</p>
+                                        <p class="mb-1"><strong>Current Stock:</strong> {{ $stockGroup->total }}</p>
+                                        <p class="mb-1"><strong>Status:</strong> {{ $stockGroup->total <= 5 ? 'Critical' : ($stockGroup->total < 10 ? 'Low' : 'Adequate') }}</p>
+                                        @if($stockGroup->updated_at)
+                                            <p class="mb-1"><strong>Last Updated:</strong> {{ \Carbon\Carbon::parse($stockGroup->updated_at)->format('M d, Y') }}</p>
                                         @endif
                                     </div>
                                 </div>
-
                             </div>
                         </td>                   
                     </tr>
@@ -179,6 +229,63 @@
 @endsection
 
 @section('scripts')
+<script>
+    function thresholdSettings() {
+        return {
+            thresholds: [],
+            init() {
+                console.log('Alpine init triggered');
+                // Load thresholds for the logged-in user.
+                fetch('{{ route('thresholds.user') }}', {
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Fetched thresholds:', data);
+                    let fetched = Object.values(data);
+                    // Ensure window.categories is defined (should be set in your Blade file)
+                    if (window.categories && window.categories.length > 0) {
+                        // For each category, if a threshold exists in fetched, use it; otherwise, use default values.
+                        this.thresholds = window.categories.map(cat => {
+                            let found = fetched.find(item => item.category === cat);
+                            return found ? found : {
+                                category: cat,
+                                low_threshold: 10,
+                                critical_threshold: 3
+                            };
+                        });
+                    } else {
+                        this.thresholds = fetched;
+                    }
+                })
+                .catch(error => console.error('Error fetching thresholds:', error));
+            },
+            updateThreshold(setting) {
+                // Send an AJAX request to update a single threshold.
+                fetch('{{ route('thresholds.update') }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        category: setting.category,
+                        low_threshold: setting.low_threshold,
+                        critical_threshold: setting.critical_threshold
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Threshold updated for ' + setting.category);
+                    }
+                })
+                .catch(error => console.error('Error updating threshold:', error));
+            }
+        }
+    }
+</script>
 <script>
     const ctx = document.getElementById('lowStockChart').getContext('2d');
     const lowStockChart = new Chart(ctx, {

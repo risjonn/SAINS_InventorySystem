@@ -97,9 +97,9 @@
             <tbody>
                 @forelse($transactions as $transaction)
                     <tr class="border-b hover:bg-gray-50">
-                        <td class="p-3 whitespace-nowrap">{{ $transaction->category }}</td>
-                        <td class="p-3 whitespace-nowrap">{{ $transaction->brand ?? 'N/A' }}</td>
-                        <td class="p-3 whitespace-nowrap">{{ $transaction->stock_model }}</td>
+                        <td class="p-3 whitespace-nowrap">{{ $transaction->product_category ?? 'N/A' }}</td>
+                        <td class="p-3 whitespace-nowrap">{{ $transaction->product_brand ?? 'N/A' }}</td>
+                        <td class="p-3 whitespace-nowrap">{{ $transaction->product_model ?? 'N/A' }}</td>
                         <td class="p-3 whitespace-nowrap">{{ $transaction->serial_number }}</td>
                         <td class="p-3 whitespace-nowrap">{{ $transaction->product_code ?? 'N/A' }}</td>
                         <td class="p-3 whitespace-nowrap">{{ $transaction->requisition_no ?? 'N/A' }}</td>
@@ -152,10 +152,10 @@
                         }
                     @endphp
                     <tr class="border-b hover:bg-gray-50">
-                        <td class="p-3">{{ $transaction->category }}</td>
-                        <td class="p-3">{{ $transaction->brand ?? 'N/A' }}</td>
+                        <td class="p-3">{{ $transaction->product_category ?? 'N/A' }}</td>
+                        <td class="p-3">{{ $transaction->product_brand ?? 'N/A' }}</td>
                         <td class="p-3">{{ $transaction->serial_number }}</td>
-                        <td class="p-3">{{ $transaction->stock_model }}</td>
+                        <td class="p-3">{{ $transaction->product_model ?? 'N/A' }}</td>
                         <td class="p-3 font-bold {{ $transaction->type == 'IN' ? 'text-green-600' : 'text-red-600' }}">
                             {{ $transaction->type }}
                         </td>

@@ -3,8 +3,10 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ThresholdController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -70,6 +72,8 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::put('/users/{user}', [\App\Http\Controllers\UserManagementController::class, 'update'])->name('users.update');
     Route::delete('/users/{user}', [\App\Http\Controllers\UserManagementController::class, 'destroy'])->name('users.destroy');
 
+    Route::resource('products', ProductController::class);
+
     Route::get('/brands', [BrandController::class, 'index'])->name('brands.index');
     Route::get('/brands/create', [BrandController::class, 'create'])->name('brands.create');
     Route::post('/brands', [BrandController::class, 'store'])->name('brands.store');
@@ -103,6 +107,8 @@ Route::middleware(['auth'])->group(function () {
     // Route for showing a specific stock. This should come after the category route.
     Route::get('stocks/show/{category}/{division}', [StockController::class, 'show'])->name('stocks.show');
 
+    Route::get('/thresholds/user', [ThresholdController::class, 'getUserThresholds'])->name('thresholds.user');
+    Route::post('/thresholds/update', [ThresholdController::class, 'updateThreshold'])->name('thresholds.update');
 
     Route::get('/transactions/details', [StockController::class, 'getTransactionDetails'])
     ->name('transactions.details');

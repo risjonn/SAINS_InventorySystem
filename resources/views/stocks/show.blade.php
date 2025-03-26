@@ -91,20 +91,24 @@
                         <tbody>
                             @forelse($stocks as $stock)
                                 <tr class="border-bottom">
-                                    <td class="text-center py-2">{{ $stock->category }}</td>
-                                    <td class="text-center py-2">{{ $stock->brand ?? 'N/A' }}</td>
-                                    <td class="text-center py-2">{{ $stock->model }}</td>
-                                    <!-- Make serial number clickable -->
-                                    <td class="text-center py-2">
-                                        <a href="#" class="req-detail text-decoration-underline"
-                                           data-serial="{{ $stock->serial_number }}">
-                                            {{ $stock->serial_number }}
-                                        </a>
-                                    </td>
+                                    <td class="text-center py-2">{{ optional($stock->product)->category ?? 'N/A' }}</td>
+                                    <td class="text-center py-2">{{ optional($stock->product)->brand ?? 'N/A' }}</td>
+                                    <td class="text-center py-2">{{ optional($stock->product)->model ?? 'N/A' }}</td>
+                                    <td class="text-center py-2">{{ $stock->serial_number }}</td>
                                     @if($selectedDivision === 'all')
                                         <td class="text-center py-2">{{ $stock->division->name }}</td>
                                     @endif
-                                    <td class="text-center py-2">{{ $stock->requisition_no ?? 'N/A' }}</td>
+                                    <td class="text-center py-2">
+                                        @if($stock->requisition_no)
+                                            <a href="#" class="req-detail text-decoration-underline"
+                                            data-req="{{ $stock->requisition_no }}"
+                                            data-serial="{{ $stock->serial_number }}">
+                                                {{ $stock->requisition_no }}
+                                            </a>
+                                        @else
+                                            N/A
+                                        @endif
+                                    </td>
                                     <td class="text-center py-2">{{ $stock->remarks }}</td>
                                     <td class="text-center py-2">
                                         {{ \Carbon\Carbon::parse($stock->updated_at)->format('Y-m-d H:i:s') }}
