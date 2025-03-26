@@ -12,7 +12,7 @@
     @endphp
 
     <!-- Page Header -->
-    <h2 class="text-center mb-4">
+    <h2 class="text-center font-semibold  mb-4">
         Stock Transaction
         <span class="text-sm ml-2 text-gray-600">
         (Division: {{ $selectedDivision === 'all' ? 'All Divisions' : $division->name }})

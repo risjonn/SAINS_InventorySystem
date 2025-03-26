@@ -463,27 +463,28 @@ class StockController extends Controller
         $selectedDivision = session('selectedDivision', auth()->user()->division_id);
         $stockId = $request->input('stock_id');
         $stock = Stock::findOrFail($stockId);
-
+    
         // Ensure the stock belongs to the selected division
         if ($stock->division_id != $selectedDivision) {
             return redirect()->back()->with('error', 'This stock does not belong to the selected division.');
         }
-
+    
         // Check if this is a forced RETURN
         $forceOperationType = $request->input('force_operation_type');
-
+    
         // Common validation for remarks
         $validated = $request->validate([
             'remarks' => 'required|string',
         ]);
-
+    
         // If forced to RETURN
         if ($forceOperationType === 'RETURN') {
-            // Ensure current status is LOAN
-            if ($stock->status !== 'LOAN') {
-                return redirect()->route('stocks.management')->with('error', 'This item is not on loan.');
+            // ALLOW returning if stock is either LOAN or OUT
+            if (! in_array($stock->status, ['LOAN', 'OUT'])) {
+                return redirect()->route('stocks.management')
+                    ->with('error', 'This item is neither on loan nor out.');
             }
-
+    
             // Record transaction as "IN" to avoid DB error if type is an ENUM
             StockTransaction::create([
                 'serial_number'    => $stock->serial_number,
@@ -497,31 +498,39 @@ class StockController extends Controller
                 'remarks'          => $validated['remarks'] . ' (Returned to inventory)',
                 'transaction_date' => now(),
             ]);
-
+    
             // Update stock status and remarks
             $stock->status  = 'available';
             $stock->remarks = $validated['remarks'];
             $stock->save();
-
+    
             return redirect()->route('stocks.management')->with([
                 'success'  => 'Stock returned successfully.',
                 'resource' => 'stock'
             ]);
         }
-
+    
         // Otherwise, handle normal OUT or LOAN operation
         $operationType = $request->input('operation_type');
-
+    
         if ($operationType === 'LOAN') {
-            // Additional validation for "taken_by"
-            $request->validate([
-                'taken_by' => 'required|string',
+            // ADD: validate "manual_date" for the loan start date
+            $loanData = $request->validate([
+                'taken_by'      => 'required|string',
+                'loan_period'   => 'required|integer|min:1|max:90',
+                'manual_date'   => 'required|date', // <--- ADDED
             ]);
-
+    
             // Combine "taken_by" info in remarks so you can see who physically took it
             $extendedRemarks = $validated['remarks'] . ' (Taken by: ' . $request->input('taken_by') . ')';
-
-            // Create LOAN transaction
+    
+            // Parse the user-chosen manual_date as the loan start date
+            $loanStartDate = \Carbon\Carbon::parse($loanData['manual_date']);
+    
+            // Calculate due date as manual_date + loan_period days
+            $dueDate = $loanStartDate->copy()->addDays($loanData['loan_period']);
+    
+            // Create LOAN transaction including due_date and loan_start_date
             StockTransaction::create([
                 'serial_number'    => $stock->serial_number,
                 'stock_model'      => $stock->model,
@@ -532,13 +541,22 @@ class StockController extends Controller
                 'type'             => 'LOAN',
                 'handled_by'       => auth()->id(),
                 'remarks'          => $extendedRemarks,
+                // Keep the existing line for transaction_date:
                 'transaction_date' => now(),
+                // ADD: store the user-chosen loan start date as a separate field (requires DB column)
+                'loan_start_date'  => $loanStartDate,
+                'due_date'         => $dueDate,
+                'loan_period'      => $loanData['loan_period'], // Store the user-entered loan period
             ]);
-
-            // Update stock status to LOAN
-            $stock->status = 'LOAN';
+    
+            // Update stock status to LOAN and update remarks
+            // Also store loan_period & loan_start_date in the stock record
+            $stock->status        = 'LOAN';
+            $stock->remarks       = $extendedRemarks;
+            $stock->loan_period   = $loanData['loan_period']; // existing line
+            $stock->loan_start_date = $loanStartDate;         // <--- ADDED
             $stock->save();
-
+    
             return redirect()->route('stocks.management')->with([
                 'success'  => 'Loan transaction recorded and stock marked as loaned.',
                 'resource' => 'stock'
@@ -548,13 +566,13 @@ class StockController extends Controller
             $request->validate([
                 'taken_by' => 'required|string',
             ]);
-
+    
             // If user typed a 'taken_by', append it to remarks
             $takenBy = $request->input('taken_by');
             $extendedRemarks = !empty($takenBy)
                 ? $validated['remarks'] . ' (Taken by: ' . $takenBy . ')'
                 : $validated['remarks'];
-
+    
             // Create OUT transaction
             StockTransaction::create([
                 'serial_number'    => $stock->serial_number,
@@ -568,18 +586,21 @@ class StockController extends Controller
                 'remarks'          => $extendedRemarks,
                 'transaction_date' => now(),
             ]);
-
-            // Update stock status to OUT
+    
+            // Update stock status to OUT and update remarks
             $stock->status = 'OUT';
+            $stock->remarks = $extendedRemarks;
             $stock->save();
-
+    
             return redirect()->route('stocks.management')->with([
                 'success'  => 'OUT transaction recorded and stock removed.',
                 'resource' => 'stock'
             ]);
         }
     }
-
+    
+    
+    
     public function loanedStocks(Request $request)
     {
         $selectedDivision = session('selectedDivision', auth()->user()->division_id);

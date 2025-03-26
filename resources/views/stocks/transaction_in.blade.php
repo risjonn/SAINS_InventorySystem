@@ -4,12 +4,18 @@
 
 @section('content')
 <div class="container my-5">
-    <h2 class="text-center mb-4">
-        Stock Transaction - IN Operation
-        @if(isset($division))
-            <span class="text-sm ml-2 text-gray-600">(Division: {{ $division->name }})</span>
-        @endif
-    </h2>
+    <!-- Flex container with Back button on the top left and heading centered -->
+    <div class="flex items-center mb-4">
+        <a href="{{ route('stocks.management') }}" class="bg-gray-600 text-white text-sm px-3 py-1 rounded hover:bg-gray-700 transition-colors">
+            &larr; Back
+        </a>
+        <h2 class="flex-grow text-center">
+            Stock Transaction - IN Operation
+            @if(isset($division))
+                <span class="text-sm ml-2 text-gray-600">(Division: {{ $division->name }})</span>
+            @endif
+        </h2>
+    </div>
 
     <form action="{{ route('stocks.transactions.storeIn') }}" method="POST" class="mt-4">
         @csrf
@@ -70,13 +76,36 @@
             <input type="text" name="erp_number" id="erp_number" class="mt-1 block w-full border rounded p-2">
         </div>
 
+        <!-- SLA Field (New Field) -->
+        <div class="mb-4">
+            <label for="sla" class="block text-sm font-medium text-gray-700">SLA</label>
+            <input type="text" name="sla" id="sla" class="mt-1 block w-full border rounded p-2">
+        </div>
+
+        <!-- SLA CATEGORY Field (New Field) -->
+        <div class="mb-4">
+            <label for="sla_category" class="block text-sm font-medium text-gray-700">SLA CATEGORY</label>
+            <select name="sla_category" id="sla_category" class="mt-1 block w-full border rounded p-2">
+                <option value="">Select SLA Category</option>
+                <option value="Standard">Standard</option>
+                <option value="Premium">Premium</option>
+                <option value="Critical">Critical</option>
+                <!-- Add additional SLA categories if needed -->
+            </select>
+        </div>
+
         <!-- Remarks Field -->
         <div class="mb-4">
             <label for="remarks" class="block text-sm font-medium text-gray-700">Remarks</label>
             <textarea name="remarks" id="remarks" class="mt-1 block w-full border rounded p-2"></textarea>
         </div>
 
-        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Record IN Transaction</button>
+        <!-- Submit Button (aligned left) -->
+        <div class="flex">
+            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">
+                Record IN Transaction
+            </button>
+        </div>
     </form>
 </div>
 @endsection
@@ -108,8 +137,6 @@ $(document).ready(function(){
             $("#category").val("").removeAttr("disabled");
         }
     });
-    
-    // Removed auto-generation of requisition number so user can manually input it.
 });
 </script>
 @endsection
