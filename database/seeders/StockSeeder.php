@@ -32,7 +32,7 @@ class StockSeeder extends Seeder
         $divisions = [1, 2, 3, 4, 5, 6];
 
         // Generate a random number of stocks between 60 and 100.
-        $numStocks = rand(60, 100);
+        $numStocks = rand(350, 500);
 
         // Get all products from the database.
         $products = Product::all();
