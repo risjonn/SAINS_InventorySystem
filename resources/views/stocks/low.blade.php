@@ -8,62 +8,28 @@
     
     /* Synchronized glow animation */
     @keyframes sync-glow-pulse {
-        0% {
-            box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
-        }
-        50% {
-            box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.4);
-        }
-        100% {
-            box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
-        }
+        0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+        50% { box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.4); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
     }
     
-    /* Pulse animation that changes opacity and scale */
     @keyframes pulse-fade {
-        0% {
-            opacity: 0.8;
-            transform: scale(1);
-        }
-        50% {
-            opacity: 1;
-            transform: scale(1.15);
-        }
-        100% {
-            opacity: 0.8;
-            transform: scale(1);
-        }
+        0% { opacity: 0.8; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.15); }
+        100% { opacity: 0.8; transform: scale(1); }
     }
     
-    /* Subtle shake animation */
     @keyframes subtle-shake {
-        0% {
-            transform: translateX(0);
-        }
-        25% {
-            transform: translateX(-1px) rotate(-1deg);
-        }
-        50% {
-            transform: translateX(0);
-        }
-        75% {
-            transform: translateX(1px) rotate(1deg);
-        }
-        100% {
-            transform: translateX(0);
-        }
+        0% { transform: translateX(0); }
+        25% { transform: translateX(-1px) rotate(-1deg); }
+        50% { transform: translateX(0); }
+        75% { transform: translateX(1px) rotate(1deg); }
+        100% { transform: translateX(0); }
     }
     
-    /* Blink animation with shadow */
     @keyframes glow-blink {
-        0%, 100% {
-            opacity: 1;
-            text-shadow: 0 0 0 rgba(220, 38, 38, 0);
-        }
-        50% {
-            opacity: 1;
-            text-shadow: 0 0 10px rgba(220, 38, 38, 0.8);
-        }
+        0%, 100% { opacity: 1; text-shadow: 0 0 0 rgba(220, 38, 38, 0); }
+        50% { opacity: 1; text-shadow: 0 0 10px rgba(220, 38, 38, 0.8); }
     }
     
     .critical-glow {
@@ -72,38 +38,27 @@
         border-radius: 9999px;
     }
     
-    .pulse-fade {
-        display: inline-block;
-        animation: pulse-fade 1.5s infinite ease-in-out;
-        transform-origin: center;
-    }
-    
-    .subtle-shake {
-        display: inline-block;
-        animation: subtle-shake 1.5s infinite ease-in-out;
-    }
-    
-    .glow-blink {
-        display: inline-block;
-        animation: glow-blink 1.5s infinite ease-in-out;
+    /* Collapsible panel for thresholds */
+    .collapse-content {
+        max-height: 300px;
+        overflow-y: auto;
     }
 </style>
 
 <script>
+    // Ensure window.categories is defined
     window.categories = {!! json_encode($distinctCategories) !!};
 </script>
 
 <div class="container mx-auto px-4 my-5">
-    <!-- Back to Summary/Dashboard Button -->
+    <!-- Back Button -->
     @if(auth()->user()->role === 'Super Admin')
         <a href="{{ route('stocks.low', ['division' => 'all']) }}" class="inline-flex items-center px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-colors duration-150">
-            <i class="fas fa-arrow-left mr-2"></i>
-            Back to Summary
+            <i class="fas fa-arrow-left mr-2"></i> Back to Summary
         </a>
     @else
         <a href="{{ route('dashboard') }}" class="inline-flex items-center px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-colors duration-150">
-            <i class="fas fa-arrow-left mr-2"></i>
-            Back
+            <i class="fas fa-arrow-left mr-2"></i> Back
         </a>
     @endif
 
@@ -114,9 +69,7 @@
                 <select name="division" id="division" onchange="this.form.submit()" class="block w-full mt-1 border rounded p-2">
                     <option value="all" {{ $selectedDivision === 'all' ? 'selected' : '' }}>All Divisions</option>
                     @foreach($divisions as $div)
-                        <option value="{{ $div->id }}" {{ $selectedDivision == $div->id ? 'selected' : '' }}>
-                            {{ $div->name }}
-                        </option>
+                        <option value="{{ $div->id }}" {{ $selectedDivision == $div->id ? 'selected' : '' }}>{{ $div->name }}</option>
                     @endforeach
                 </select>
             </form>
@@ -125,34 +78,41 @@
 
     <h2 class="text-2xl font-semibold mt-4">Low Stock Items</h2>
 
-    <div class="container mx-auto px-4 my-5" x-data="thresholdSettings()" x-init="init()">
-        <!-- Your threshold settings panel and other content here -->
-        <h3 class="text-lg font-semibold mb-4">Threshold Settings (per Category)</h3>
-        <template x-for="(setting, index) in thresholds" :key="setting.category">
-            <div class="flex items-center space-x-4 mb-3">
-                <div class="w-1/3">
-                    <span x-text="setting.category" class="font-medium text-gray-700"></span>
+    <!-- Collapsible Threshold Settings Section -->
+    <div x-data="thresholdSettings()" class="mb-6">
+        <button @click="showSettings = !showSettings" class="inline-flex items-center px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded transition-colors duration-200">
+            <i class="fas fa-sliders-h mr-2"></i>
+            <span x-text="showSettings ? 'Hide Threshold Settings' : 'Edit Threshold Settings'"></span>
+        </button>
+        <div x-show="showSettings" class="mt-4 bg-white rounded-xl shadow-lg p-4 collapse-content" style="display: none;">
+            <h3 class="text-xl font-semibold mb-4 border-b pb-2 text-gray-800">Threshold Settings (per Category)</h3>
+            <template x-for="(setting, index) in thresholds" :key="setting.category">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-1/3">
+                        <span x-text="setting.category" class="font-medium text-gray-800"></span>
+                    </div>
+                    <div class="w-1/3">
+                        <label class="block text-sm text-gray-600">Low Threshold:</label>
+                        <select x-model="setting.low_threshold" @change="updateThreshold(setting)" class="mt-1 block w-full border rounded p-2">
+                            <template x-for="i in 11" :key="i">
+                                <option :value="i-1" x-text="i-1"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div class="w-1/3">
+                        <label class="block text-sm text-gray-600">Critical Level:</label>
+                        <select x-model="setting.critical_threshold" @change="updateThreshold(setting)" class="mt-1 block w-full border rounded p-2">
+                            <template x-for="i in 4" :key="i">
+                                <option :value="i-1" x-text="i-1"></option>
+                            </template>
+                        </select>
+                    </div>
                 </div>
-                <div class="w-1/3">
-                    <label class="text-sm font-medium text-gray-600">Low Threshold:</label>
-                    <select x-model="setting.low_threshold" @change="updateThreshold(setting)" class="mt-1 block w-full border rounded p-1">
-                        <template x-for="i in 11" :key="i">
-                            <option :value="i-1" x-text="i-1"></option>
-                        </template>
-                    </select>
-                </div>
-                <div class="w-1/3">
-                    <label class="text-sm font-medium text-gray-600">Critical Level:</label>
-                    <select x-model="setting.critical_threshold" @change="updateThreshold(setting)" class="mt-1 block w-full border rounded p-1">
-                        <template x-for="i in 4" :key="i">
-                            <option :value="i-1" x-text="i-1"></option>
-                        </template>
-                    </select>
-                </div>
-            </div>
-        </template>
+            </template>
+        </div>
     </div>
 
+    <!-- Table: Only show categories below threshold (default low threshold: 10) -->
     <div class="mt-4 bg-white rounded-xl shadow-lg p-6">
         @if(isset($division))
             <p class="text-lg text-gray-700 mb-2">Division: {{ $division->name }}</p>
@@ -169,61 +129,48 @@
             </thead>
             <tbody>
                 @foreach($aggregatedStocks as $stockGroup)
+                    @if($stockGroup->total < 10)
                     <tr class="border-b odd:bg-white even:bg-gray-50 hover:bg-gray-100 transition-all duration-150 relative group">
                         <td class="p-3 border-b">{{ $stockGroup->category }}</td>
                         <td class="p-3 border-b text-left">
                             <div class="flex items-center space-x-2">
-                                <!-- Fixed-width container for number -->
-                                <span class="text-left w-6 inline-block font-medium
-                                    {{ $stockGroup->total <= 5 ? 'text-red-600' : ($stockGroup->total < 10 ? 'text-amber-600' : 'text-green-600') }}">
+                                <!-- Display available count -->
+                                <span class="w-8 inline-block font-medium text-amber-600 text-center">
                                     {{ $stockGroup->total }}
                                 </span>
                                 
-                                <!-- Progress bar container -->
+                                <!-- Progress Bar (fills proportionally toward 10) -->
                                 <div class="w-24 h-3 bg-gray-200 rounded-full overflow-hidden {{ $stockGroup->total <= 5 ? 'critical-glow' : '' }}">
-                                    <!-- Inner bar: Calculate width based on your threshold logic (example: using 10 as the maximum) -->
-                                    <div class="h-full rounded-full animate-progress 
-                                        {{ $stockGroup->total <= 5 ? 'bg-red-600' : ($stockGroup->total < 10 ? 'bg-amber-500' : 'bg-green-500') }}"
-                                        data-target-width="{{ min(($stockGroup->total / 10) * 100, 100) }}%"
-                                        style="width: 0%;">
+                                    <div class="h-full rounded-full {{ $stockGroup->total <= 5 ? 'bg-red-600' : 'bg-amber-500' }} animate-progress"
+                                        style="width: {{ min(($stockGroup->total / 10) * 100, 100) }}%;">
                                     </div>
                                 </div>
                                 
-                                <!-- Status indicator -->
-                                @if($stockGroup->total <= 5)
-                                    <i class="fas fa-exclamation-triangle text-red-600 pulse-fade" title="Critical Stock Level"></i>
-                                @elseif($stockGroup->total < 10)
-                                    <i class="fas fa-exclamation-circle text-amber-500" title="Low Stock"></i>
-                                @else
-                                    <i class="fas fa-check-circle text-green-500" title="Adequate Stock"></i>
-                                @endif
-                                
-                                <!-- Container for status text and tooltip -->
-                                <div class="relative inline-flex items-center">
-                                    <span class="text-xs font-medium
-                                        {{ $stockGroup->total <= 5 ? 'text-red-600 glow-blink' : ($stockGroup->total < 10 ? 'text-amber-500' : 'text-green-500') }}">
-                                        {{ $stockGroup->total <= 5 ? 'Critical' : ($stockGroup->total < 10 ? 'Low' : 'OK') }}
-                                    </span>
-                                    
-                                    <div class="opacity-0 group-hover:opacity-100 absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-white shadow-lg p-3 rounded-md text-xs z-20 transition-opacity duration-200 min-w-[200px] text-gray-800">
-                                        <p class="mb-1"><strong>Category:</strong> {{ $stockGroup->category }}</p>
-                                        <p class="mb-1"><strong>Current Stock:</strong> {{ $stockGroup->total }}</p>
-                                        <p class="mb-1"><strong>Status:</strong> {{ $stockGroup->total <= 5 ? 'Critical' : ($stockGroup->total < 10 ? 'Low' : 'Adequate') }}</p>
-                                        @if($stockGroup->updated_at)
-                                            <p class="mb-1"><strong>Last Updated:</strong> {{ \Carbon\Carbon::parse($stockGroup->updated_at)->format('M d, Y') }}</p>
-                                        @endif
-                                    </div>
+                                <!-- Status Badge -->
+                                <div>
+                                    @if($stockGroup->total <= 5)
+                                        <span class="inline-flex items-center bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-semibold shadow">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i> Critical
+                                        </span>
+                                    @elseif($stockGroup->total < 10)
+                                        <span class="inline-flex items-center bg-amber-100 text-amber-700 px-2 py-1 rounded-full text-xs font-semibold shadow">
+                                            <i class="fas fa-exclamation-circle mr-1"></i> Low
+                                        </span>
+                                    @endif
                                 </div>
                             </div>
                         </td>                   
                     </tr>
+                    @endif
                 @endforeach
             </tbody>
         </table>
     </div>
 
-    <div class="mb-6">
-        <canvas id="lowStockChart" class="w-full h-64"></canvas>
+    <!-- Enhanced Chart Section: Similar styling as summary page -->
+    <div class="mt-8 bg-white rounded-xl shadow-lg p-6" style="max-width: 600px; margin: auto; height: 300px;">
+        <h3 class="text-xl font-semibold mb-4 text-gray-800 text-center">Low Stock by Category</h3>
+        <canvas id="lowStockChart" style="max-width: 100%; height: 100%;"></canvas>
     </div>
 </div>
 @endsection
@@ -232,10 +179,10 @@
 <script>
     function thresholdSettings() {
         return {
+            showSettings: false,
             thresholds: [],
             init() {
                 console.log('Alpine init triggered');
-                // Load thresholds for the logged-in user.
                 fetch('{{ route('thresholds.user') }}', {
                     headers: {'X-Requested-With': 'XMLHttpRequest'}
                 })
@@ -243,9 +190,7 @@
                 .then(data => {
                     console.log('Fetched thresholds:', data);
                     let fetched = Object.values(data);
-                    // Ensure window.categories is defined (should be set in your Blade file)
                     if (window.categories && window.categories.length > 0) {
-                        // For each category, if a threshold exists in fetched, use it; otherwise, use default values.
                         this.thresholds = window.categories.map(cat => {
                             let found = fetched.find(item => item.category === cat);
                             return found ? found : {
@@ -261,7 +206,6 @@
                 .catch(error => console.error('Error fetching thresholds:', error));
             },
             updateThreshold(setting) {
-                // Send an AJAX request to update a single threshold.
                 fetch('{{ route('thresholds.update') }}', {
                     method: 'POST',
                     headers: {
@@ -286,6 +230,8 @@
         }
     }
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     const ctx = document.getElementById('lowStockChart').getContext('2d');
     const lowStockChart = new Chart(ctx, {
@@ -301,7 +247,7 @@
                     'rgba(52, 211, 153, 0.7)',
                     'rgba(96, 165, 250, 0.7)',
                     'rgba(167, 139, 250, 0.7)',
-                    // Additional colors as needed
+                    // Add more colors if needed...
                 ],
                 borderColor: [
                     'rgba(248, 113, 113, 1)',
@@ -314,9 +260,8 @@
             }]
         },
         options: {
-            maintainAspectRatio: false, 
-            indexAxis: 'y',
-            responsive: true,
+            responsive: false,
+            maintainAspectRatio: false,
             layout: {
                 padding: {
                     top: 20,
@@ -328,32 +273,17 @@
             scales: {
                 x: {
                     beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
-                    }
+                    ticks: { stepSize: 1 }
                 }
             },
             plugins: {
-                legend: {
-                    display: false
-                },
+                legend: { display: false },
                 title: {
                     display: true,
                     text: 'Low Stock by Category'
                 }
             }
         }
-    });
-</script>
-
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        document.querySelectorAll('.animate-progress').forEach(function(el) {
-            const targetWidth = el.getAttribute('data-target-width');
-            // Trigger reflow for a smooth transition
-            void el.offsetWidth;
-            el.style.width = targetWidth;
-        });
     });
 </script>
 @endsection

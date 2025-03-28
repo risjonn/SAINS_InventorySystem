@@ -51,22 +51,58 @@ class StockController extends Controller
         }
 
         if ($selectedDivision === 'all') {
-            // Summary view for Super Admin: Group by division
+            // Load the thresholds for the current user (or use defaults)
+            $user = auth()->user();
+            $userThresholds = \App\Models\UserProductThreshold::where('user_id', $user->id)
+                                 ->get()
+                                 ->keyBy(function ($item) {
+                                     // Normalize category keys to lowercase trimmed strings
+                                     return strtolower(trim($item->category));
+                                 });
+        
+            // Retrieve all available stocks with their related products
             $stocks = Stock::with('product')
-                ->where('status', 'available')
-                ->select('division_id', DB::raw('COUNT(DISTINCT product_id) as total'))
-                ->groupBy('division_id')
-                ->get();
-
-            $divisionsSummary = $stocks->map(function ($item) {
-                $division = Division::find($item->division_id);
+                        ->where('status', 'available')
+                        ->get();
+        
+            // Group stocks by division and then by category (normalized)
+            $divisionsSummary = $stocks->groupBy('division_id')->map(function ($divisionStocks, $divisionId) use ($userThresholds) {
+                // Group stocks by category
+                $grouped = $divisionStocks->groupBy(function ($stock) {
+                    return strtolower(trim(optional($stock->product)->category ?? 'Unknown'));
+                });
+        
+                $defaultLowThreshold = 10;
+                $defaultCriticalThreshold = 5;
+        
+                // Total number of categories that are low (below low threshold)
+                $totalLow = $grouped->filter(function ($group, $category) use ($userThresholds, $defaultLowThreshold) {
+                    $threshold = $userThresholds->has($category)
+                                ? $userThresholds->get($category)->low_threshold
+                                : $defaultLowThreshold;
+                    return $group->count() < $threshold;
+                })->count();
+        
+                // Number of categories that are critical (below critical threshold)
+                $criticalCount = $grouped->filter(function ($group, $category) use ($defaultCriticalThreshold) {
+                    return $group->count() < $defaultCriticalThreshold;
+                })->count();
+        
+                // Non-critical low = Total low minus critical count
+                $nonCriticalLow = $totalLow - $criticalCount;
+        
+                $division = Division::find($divisionId);
                 return [
-                    'id'    => $item->division_id,
-                    'name'  => $division ? $division->name : 'Unknown',
-                    'total' => $item->total,
+                    'id'             => $divisionId,
+                    'name'           => $division ? $division->name : 'Unknown',
+                    'nonCriticalLow' => $nonCriticalLow,
+                    'critical'       => $criticalCount,
                 ];
-            });
-
+            })->filter(function ($division) {
+                // Only include divisions that have any low stock items.
+                return ($division['nonCriticalLow'] + $division['critical']) > 0;
+            })->values();
+        
             return view('stocks.low_summary', compact('divisionsSummary', 'selectedDivision'));
         } else {
             // Detailed view for a specific division:
