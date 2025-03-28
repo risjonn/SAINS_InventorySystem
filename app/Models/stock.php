@@ -16,7 +16,11 @@ class Stock extends Model
         'status',
         'product_code',
         'product_id',
-        'requisition_no'
+        'requisition_no',
+        'product_code',  // New field for product code
+        'requisition_no', // New field for requisition number
+        'erp_number',
+         'sla_category'
     ];
 
     public function division()

@@ -12,7 +12,7 @@
     @endphp
 
     <!-- Page Header -->
-    <h2 class="text-center mb-4">
+    <h2 class="text-center font-semibold  mb-4">
         Stock Transaction
         <span class="text-sm ml-2 text-gray-600">
         (Division: {{ $selectedDivision === 'all' ? 'All Divisions' : $division->name }})
@@ -255,9 +255,12 @@ $(document).ready(function(){
     $("#sortOption").trigger("change");
 
     /* ===================== Search Filter Functionality ===================== */
+    // COMMENT OUT the row-hiding logic so the server-side search can find items on all pages.
     $("#searchInput").on("keyup", function() {
+        // If you want purely server-side searching (across all pages),
+        // comment out or remove this local filtering:
+        /*
         var value = $(this).val().toLowerCase();
-        // Determine which filter we're using by checking a PHP variable passed to JS.
         var currentFilter = "{{ $currentFilter }}";
         $("#transactionsTable tbody tr").each(function() {
             var showRow = false;
@@ -286,6 +289,7 @@ $(document).ready(function(){
         } else {
             $("#transactionsTable tbody tr.no-record").remove();
         }
+        */
     });
 
     $("#clearSearch").on("click", function() {
