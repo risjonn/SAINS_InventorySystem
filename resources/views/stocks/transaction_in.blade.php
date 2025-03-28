@@ -81,16 +81,10 @@
             <input type="text" name="sla" id="sla" class="mt-1 block w-full border rounded p-2">
         </div>
 
-        <!-- SLA CATEGORY Field (New Field) -->
+        <!-- SLA CATEGORY Field (Changed to a text field) -->
         <div class="mb-4">
             <label for="sla_category" class="block text-sm font-medium text-gray-700">SLA CATEGORY</label>
-            <select name="sla_category" id="sla_category" class="mt-1 block w-full border rounded p-2">
-                <option value="">Select SLA Category</option>
-                <option value="Standard">Standard</option>
-                <option value="Premium">Premium</option>
-                <option value="Critical">Critical</option>
-                <!-- Add additional SLA categories if needed -->
-            </select>
+            <input type="text" name="sla_category" id="sla_category" class="mt-1 block w-full border rounded p-2" placeholder="Enter SLA Category">
         </div>
 
         <!-- Remarks Field -->
@@ -110,39 +104,31 @@
 @endsection
 
 @section('scripts')
+<!-- Include jQuery -->
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script>
-    // Output products data as a JavaScript array of objects.
+$(document).ready(function(){
+    // Predefined product templates as a JavaScript array of objects.
     var productTemplates = @json($products);
 
-    $(document).ready(function(){
-        $("#product_code").on("change", function(){
-            var code = $(this).val();
-            // Find the product that matches the selected product code
-            var selectedProduct = productTemplates.find(function(prod) {
-                return prod.product_code === code;
-            });
-            if (selectedProduct) {
-                $("#brand").val(selectedProduct.brand);
-                $("#model").val(selectedProduct.model);
-                $("#category").val(selectedProduct.category);
-            } else {
-                $("#brand").val("");
-                $("#model").val("");
-                $("#category").val("");
-            }
+    $("#product_code").on("change", function(){
+        var code = $(this).val();
+        // Find the product that matches the selected product code.
+        var selectedProduct = productTemplates.find(function(prod) {
+            return prod.product_code === code;
         });
-        
-        // Auto-generate requisition number in format: REQ-YYYYMMDD-XXXX
-        function generateRequisitionNumber() {
-            var today = new Date();
-            var dd = String(today.getDate()).padStart(2, '0');
-            var mm = String(today.getMonth() + 1).padStart(2, '0');
-            var yyyy = today.getFullYear();
-            var randomDigits = Math.floor(Math.random() * 9000) + 1000;
-            return 'REQ-' + yyyy + mm + dd + '-' + randomDigits;
+        if (selectedProduct) {
+            $("#brand").val(selectedProduct.brand);
+            $("#model").val(selectedProduct.model);
+            $("#category").val(selectedProduct.category);
+        } else {
+            $("#brand").val("");
+            $("#model").val("");
+            $("#category").val("");
         }
-        $("#requisition_no").val(generateRequisitionNumber());
     });
+    
+    // Removed auto-generation of requisition number so user can manually input it.
+});
 </script>
 @endsection

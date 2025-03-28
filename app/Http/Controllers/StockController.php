@@ -164,16 +164,17 @@ class StockController extends Controller
         if ($search) {
             $transactionsQuery->where(function ($q) use ($search, $selectedDivision) {
                 $q->where('stock_transactions.serial_number', 'LIKE', $search.'%')
-                  ->orWhere('stock_transactions.stock_model', 'LIKE', $search.'%')
                   ->orWhere('stock_transactions.requisition_no', 'LIKE', "%{$search}%")
                   ->orWhere('products.category', 'LIKE', "%{$search}%")
                   ->orWhere('products.model', 'LIKE', "%{$search}%");
+            
                 if ($selectedDivision === 'all') {
                     $q->orWhereHas('stock.division', function ($q2) use ($search) {
                         $q2->where('name', 'LIKE', $search.'%');
                     });
                 }
             });
+            
         }
     
         $transactionsQuery->orderBy($sortBy, $sortOrder);
@@ -281,6 +282,7 @@ class StockController extends Controller
             'model'           => 'required|string',
             'category'        => 'required|string',
             'remarks'         => 'nullable|string',
+            'sla_category'    => 'nullable|string',
         ]);
     
         // Look up the product based on the provided product_code.
@@ -307,6 +309,7 @@ class StockController extends Controller
                 'status'          => 'available',
                 'updated_at'      => now(),
                 'product_id'      => $product->id, // Set the related product_id here.
+                'sla_category'    => $validated['sla_category'] ?? null,
             ]
         );
     
@@ -325,6 +328,7 @@ class StockController extends Controller
             'handled_by'       => auth()->id(),
             'remarks'          => $validated['remarks'],
             'transaction_date' => now(),
+            'product_id' => $stock->product_id
         ]);
     
         return redirect()->route('stocks.management')->with([
@@ -579,6 +583,7 @@ class StockController extends Controller
                 'handled_by'       => auth()->id(),
                 'remarks'          => $validated['remarks'] . ' (Returned to inventory)',
                 'transaction_date' => now(),
+                'product_id'       => $stock->product_id,
             ]);
     
             // Update stock status and remarks
@@ -629,6 +634,7 @@ class StockController extends Controller
                 'loan_start_date'  => $loanStartDate,
                 'due_date'         => $dueDate,
                 'loan_period'      => $loanData['loan_period'], // Store the user-entered loan period
+                'product_id'       => $stock->product_id,
             ]);
     
             // Update stock status to LOAN and update remarks
@@ -667,6 +673,7 @@ class StockController extends Controller
                 'handled_by'       => auth()->id(),
                 'remarks'          => $extendedRemarks,
                 'transaction_date' => now(),
+                'product_id'       => $stock->product_id,
             ]);
     
             // Update stock status to OUT and update remarks
