@@ -200,16 +200,17 @@ class StockController extends Controller
         if ($search) {
             $transactionsQuery->where(function ($q) use ($search, $selectedDivision) {
                 $q->where('stock_transactions.serial_number', 'LIKE', $search.'%')
-                  ->orWhere('stock_transactions.stock_model', 'LIKE', $search.'%')
                   ->orWhere('stock_transactions.requisition_no', 'LIKE', "%{$search}%")
                   ->orWhere('products.category', 'LIKE', "%{$search}%")
                   ->orWhere('products.model', 'LIKE', "%{$search}%");
+            
                 if ($selectedDivision === 'all') {
                     $q->orWhereHas('stock.division', function ($q2) use ($search) {
                         $q2->where('name', 'LIKE', $search.'%');
                     });
                 }
             });
+            
         }
     
         $transactionsQuery->orderBy($sortBy, $sortOrder);
@@ -313,9 +314,11 @@ class StockController extends Controller
             'brand'           => 'nullable|string',
             'product_code'    => 'nullable|string',
             'requisition_no'  => 'nullable|string',
+            'erp_number'     => 'nullable|string',
             'model'           => 'required|string',
             'category'        => 'required|string',
             'remarks'         => 'nullable|string',
+            'sla_category'    => 'nullable|string',
         ]);
     
         // Look up the product based on the provided product_code.
@@ -334,6 +337,7 @@ class StockController extends Controller
                 'brand'           => $validated['brand'] ?? null,
                 'product_code'    => $validated['product_code'] ?? null,
                 'requisition_no'  => $validated['requisition_no'] ?? null,
+                'erp_number'      => $validated['erp_number'] ?? null,
                 'model'           => $validated['model'],
                 'category'        => $validated['category'],
                 'division_id'     => $selectedDivision,
@@ -341,6 +345,7 @@ class StockController extends Controller
                 'status'          => 'available',
                 'updated_at'      => now(),
                 'product_id'      => $product->id, // Set the related product_id here.
+                'sla_category'    => $validated['sla_category'] ?? null,
             ]
         );
     
@@ -359,6 +364,7 @@ class StockController extends Controller
             'handled_by'       => auth()->id(),
             'remarks'          => $validated['remarks'],
             'transaction_date' => now(),
+            'product_id' => $stock->product_id
         ]);
     
         return redirect()->route('stocks.management')->with([
@@ -579,27 +585,28 @@ class StockController extends Controller
         $selectedDivision = session('selectedDivision', auth()->user()->division_id);
         $stockId = $request->input('stock_id');
         $stock = Stock::findOrFail($stockId);
-
+    
         // Ensure the stock belongs to the selected division
         if ($stock->division_id != $selectedDivision) {
             return redirect()->back()->with('error', 'This stock does not belong to the selected division.');
         }
-
+    
         // Check if this is a forced RETURN
         $forceOperationType = $request->input('force_operation_type');
-
+    
         // Common validation for remarks
         $validated = $request->validate([
             'remarks' => 'required|string',
         ]);
-
+    
         // If forced to RETURN
         if ($forceOperationType === 'RETURN') {
-            // Ensure current status is LOAN
-            if ($stock->status !== 'LOAN') {
-                return redirect()->route('stocks.management')->with('error', 'This item is not on loan.');
+            // ALLOW returning if stock is either LOAN or OUT
+            if (! in_array($stock->status, ['LOAN', 'OUT'])) {
+                return redirect()->route('stocks.management')
+                    ->with('error', 'This item is neither on loan nor out.');
             }
-
+    
             // Record transaction as "IN" to avoid DB error if type is an ENUM
             StockTransaction::create([
                 'serial_number'    => $stock->serial_number,
@@ -612,32 +619,41 @@ class StockController extends Controller
                 'handled_by'       => auth()->id(),
                 'remarks'          => $validated['remarks'] . ' (Returned to inventory)',
                 'transaction_date' => now(),
+                'product_id'       => $stock->product_id,
             ]);
-
+    
             // Update stock status and remarks
             $stock->status  = 'available';
             $stock->remarks = $validated['remarks'];
             $stock->save();
-
+    
             return redirect()->route('stocks.management')->with([
                 'success'  => 'Stock returned successfully.',
                 'resource' => 'stock'
             ]);
         }
-
+    
         // Otherwise, handle normal OUT or LOAN operation
         $operationType = $request->input('operation_type');
-
+    
         if ($operationType === 'LOAN') {
-            // Additional validation for "taken_by"
-            $request->validate([
-                'taken_by' => 'required|string',
+            // ADD: validate "manual_date" for the loan start date
+            $loanData = $request->validate([
+                'taken_by'      => 'required|string',
+                'loan_period'   => 'required|integer|min:1|max:90',
+                'manual_date'   => 'required|date', // <--- ADDED
             ]);
-
+    
             // Combine "taken_by" info in remarks so you can see who physically took it
             $extendedRemarks = $validated['remarks'] . ' (Taken by: ' . $request->input('taken_by') . ')';
-
-            // Create LOAN transaction
+    
+            // Parse the user-chosen manual_date as the loan start date
+            $loanStartDate = \Carbon\Carbon::parse($loanData['manual_date']);
+    
+            // Calculate due date as manual_date + loan_period days
+            $dueDate = $loanStartDate->copy()->addDays($loanData['loan_period']);
+    
+            // Create LOAN transaction including due_date and loan_start_date
             StockTransaction::create([
                 'serial_number'    => $stock->serial_number,
                 'stock_model'      => $stock->model,
@@ -648,13 +664,23 @@ class StockController extends Controller
                 'type'             => 'LOAN',
                 'handled_by'       => auth()->id(),
                 'remarks'          => $extendedRemarks,
+                // Keep the existing line for transaction_date:
                 'transaction_date' => now(),
+                // ADD: store the user-chosen loan start date as a separate field (requires DB column)
+                'loan_start_date'  => $loanStartDate,
+                'due_date'         => $dueDate,
+                'loan_period'      => $loanData['loan_period'], // Store the user-entered loan period
+                'product_id'       => $stock->product_id,
             ]);
-
-            // Update stock status to LOAN
-            $stock->status = 'LOAN';
+    
+            // Update stock status to LOAN and update remarks
+            // Also store loan_period & loan_start_date in the stock record
+            $stock->status        = 'LOAN';
+            $stock->remarks       = $extendedRemarks;
+            $stock->loan_period   = $loanData['loan_period']; // existing line
+            $stock->loan_start_date = $loanStartDate;         // <--- ADDED
             $stock->save();
-
+    
             return redirect()->route('stocks.management')->with([
                 'success'  => 'Loan transaction recorded and stock marked as loaned.',
                 'resource' => 'stock'
@@ -664,13 +690,13 @@ class StockController extends Controller
             $request->validate([
                 'taken_by' => 'required|string',
             ]);
-
+    
             // If user typed a 'taken_by', append it to remarks
             $takenBy = $request->input('taken_by');
             $extendedRemarks = !empty($takenBy)
                 ? $validated['remarks'] . ' (Taken by: ' . $takenBy . ')'
                 : $validated['remarks'];
-
+    
             // Create OUT transaction
             StockTransaction::create([
                 'serial_number'    => $stock->serial_number,
@@ -683,19 +709,23 @@ class StockController extends Controller
                 'handled_by'       => auth()->id(),
                 'remarks'          => $extendedRemarks,
                 'transaction_date' => now(),
+                'product_id'       => $stock->product_id,
             ]);
-
-            // Update stock status to OUT
+    
+            // Update stock status to OUT and update remarks
             $stock->status = 'OUT';
+            $stock->remarks = $extendedRemarks;
             $stock->save();
-
+    
             return redirect()->route('stocks.management')->with([
                 'success'  => 'OUT transaction recorded and stock removed.',
                 'resource' => 'stock'
             ]);
         }
     }
-
+    
+    
+    
     public function loanedStocks(Request $request)
     {
         $selectedDivision = session('selectedDivision', auth()->user()->division_id);
@@ -712,16 +742,14 @@ class StockController extends Controller
 
     public function getTransactionDetails(Request $request)
     {
-        $requisitionNo = $request->input('requisition_no');
-        $serial        = $request->input('serial');
+        $serial = $request->input('serial');
     
-        if (!$requisitionNo || !$serial) {
+        if (!$serial) {
             return response()->json(['error' => 'Invalid parameters.'], 400);
         }
     
-        // Retrieve the latest transaction matching both requisition_no & serial_number
-        $transaction = StockTransaction::where('requisition_no', $requisitionNo)
-            ->where('serial_number', $serial)
+        // Retrieve the latest transaction matching the serial number
+        $transaction = StockTransaction::where('serial_number', $serial)
             ->orderBy('transaction_date', 'desc')
             ->first();
     
@@ -729,16 +757,13 @@ class StockController extends Controller
             return '<div class="alert alert-warning">Transaction not found.</div>';
         }
     
-        // Retrieve ONLY the history for the same requisition_no & serial_number
-        $history = StockTransaction::where('requisition_no', $requisitionNo)
-            ->where('serial_number', $serial)
+        // Retrieve the transaction history for the same serial number
+        $history = StockTransaction::where('serial_number', $serial)
             ->orderBy('transaction_date', 'desc')
             ->get();
     
-        // Optionally load the stock record by both requisition_no & serial
-        $stock = Stock::where('requisition_no', $requisitionNo)
-            ->where('serial_number', $serial)
-            ->first();
+        // Retrieve the stock record by serial number
+        $stock = Stock::where('serial_number', $serial)->first();
     
         return view('stocks.partials.req_modal', compact('transaction', 'stock', 'history'));
     }
