@@ -54,7 +54,7 @@
     <!-- Back Button -->
     @if(auth()->user()->role === 'Super Admin')
         <a href="{{ route('stocks.low', ['division' => 'all']) }}" class="inline-flex items-center px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-colors duration-150">
-            <i class="fas fa-arrow-left mr-2"></i> Back to Summary
+            <i class="fas fa-arrow-left mr-2"></i> Summary
         </a>
     @else
         <a href="{{ route('dashboard') }}" class="inline-flex items-center px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-colors duration-150">
@@ -168,9 +168,9 @@
     </div>
 
     <!-- Enhanced Chart Section: Similar styling as summary page -->
-    <div class="mt-8 bg-white rounded-xl shadow-lg p-6" style="max-width: 600px; margin: auto; height: 300px;">
+    <div class="mt-8 bg-white rounded-xl shadow-lg p-6" style="max-width: 600px; margin: auto; height: 400px;">
         <h3 class="text-xl font-semibold mb-4 text-gray-800 text-center">Low Stock by Category</h3>
-        <canvas id="lowStockChart" style="max-width: 100%; height: 100%;"></canvas>
+        <canvas id="lowStockChart" width="600" height="400"></canvas>
     </div>
 </div>
 @endsection
@@ -233,21 +233,34 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const ctx = document.getElementById('lowStockChart').getContext('2d');
+document.addEventListener('DOMContentLoaded', function() {
+    // Log the data arrays to ensure they contain values.
+    const labels = {!! json_encode($categoriesLabels) !!};
+    const dataValues = {!! json_encode($categoriesData) !!};
+    console.log("Chart Labels:", labels);
+    console.log("Chart Data:", dataValues);
+
+    const canvas = document.getElementById('lowStockChart');
+    if (!canvas) {
+        console.error("Canvas element with id 'lowStockChart' not found.");
+        return;
+    }
+    const ctx = canvas.getContext('2d');
+    
     const lowStockChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: {!! json_encode($categoriesLabels) !!},
+            labels: labels,
             datasets: [{
                 label: 'Stock Count',
-                data: {!! json_encode($categoriesData) !!},
+                data: dataValues,
                 backgroundColor: [
                     'rgba(248, 113, 113, 0.7)',
                     'rgba(251, 191, 36, 0.7)',
                     'rgba(52, 211, 153, 0.7)',
                     'rgba(96, 165, 250, 0.7)',
                     'rgba(167, 139, 250, 0.7)',
-                    // Add more colors if needed...
+                    // More colors if needed...
                 ],
                 borderColor: [
                     'rgba(248, 113, 113, 1)',
@@ -256,34 +269,56 @@
                     'rgba(96, 165, 250, 1)',
                     'rgba(167, 139, 250, 1)',
                 ],
-                borderWidth: 1
+                borderWidth: 1,
+                barPercentage: 0.6,
+                categoryPercentage: 0.6
             }]
         },
         options: {
-            responsive: false,
+            responsive: true,
             maintainAspectRatio: false,
             layout: {
                 padding: {
-                    top: 20,
-                    right: 20,
-                    bottom: 20,
-                    left: 20
+                    top: 30,
+                    right: 30,
+                    bottom: 30,
+                    left: 30
                 }
             },
             scales: {
                 x: {
                     beginAtZero: true,
-                    ticks: { stepSize: 1 }
+                    ticks: {
+                        stepSize: 1,
+                        padding: 10
+                    },
+                    grid: {
+                        display: true,
+                        color: "rgba(0, 0, 0, 0.1)"
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        padding: 10
+                    },
+                    grid: {
+                        display: true,
+                        color: "rgba(0, 0, 0, 0.1)"
+                    }
                 }
             },
             plugins: {
-                legend: { display: false },
+                legend: {
+                    display: false
+                },
                 title: {
                     display: true,
-                    text: 'Low Stock by Category'
+                    text: 'Low Stock by Category',
+                    padding: { bottom: 20 }
                 }
             }
         }
     });
+});
 </script>
-@endsection

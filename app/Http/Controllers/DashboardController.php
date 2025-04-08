@@ -39,17 +39,19 @@ class DashboardController extends Controller
         // Get all available stocks.
         $stocks = $stockSummaryQuery->get();
 
-        // Load the logged-in user's thresholds and key them by category.
+        // Load the logged-in user's thresholds and key them by normalized category.
         $userThresholds = UserProductThreshold::where('user_id', $user->id)
             ->get()
-            ->keyBy('category');
+            ->keyBy(function ($item) {
+                return strtolower(trim($item->category));
+            });
 
         // Calculate low stock items based on division selection.
         if ($selectedDivision === 'all') {
-            // When "All Divisions" is selected, group stocks by division first, then by category within each division.
+            // For each division, group stocks by category and count low-stock categories.
             $lowStockItems = $stocks->groupBy('division_id')->map(function ($divisionStocks) use ($userThresholds) {
                 return $divisionStocks->groupBy(function ($stock) {
-                    return optional($stock->product)->category ?? 'Unknown';
+                    return strtolower(trim(optional($stock->product)->category ?? 'Unknown'));
                 })->filter(function ($group, $category) use ($userThresholds) {
                     $defaultThreshold = 5;
                     $threshold = $userThresholds->has($category)
@@ -58,8 +60,38 @@ class DashboardController extends Controller
                     return $group->count() < $threshold;
                 })->count();
             })->sum();
+
+            // Build a breakdown per division.
+            $divisionsSummary = $stocks->groupBy('division_id')->map(function ($divisionStocks, $divisionId) use ($userThresholds) {
+                // Group by normalized category.
+                $grouped = $divisionStocks->groupBy(function ($stock) {
+                    return strtolower(trim(optional($stock->product)->category ?? 'Unknown'));
+                });
+                $defaultThreshold = 5;
+                $defaultCritical = 5;
+                // Count all categories in low stock.
+                $lowCount = $grouped->filter(function ($group, $category) use ($userThresholds, $defaultThreshold) {
+                    $threshold = $userThresholds->has($category)
+                        ? $userThresholds->get($category)->low_threshold
+                        : $defaultThreshold;
+                    return $group->count() < $threshold;
+                })->count();
+                // Count categories that are critical.
+                $criticalCount = $grouped->filter(function ($group, $category) use ($defaultCritical) {
+                    return $group->count() < $defaultCritical;
+                })->count();
+                // Non-critical low count.
+                $nonCritical = $lowCount - $criticalCount;
+                $division = Division::find($divisionId);
+                return [
+                    'id'             => $divisionId,
+                    'name'           => $division ? $division->name : 'Unknown',
+                    'nonCriticalLow' => $nonCritical,
+                    'critical'       => $criticalCount,
+                ];
+            })->values();
         } else {
-            // For a specific division, group stocks by category directly.
+            // For a specific division.
             $lowStockItems = $stocks->groupBy(function ($stock) {
                 return optional($stock->product)->category ?? 'Unknown';
             })->filter(function ($group, $category) use ($userThresholds) {
@@ -69,6 +101,7 @@ class DashboardController extends Controller
                     : $defaultThreshold;
                 return $group->count() < $threshold;
             })->count();
+            $divisionsSummary = null;
         }
 
         // Build a summary of stock counts per category.
@@ -109,7 +142,8 @@ class DashboardController extends Controller
             'userCount',
             'stockSummary',
             'recentTransactions',
-            'divisionName'
+            'divisionName',
+            'divisionsSummary' // Pass it to the view
         ));
     }
 

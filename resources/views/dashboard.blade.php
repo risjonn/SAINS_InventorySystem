@@ -4,12 +4,11 @@
 <div class="container mx-auto px-4">
     <h2 class="text-xl font-semibold mt-4">Dashboard</h2>
 
-    <!-- Division Selection: only show for Super Admin -->
+    <!-- Division Selection: only for Super Admin -->
     @if(auth()->user()->role === 'Super Admin')
         <form method="GET" action="{{ route('dashboard') }}" class="mb-4">
             <label for="division" class="block text-sm font-medium text-gray-700">Select Division:</label>
             <select name="division" id="division" onchange="this.form.submit()" class="block w-full mt-1 border rounded p-2">
-                <!-- "All Divisions" option -->
                 <option value="all" {{ $selectedDivision === 'all' ? 'selected' : '' }}>All Divisions</option>
                 @foreach($divisions as $division)
                     <option value="{{ $division->id }}" {{ $selectedDivision == $division->id ? 'selected' : '' }}>
@@ -19,7 +18,6 @@
             </select>
         </form>
     @else
-        <!-- For regular admins, show their division (read-only) -->
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700">Division:</label>
             <p class="mt-1 p-2 border rounded bg-gray-100">{{ $divisions->find($selectedDivision)->name }}</p>
@@ -27,42 +25,61 @@
     @endif
 
     <!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <!-- Low Stock Items Card (Clickable) -->
-    <a href="{{ route('stocks.low', ['division' => 'all']) }}" class="block">
-        <div class="relative p-6 rounded-xl shadow-lg bg-yellow-100 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl">
-            <!-- Glowing border layer (only when low stock exists) -->
-            @if($lowStockItems > 0)
-                <div class="absolute inset-0 rounded-xl animate-glow pointer-events-none"></div>
-            @endif
-      
-            <!-- Card content -->
-            <div class="relative">
-                <div class="flex items-center">
-                <h3 class="text-xl font-semibold {{ $lowStockItems > 0 ? 'text-yellow-800' : 'text-yellow-700' }}">
-                    Low Stock Items
-                </h3>
-                @if($lowStockItems > 0)
-                    <div class="relative ml-2">
-                    <i class="fas fa-exclamation-circle text-yellow-800 text-lg animate-bounce-sync"></i>
-                    </div>
-                @endif
-                </div>
-                <p class="mt-2 text-3xl font-bold {{ $lowStockItems > 0 ? 'text-yellow-900' : 'text-yellow-800' }}">
-                {{ $lowStockItems }}
-                </p>
-                <p class="mt-1 text-sm {{ $lowStockItems > 0 ? 'text-yellow-700' : 'text-yellow-600' }}">
-                Click for details
-                </p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Low Stock Items Card -->
+        @if(auth()->user()->role === 'Super Admin' && $selectedDivision === 'all')
+        <div class="mt-4 bg-yellow-50 border border-yellow-200 rounded-xl shadow-lg p-6">
+            <h2 class="text-2xl font-semibold mb-4 text-yellow-800">Low Stock Items by Division</h2>
+            <div class="overflow-y-auto" style="max-height: 300px;">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-yellow-100">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Division</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Low Stock Items</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @foreach($divisionsSummary as $division)
+                            <tr class="hover:bg-yellow-100 cursor-pointer" onclick="window.location.href='{{ route('stocks.low', ['division' => $division['id']]) }}'">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-yellow-900">{{ $division['name'] }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full 
+                                        {{ $division['critical'] > 0 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700' }}">
+                                        Low: {{ $division['nonCriticalLow'] }}, Critical: {{ $division['critical'] }}
+                                    </span>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <!-- New button to navigate to the detailed summary page -->
+            <div class="mt-4 text-center">
+                <a href="{{ route('stocks.low', ['division' => 'all']) }}" class="inline-flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors duration-200">
+                    View Full Summary
+                </a>
             </div>
         </div>
-      </a>
+        @else
+            <a href="{{ route('stocks.low', ['division' => auth()->user()->division_id]) }}" class="block">
+                <div class="relative p-6 bg-yellow-100 rounded-xl shadow-lg transition transform hover:scale-105 hover:shadow-2xl">
+                    @if($lowStockItems > 0)
+                        <div class="absolute inset-0 rounded-xl animate-glow pointer-events-none" style="z-index: -1;"></div>
+                    @endif
+                    <div class="relative z-10">
+                        <div class="flex items-center">
+                            <h3 class="text-xl font-semibold text-yellow-800">Low Stock Items</h3>
+                            <i class="fas fa-exclamation-circle ml-2 text-yellow-800"></i>
+                        </div>
+                        <p class="mt-2 text-3xl font-bold text-yellow-900">{{ $lowStockItems }}</p>
+                        <p class="mt-1 text-sm text-yellow-700">Click for details</p>
+                    </div>
+                </div>
+            </a>
+        @endif
 
-    <!-- Recent Updates Card -->
-    <div class="bg-gradient-to-br from-gray-100 to-gray-200 p-6 rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl">
-        <h3 class="text-xl font-semibold text-gray-800">Recent Updates</h3>
-        <p class="mt-2 text-sm text-gray-600">Latest stock transactions</p>
-    </div>
+        <!-- Optionally, you can add another card here for KPIs or key metrics if needed -->
+        <!-- For example, a card for "Total Stocks" or "Recent Activity" could be added -->
     </div>
 
     <!-- Stock Summary Table -->

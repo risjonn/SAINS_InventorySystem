@@ -6,7 +6,7 @@
     <div class="my-4">
         <a href="{{ route('dashboard') }}" class="inline-flex items-center px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-colors duration-150">
             <i class="fas fa-arrow-left mr-2"></i>
-            Back to Dashboard
+            Dashboard
         </a>
     </div>
     <h2 class="text-2xl font-semibold mt-4">Low Stock Summary by Division</h2>
