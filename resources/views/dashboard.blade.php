@@ -61,7 +61,7 @@
             </div>
         </div>
         @else
-            <a href="{{ route('stocks.low', ['division' => auth()->user()->division_id]) }}" class="block">
+            <a href="{{ route('stocks.low', ['division' => $selectedDivision]) }}" class="block">
                 <div class="relative p-6 bg-yellow-100 rounded-xl shadow-lg transition transform hover:scale-105 hover:shadow-2xl">
                     @if($lowStockItems > 0)
                         <div class="absolute inset-0 rounded-xl animate-glow pointer-events-none" style="z-index: -1;"></div>
