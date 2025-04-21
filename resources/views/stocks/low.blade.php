@@ -357,93 +357,103 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Log the data arrays to ensure they contain values.
-        const labels = {!! json_encode($categoriesLabels) !!};
-        const dataValues = {!! json_encode($categoriesData) !!};
-        console.log("Chart Labels:", labels);
-        console.log("Chart Data:", dataValues);
-
-        const canvas = document.getElementById('lowStockChart');
-        if (!canvas) {
-            console.error("Canvas element with id 'lowStockChart' not found.");
-            return;
-        }
-        const ctx = canvas.getContext('2d');
+        document.addEventListener('DOMContentLoaded', function() {
+          const allLabels    = @json($categoriesLabels);
+          const allData      = @json($categoriesData);
+          const lowThr       = @json($lowThresholdsJs);
+          const critThr      = @json($criticalThresholdsJs);
+          const divisionName = "{{ $division->name }}";
         
-        const lowStockChart = new Chart(ctx, {
+          // Filter & color logic remains the same
+          const filtered = allData
+            .map((v,i) => ({
+              label: allLabels[i],
+              value: v,
+              low:   lowThr[i],
+              crit:  critThr[i]
+            }))
+            .filter(x => x.value < x.low);
+        
+          const labels       = filtered.map(x => x.label);
+          const dataValues   = filtered.map(x => x.value);
+          const bgColors     = filtered.map(x => x.value <= x.crit
+                                ? 'rgba(220,38,38,0.7)'
+                                : 'rgba(251,191,36,0.7)');
+          const borderColors = filtered.map(x => x.value <= x.crit
+                                ? 'rgba(220,38,38,1)'
+                                : 'rgba(251,191,36,1)');
+        
+          const ctx = document.getElementById('lowStockChart').getContext('2d');
+          new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Stock Count',
-                    data: dataValues,
-                    backgroundColor: [
-                        'rgba(248, 113, 113, 0.7)',
-                        'rgba(251, 191, 36, 0.7)',
-                        'rgba(52, 211, 153, 0.7)',
-                        'rgba(96, 165, 250, 0.7)',
-                        'rgba(167, 139, 250, 0.7)',
-                        // More colors if needed...
-                    ],
-                    borderColor: [
-                        'rgba(248, 113, 113, 1)',
-                        'rgba(251, 191, 36, 1)',
-                        'rgba(52, 211, 153, 1)',
-                        'rgba(96, 165, 250, 1)',
-                        'rgba(167, 139, 250, 1)',
-                    ],
-                    borderWidth: 1,
-                    barPercentage: 0.6,
-                    categoryPercentage: 0.6
-                }]
+              labels,
+              datasets: [{
+                label: 'Stock Count',
+                data: dataValues,
+                backgroundColor: bgColors,
+                borderColor: borderColors,
+                borderWidth: 1,
+                barPercentage: 0.6,
+                categoryPercentage: 0.6
+              }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: {
-                    padding: {
-                        top: 30,
-                        right: 30,
-                        bottom: 30,
-                        left: 30
-                    }
-                },
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1,
-                            padding: 10
-                        },
-                        grid: {
-                            display: true,
-                            color: "rgba(0, 0, 0, 0.1)"
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            padding: 10
-                        },
-                        grid: {
-                            display: true,
-                            color: "rgba(0, 0, 0, 0.1)"
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    title: {
-                        display: true,
-                        text: 'Low Stock by Category',
-                        padding: { bottom: 20 }
-                    }
+              responsive: true,
+              maintainAspectRatio: false,
+        
+              // *** Better overall padding ***
+              layout: {
+                padding: {
+                  top:    0,  // reduced from 100 so bars don't hug the bottom
+                  right:  20,
+                  bottom: 60,  // keeps long labels visible
+                  left:   20
                 }
+              },
+        
+              scales: {
+                x: {
+                  grid: { display: false },
+                  ticks: {
+                    autoSkip:     false, // show every label
+                    maxRotation:  0,
+                    minRotation:  0,
+                    padding:      10
+                  }
+                },
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    stepSize: 1,
+                    callback: v => Number.isInteger(v) ? v : ''
+                  },
+                  grid: { color: 'rgba(0,0,0,0.1)' }
+                }
+              },
+        
+              plugins: {
+                // *** Add spacing below legend via legend.padding ***
+                legend: {
+                  display: true,
+                  position: 'top',
+                  padding: 30, 
+                  labels: {
+                    generateLabels: chart => [
+                      { text: 'Low',      fillStyle: 'rgba(251,191,36,0.7)' },
+                      { text: 'Critical', fillStyle: 'rgba(220,38,38,0.7)' }
+                    ]
+                  }
+                },
+        
+                title: {
+                  display: true,
+                  text: [divisionName],
+                  padding: { bottom: 0 }
+                }
+              }
             }
+          });
         });
-    });
     </script>
 @endsection

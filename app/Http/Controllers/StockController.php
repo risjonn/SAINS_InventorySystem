@@ -47,121 +47,143 @@ class StockController extends Controller
     {
         $user = auth()->user();
     
-        // Force regular admins to use their assigned division.
+        // 1. Determine which division to show
         if ($user->role !== 'Super Admin') {
             $selectedDivision = $user->division_id;
         } else {
             $selectedDivision = $request->query('division', session('selectedDivision', 'all'));
         }
     
+        // 2. "All divisions" summary view
         if ($selectedDivision === 'all') {
-            // "All divisions" summary. (This branch returns the low_summary view.)
             $stocks = Stock::with('product')
-                        ->where('status', 'available')
-                        ->get();
-    
-            $divisionsSummary = $stocks->groupBy('division_id')->map(function ($divisionStocks, $divisionId) {
-                $selectedAdmin = User::where('division_id', $divisionId)
-                    ->where('role', 'Admin')
-                    ->first();
-                $adminThresholds = $selectedAdmin 
-                    ? UserProductThreshold::where('user_id', $selectedAdmin->id)
-                        ->get()
-                        ->keyBy(function ($item) {
-                            return strtolower(trim($item->category));
-                        })
-                    : collect();
-                $grouped = $divisionStocks->groupBy(function ($stock) {
-                    return strtolower(trim(optional($stock->product)->category ?? 'Unknown'));
-                });
-                $defaultLowThreshold = 10;
-                $defaultCriticalThreshold = 3;
-                $lowCount = 0;
-                $criticalCount = 0;
-                foreach ($grouped as $category => $group) {
-                    $lowThreshold = $adminThresholds->has($category)
-                        ? $adminThresholds->get($category)->low_threshold
-                        : $defaultLowThreshold;
-                    $criticalThreshold = $adminThresholds->has($category)
-                        ? $adminThresholds->get($category)->critical_threshold
-                        : $defaultCriticalThreshold;
-                    if ($group->count() < $lowThreshold) {
-                        if ($group->count() <= $criticalThreshold) {
-                            $criticalCount++;
-                        } else {
-                            $lowCount++;
-                        }
-                    }
-                }
-                $divisionObj = Division::find($divisionId);
-                return [
-                    'id' => $divisionId,
-                    'name' => $divisionObj ? $divisionObj->name : 'Unknown',
-                    'nonCriticalLow' => $lowCount,
-                    'critical' => $criticalCount,
-                ];
-            })->filter(function ($division) {
-                return ($division['nonCriticalLow'] + $division['critical']) > 0;
-            })->values();
-    
-            return view('stocks.low_summary', compact('divisionsSummary', 'selectedDivision'));
-        } else {
-            // Detailed view for a specific division.
-            $division = Division::find($selectedDivision);
-            $divisions = Division::all();
-            $stocks = Stock::with('product')
-                ->where('division_id', $selectedDivision)
                 ->where('status', 'available')
                 ->get();
     
-            $stocksGrouped = $stocks->groupBy(function ($stock) {
-                return strtolower(trim(optional($stock->product)->category ?? 'Unknown'));
-            });
-            $aggregatedStocks = $stocksGrouped->map(function ($group, $category) {
-                return (object)[
-                    'category' => ucfirst($category),
-                    'total' => $group->count(),
-                    'updated_at' => $group->first()->updated_at ?? null,
-                ];
-            })->values();
+            $divisionsSummary = $stocks
+                ->groupBy('division_id')
+                ->map(function ($divisionStocks, $divisionId) {
+                    // Build per‑division low vs. critical counts
+                    $selectedAdmin = User::where('division_id', $divisionId)
+                        ->where('role', 'Admin')
+                        ->first();
+                    $adminThresholds = $selectedAdmin
+                        ? UserProductThreshold::where('user_id', $selectedAdmin->id)
+                            ->get()
+                            ->keyBy(fn($item) => strtolower(trim($item->category)))
+                        : collect();
     
-            $distinctCategories = $aggregatedStocks->pluck('category')->toArray();
-            $categoriesLabels = $aggregatedStocks->pluck('category')->toArray();
-            $categoriesData = $aggregatedStocks->pluck('total')->toArray();
+                    $defaultLowThreshold      = 10;
+                    $defaultCriticalThreshold = 3;
+                    $lowCount     = 0;
+                    $criticalCount = 0;
     
-            if ($user->role === 'Super Admin') {
-                $selectedAdmin = User::where('division_id', $selectedDivision)
-                    ->where('role', 'Admin')
-                    ->first();
-                $thresholdsForAggregation = $selectedAdmin 
-                    ? UserProductThreshold::where('user_id', $selectedAdmin->id)
-                        ->get()
-                        ->keyBy(function ($item) {
-                            return strtolower(trim($item->category));
-                        })
-                    : collect();
-            } else {
-                $thresholdsForAggregation = UserProductThreshold::where('user_id', $user->id)
-                    ->get()
-                    ->keyBy(function ($item) {
-                        return strtolower(trim($item->category));
-                    });
-            }
-            $thresholdsForUser = $thresholdsForAggregation;
+                    // Count per category
+                    $divisionStocks
+                        ->groupBy(fn($stock) => strtolower(trim(optional($stock->product)->category ?? 'Unknown')))
+                        ->each(function ($group, $category) use (
+                            $adminThresholds, $defaultLowThreshold, $defaultCriticalThreshold,
+                            &$lowCount, &$criticalCount
+                        ) {
+                            $ct = $group->count();
+                            $lowThr  = $adminThresholds->has($category)
+                                ? $adminThresholds->get($category)->low_threshold
+                                : $defaultLowThreshold;
+                            $critThr = $adminThresholds->has($category)
+                                ? $adminThresholds->get($category)->critical_threshold
+                                : $defaultCriticalThreshold;
     
-            return view('stocks.low', compact(
-                'stocks',
-                'division',
-                'aggregatedStocks',
-                'categoriesLabels',
-                'categoriesData',
-                'distinctCategories',
-                'divisions',
-                'selectedDivision',
-                'selectedAdmin',
-                'thresholdsForUser'
-            ));
+                            if ($ct < $lowThr) {
+                                $ct <= $critThr ? $criticalCount++ : $lowCount++;
+                            }
+                        });
+    
+                    $divisionObj = Division::find($divisionId);
+                    return [
+                        'id'             => $divisionId,
+                        'name'           => $divisionObj?->name ?? 'Unknown',
+                        'nonCriticalLow' => $lowCount,
+                        'critical'       => $criticalCount,
+                    ];
+                })
+                ->filter(fn($div) => ($div['nonCriticalLow'] + $div['critical']) > 0)
+                ->values();
+    
+            return view('stocks.low_summary', compact('divisionsSummary', 'selectedDivision'));
         }
+    
+        // 3. Detailed low‑stock view for one division
+        $division = Division::findOrFail($selectedDivision);
+        $divisions = Division::all();
+        $stocks    = Stock::with('product')
+            ->where('division_id', $selectedDivision)
+            ->where('status', 'available')
+            ->get();
+    
+        // Group and aggregate
+        $aggregatedStocks = $stocks
+            ->groupBy(fn($stock) => strtolower(trim(optional($stock->product)->category ?? 'Unknown')))
+            ->map(fn($group, $category) => (object)[
+                'category'   => ucfirst($category),
+                'total'      => $group->count(),
+                'updated_at' => $group->first()->updated_at ?? null,
+            ])
+            ->values();
+    
+        $distinctCategories = $aggregatedStocks->pluck('category')->toArray();
+        $categoriesLabels   = $aggregatedStocks->pluck('category')->toArray();
+        $categoriesData     = $aggregatedStocks->pluck('total')->toArray();
+    
+        // Fetch whichever thresholds apply
+        if ($user->role === 'Super Admin') {
+            $selectedAdmin = User::where('division_id', $selectedDivision)
+                ->where('role', 'Admin')
+                ->first();
+            $thresholdsForAggregation = $selectedAdmin
+                ? UserProductThreshold::where('user_id', $selectedAdmin->id)
+                    ->get()
+                    ->keyBy(fn($item) => strtolower(trim($item->category)))
+                : collect();
+        } else {
+            $thresholdsForAggregation = UserProductThreshold::where('user_id', $user->id)
+                ->get()
+                ->keyBy(fn($item) => strtolower(trim($item->category)));
+        }
+        // For table logic
+        $thresholdsForUser = $thresholdsForAggregation;
+    
+        // 4. Build JS arrays so Blade/Chart.js can color & filter correctly
+        $lowThresholdsJs = $aggregatedStocks
+            ->map(fn($stockGroup) => 
+                $thresholdsForAggregation->has(strtolower($stockGroup->category))
+                    ? $thresholdsForAggregation->get(strtolower($stockGroup->category))->low_threshold
+                    : 10
+            )
+            ->toArray();
+    
+        $criticalThresholdsJs = $aggregatedStocks
+            ->map(fn($stockGroup) => 
+                $thresholdsForAggregation->has(strtolower($stockGroup->category))
+                    ? $thresholdsForAggregation->get(strtolower($stockGroup->category))->critical_threshold
+                    : 3
+            )
+            ->toArray();
+    
+        // 5. Render detailed view
+        return view('stocks.low', compact(
+            'stocks',
+            'division',
+            'divisions',
+            'aggregatedStocks',
+            'distinctCategories',
+            'categoriesLabels',
+            'categoriesData',
+            'lowThresholdsJs',
+            'criticalThresholdsJs',
+            'selectedDivision',
+            'selectedAdmin',
+            'thresholdsForUser'
+        ));
     }
 
     public function transactions(Request $request)
