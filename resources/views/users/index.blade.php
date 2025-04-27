@@ -3,134 +3,191 @@
 @section('title', 'Manage Users')
 
 @section('content')
-<div class="container mx-auto px-4 py-6" x-data="{
-    searchQuery: '{{ request('q') }}',
-    divisionFilter: '{{ request('division_id') }}',
-    roleFilter: '{{ request('role') }}',
-    users: [],
-    loading: false,
-    currentPage: 1,
-    totalPages: 1,
-    showEditModal: false,
-    currentUser: {
-        id: null,
-        username: '',
-        name: '',
-        email: '',
-        division_id: '',
-        role: ''
-    },
+<div class="container mx-auto px-4 py-6"
+     x-data="{
+         activeTab: 'users',
+         searchQuery: '{{ request('q') }}',
+         divisionFilter: '{{ request('division_id') }}',
+         roleFilter: '{{ request('role') }}',
+         users: [],
+         loading: false,
+         currentPage: 1,
+         totalPages: 1,
+         showEditModal: false,
+         currentUser: { id: null, username: '', name: '', email: '', division_id: '', role: '' },
 
-    init() {
-        this.fetchUsers();
-    },
+         init() {
+             this.fetchUsers();
+         },
 
-    async fetchUsers(page = 1) {
-        this.loading = true;
-        this.currentPage = page;
+         async fetchUsers(page = 1) {
+             this.loading = true;
+             this.currentPage = page;
 
-        try {
-            const response = await fetch('{{ route("users.index") }}?' + new URLSearchParams({
-                q: this.searchQuery,
-                division_id: this.divisionFilter,
-                role: this.roleFilter,
-                page: this.currentPage
-            }), {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
+             try {
+                 const response = await fetch('{{ route("users.index") }}?' +
+                     new URLSearchParams({
+                         q: this.searchQuery,
+                         division_id: this.divisionFilter,
+                         role: this.roleFilter,
+                         page: this.currentPage
+                     }), {
+                         headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                     }
+                 );
 
-            const data = await response.text();
-            document.getElementById('users_table').innerHTML = data;
-            this.updatePaginationState();
-        } catch (error) {
-            console.error('Error fetching users:', error);
-        } finally {
-            this.loading = false;
-        }
-    },
+                 const html = await response.text();
+                 document.getElementById('users_table').innerHTML = html;
+                 this.updatePaginationState();
+             } catch (error) {
+                 console.error('Error fetching users:', error);
+             } finally {
+                 this.loading = false;
+             }
+         },
 
-    updatePaginationState() {
-        const paginationLinks = document.querySelectorAll('.pagination a');
-        paginationLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const url = new URL(link.href);
-                this.currentPage = url.searchParams.get('page') || 1;
-                this.fetchUsers(this.currentPage);
-            });
-        });
-    },
+         updatePaginationState() {
+             document.querySelectorAll('.pagination a').forEach(link => {
+                 link.addEventListener('click', e => {
+                     e.preventDefault();
+                     const url = new URL(link.href);
+                     this.currentPage = url.searchParams.get('page') || 1;
+                     this.fetchUsers(this.currentPage);
+                 });
+             });
+         },
 
-    openModal(userData) {
-        this.currentUser = userData;
-        this.showEditModal = true;
-    },
-    
-    closeModal() {
-        this.showEditModal = false;
-    },
-    
-    deleteUser(url) {
-        if (confirm('Are you sure you want to delete this user?')) {
-            const form = document.getElementById('globalDeleteForm');
-            form.action = url;
-            form.submit();
-        }
-    }
-}">
-    <!-- Header -->
+         openModal(userData) {
+             this.currentUser = userData;
+             this.showEditModal = true;
+         },
+         closeModal() {
+             this.showEditModal = false;
+         },
+         deleteUser(url) {
+             if (confirm('Are you sure you want to delete this user?')) {
+                 const form = document.getElementById('globalDeleteForm');
+                 form.action = url;
+                 form.submit();
+             }
+         },
+
+         switchTab(tab) { this.activeTab = tab }
+     }"
+     x-init="init()"
+>
+    <!-- Header & Add-User Button -->
     <div class="flex flex-col sm:flex-row items-center justify-between mb-6">
         <h2 class="text-2xl font-bold text-gray-800">Manage Users</h2>
-        <a href="{{ route('users.create') }}" class="bg-green-500 hover:bg-green-600 transition-colors text-white px-5 py-3 rounded-md shadow">
+        <a href="{{ route('users.create') }}"
+           class="bg-green-500 hover:bg-green-600 transition-colors text-white px-5 py-3 rounded-md shadow">
             <i class="fas fa-user-plus mr-2"></i> Add New User
         </a>
     </div>
 
-    <!-- Filters -->
-    <div class="bg-white p-4 rounded-md shadow mb-6">
-        <div class="flex flex-col sm:flex-row gap-4 items-center justify-center">
-            <input type="text" 
-                   x-model="searchQuery" 
-                   @input.debounce.300ms="fetchUsers()" 
-                   placeholder="Search users..." 
-                   class="w-full sm:w-1/3 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+    <!-- Tab Navigation -->
+    <nav class="flex border-b mb-4">
+        <button @click="switchTab('users')"
+                :class="activeTab==='users' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-600'"
+                class="px-4 py-2 border-b-2 font-medium">
+            All Users
+        </button>
+        <button @click="switchTab('requests')"
+                :class="activeTab==='requests' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-600'"
+                class="px-4 py-2 border-b-2 font-medium">
+            Password Reset Requests
+        </button>
+    </nav>
 
-            <select x-model="divisionFilter" 
-                    @change="fetchUsers()" 
-                    class="w-full sm:w-1/4 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                <option value="">All Divisions</option>
-                @foreach($divisions as $division)
-                    <option value="{{ $division->id }}">{{ $division->name }}</option>
-                @endforeach
-            </select>
+    <!-- All Users Tab -->
+    <div x-show="activeTab==='users'" x-cloak>
+        <!-- Filters -->
+        <div class="bg-white p-4 rounded-md shadow mb-6">
+            <div class="flex flex-col sm:flex-row gap-4 items-center justify-center">
+                <input type="text"
+                       x-model="searchQuery"
+                       @input.debounce.300ms="fetchUsers()"
+                       placeholder="Search users"
+                       class="w-full sm:w-1/3 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400">
 
-            <select x-model="roleFilter" 
-                    @change="fetchUsers()" 
-                    class="w-full sm:w-1/4 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                <option value="">All Roles</option>
-                <option value="Admin">Admin</option>
-                <option value="Super Admin">Super Admin</option>
-            </select>
+                <select x-model="divisionFilter"
+                        @change="fetchUsers()"
+                        class="w-full sm:w-1/4 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                    <option value="">All Divisions</option>
+                    @foreach($divisions as $division)
+                        <option value="{{ $division->id }}">{{ $division->name }}</option>
+                    @endforeach
+                </select>
 
-            <button @click="fetchUsers()" 
-                    class="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 transition-colors text-white px-4 py-2 rounded-md shadow">
-                <i class="fas fa-search mr-1"></i> Search
-            </button>
+                <select x-model="roleFilter"
+                        @change="fetchUsers()"
+                        class="w-full sm:w-1/4 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                    <option value="">All Roles</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Super Admin">Super Admin</option>
+                </select>
+
+                <button @click="fetchUsers()"
+                        class="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 transition-colors text-white px-4 py-2 rounded-md shadow">
+                    <i class="fas fa-search mr-1"></i> Search
+                </button>
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <div id="users_table">
+            @include('users.partials.user_table', ['users' => $users])
         </div>
     </div>
 
-    <!-- Table -->
-    <div id="users_table">
-        @include('users.partials.user_table', ['users' => $users])
+    <!-- Password Reset Requests Tab -->
+    <div x-show="activeTab==='requests'" x-cloak class="space-y-4">
+        <h3 class="text-xl font-semibold mb-2">Pending Password Reset Requests</h3>
+        <table class="min-w-full bg-white rounded-lg shadow overflow-hidden">
+            <thead class="bg-gray-200 text-left">
+                <tr>
+                    <th class="p-3">Username</th>
+                    <th class="p-3">Requested At</th>
+                    <th class="p-3">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($resetRequests as $req)
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-3">{{ $req->user->username }}</td>
+                        <td class="p-3">{{ $req->created_at->format('Y-m-d H:i') }}</td>
+                        <td class="p-3">
+                            <button
+                                class="reset-button text-yellow-600 hover:text-yellow-800"
+                                data-request="{{ $req->id }}"
+                                data-username="{{ $req->user->username }}">
+                                Reset Password
+                            </button>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="3" class="p-4 text-center text-gray-500">
+                            No pending requests.
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 
-    <!-- Delete Form -->
-    <form id="globalDeleteForm" method="POST" style="display: none;">
-        @csrf
-        @method('DELETE')
-    </form>
+    <script>
+        $(document).on('click', '.reset-button', function() {
+            const reqId  = $(this).data('request');
+            const usernm = $(this).data('username');
+
+            // Populate & show the modal
+            $('#reset-request-id').val(reqId);
+            $('#reset-username').val(usernm);
+            $('#new_password, #new_password_confirmation').val('');
+            $('#resetPasswordModal').modal('show');
+        });
+    </script>
 
     <!-- Edit Modal -->
     @include('users.partials.edit-modal')

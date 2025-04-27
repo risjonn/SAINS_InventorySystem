@@ -6,6 +6,7 @@ use App\Models\Division;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Models\PasswordResetRequest;
 
 class UserManagementController extends Controller
 {
@@ -35,6 +36,11 @@ class UserManagementController extends Controller
         }
     
         $users = $query->orderBy('name')->paginate(10);
+
+        $resetRequests = PasswordResetRequest::with('user')
+        ->where('completed', 'Incomplete')
+        ->latest()
+        ->get();
     
         // If AJAX request, return just the user table partial
         if ($request->ajax()) {
@@ -42,9 +48,9 @@ class UserManagementController extends Controller
         }
     
         // Also pass divisions for the filter dropdown
-        $divisions = \App\Models\Division::all();
+        $divisions = Division::all();
     
-        return view('users.index', compact('users', 'divisions'));
+        return view('users.index', compact('users', 'divisions', 'resetRequests'));
     }
 
     // Show the form to create a new user
@@ -115,5 +121,34 @@ class UserManagementController extends Controller
             'success' => 'User Removed Successfully.',
             'resource' => 'user'
         ]);
+    }
+
+    // Deactive user
+    public function deactivate(User $user)
+    {
+        $user->status = 'Inactive';
+        $user->save();
+        return redirect()->route('users.index')->with([
+            'success' => 'User Deactivated Successfully',
+            'resource' => 'user'
+        ]);
+    }
+
+    // Activate user
+    public function activate(User $user)
+    {
+        $user->status = 'Active';
+        $user->save();
+        return redirect()->route('users.index')->with([
+            'success' => 'User Activated Successfully',
+            'resource' => 'user'
+        ]);
+    }
+
+    // Restore a soft-deleted account
+    public function restore($id)
+    {
+        User::withTrashed()->findOrFail($id)->restore();
+        return back()->with('success','User restored.');
     }
 }

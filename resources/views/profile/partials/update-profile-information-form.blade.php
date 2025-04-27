@@ -4,7 +4,7 @@
             {{ __('Profile Information') }}
         </h2>
         <p class="mt-1 text-sm text-gray-600">
-            {{ __("Update your account's profile information, including your username, name, and email address.") }}
+            {{ __("Update your account's profile information, including your username and name.") }}
         </p>
     </header>
 
@@ -37,7 +37,7 @@
         </div>
 
         <!-- Email Field -->
-        <div>
+        {{-- <div>
             <x-input-label for="email" :value="__('Email')" />
             <x-text-input id="email" name="email" type="email"
                 class="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
@@ -60,7 +60,7 @@
                     @endif
                 </div>
             @endif
-        </div>
+        </div> --}}
 
         <div class="flex items-center gap-4">
             <x-primary-button>{{ __('Save') }}</x-primary-button>

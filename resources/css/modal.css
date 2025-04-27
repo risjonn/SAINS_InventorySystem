@@ -26,6 +26,24 @@
     color: #fff !important;
 }
 
+/* reuse the delete header styling already present */
+.modal-header.delete-confirm {
+  background-color: #dc3545; /* red */
+  color: #fff;
+}
+
+/* green header for activation */
+.modal-header.activate-confirm {
+  background-color: #28a745; 
+  color: #fff;
+}
+
+/* yellow header for deactivation */
+.modal-header.deactivate-confirm {
+  background-color: #ffc107; 
+  color: #212529;
+}
+
 /* For loan operations: vibrant orange/yellow */
 .modal-header.loan {
   background: linear-gradient(45deg, #FBBF24, #F59E0B) !important;

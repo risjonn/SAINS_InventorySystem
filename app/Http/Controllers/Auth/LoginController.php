@@ -48,6 +48,14 @@ class LoginController extends Controller
             'password' => 'required|string',
         ]);
 
+        $user = \App\Models\User::where('username',$request->username)->first();
+
+        if ($user && $user->status === 'Inactive') {
+            return back()->withErrors([
+                'username' => 'Your account is deactivated. Please contact your Super Admin.',
+            ]);
+        }
+
         if (Auth::attempt($request->only('username', 'password'))) {
             return redirect()->intended($this->redirectTo);
         }

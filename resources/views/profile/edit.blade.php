@@ -15,11 +15,11 @@
                 Update Password
             </a>
         </li>
-        <li class="flex-1">
+        {{-- <li class="flex-1">
             <a href="#delete" class="tab-link block text-center px-4 py-2 border-b-4 border-transparent rounded-t-lg text-gray-600 hover:text-blue-600 hover:border-blue-600">
                 Delete Account
             </a>
-        </li>
+        </li> --}}
     </ul>
 </div>
 

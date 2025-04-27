@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'username',  // Add this line if not present
@@ -16,7 +17,8 @@ class User extends Authenticatable
         'email',
         'password',
         'division_id',
-        'role'
+        'role',
+        'status',
     ];
 
     protected $hidden = [

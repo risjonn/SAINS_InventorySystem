@@ -50,61 +50,207 @@
        x-transition.opacity>
   </div>
 
-  <!-- Sidebar -->
-  <aside class="fixed top-0 left-0 z-40 h-screen bg-white shadow-lg border-r border-gray-100"
-         :class="sidebarOpen ? 'w-64' : 'w-20'"
-         style="transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);">
-    <div class="relative">
+  @if (!request()->is('forgot-password'))
+        <!-- Sidebar -->
+        <aside class="fixed top-0 left-0 z-40 h-screen bg-white shadow-lg border-r border-gray-100"
+        :class="sidebarOpen ? 'w-64' : 'w-20'"
+        style="transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);">
+      <div class="relative">
       <!-- Sidebar Header -->
       <div class="p-4 border-b border-gray-100 flex items-center justify-between h-16">
-        <!-- Text Header: Visible when sidebar is open -->
-        <h2 class="text-xl font-bold text-gray-700 whitespace-nowrap overflow-hidden" 
-            x-show="sidebarOpen"
-            :class="sidebarOpen ? 'opacity-100 max-w-full' : 'opacity-0 max-w-0'">
-          Stock System
-        </h2>
-        <!-- Image: Visible when sidebar is closed -->
-        <img 
-          x-show="!sidebarOpen" 
-          src="{{ asset('image/SAINS2.jpeg') }}" 
-          alt="SAINS Inventory System Logo" 
-          class="w-10 h-10 mx-auto opacity-100 transition-all duration-300 ease-in-out"
-          loading="lazy"
-          onerror="this.onerror=null; this.src='{{ asset('images/fallback.jpeg') }}';"
-        >
+      <!-- Text Header: Visible when sidebar is open -->
+      <h2 class="text-xl font-bold text-gray-700 whitespace-nowrap overflow-hidden" 
+          x-show="sidebarOpen"
+          :class="sidebarOpen ? 'opacity-100 max-w-full' : 'opacity-0 max-w-0'">
+        Stock System
+      </h2>
+      <!-- Image: Visible when sidebar is closed -->
+      <img 
+        x-show="!sidebarOpen" 
+        src="{{ asset('image/SAINS2.jpeg') }}" 
+        alt="SAINS Inventory System Logo" 
+        class="w-10 h-10 mx-auto opacity-100 transition-all duration-300 ease-in-out"
+        loading="lazy"
+        onerror="this.onerror=null; this.src='{{ asset('images/fallback.jpeg') }}';"
+      >
       </div>
       <nav class="mt-4 px-2 space-y-1">
-        <!-- Dashboard Link -->
-        <div x-data="{
-              id: 'dashboard',
+      <!-- Dashboard Link -->
+      <div x-data="{
+            id: 'dashboard',
+            iconHovered: false,
+            tooltipHovered: false,
+            setActive() { $store.activeTooltip.set(this.id) },
+            clearActive() { if(!this.iconHovered && !this.tooltipHovered){ $store.activeTooltip.clear(this.id) } }
+          }"
+          class="relative group"
+          @mouseenter="iconHovered = true; setActive()"
+          @mouseleave="iconHovered = false; clearActive()">
+        <a href="{{ route('dashboard') }}" 
+            :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
+            class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 {{ (request()->routeIs('dashboard') || request()->routeIs('stocks.low')) ? 'bg-gray-100 text-blue-600' : 'text-gray-600' }}"
+            x-bind:class="($store.activeTooltip.current === 'dashboard') ? 'bg-gray-200 text-blue-600' : ''">
+          <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center group-hover:text-blue-600">
+            <i class="fas fa-home text-lg"></i>
+          </div>
+          <span x-show="sidebarOpen" x-cloak class="ml-3 text-sm font-medium whitespace-nowrap transition-all duration-150">
+            Dashboard
+          </span>
+        </a>
+        <template x-if="!sidebarOpen">
+          <div x-show="$store.activeTooltip.current === id" 
+                x-cloak 
+                class="absolute left-full ml-0 top-1/2 -translate-y-1/2 transition duration-150 z-50"
+                @mouseenter="tooltipHovered = true; setActive()"
+                @mouseleave="tooltipHovered = false; clearActive()">
+            <div class="relative">
+              <div class="bg-gray-200 text-blue-600 flex items-center h-14 rounded-r-lg rounded-l-none p-4 text-sm font-medium">
+                Dashboard
+              </div>
+              <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
+                <svg class="w-3 h-3 fill-current text-gray-200" viewBox="0 0 10 10">
+                  <polygon points="0,0 10,0 5,5"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- Stock Inventory Link -->
+      <div x-data="{
+              id: 'stockInventory',
+              stockMenuOpen: localStorage.getItem('stockMenuOpen') === 'true',
               iconHovered: false,
               tooltipHovered: false,
               setActive() { $store.activeTooltip.set(this.id) },
               clearActive() { if(!this.iconHovered && !this.tooltipHovered){ $store.activeTooltip.clear(this.id) } }
-            }"
-            class="relative group"
-            @mouseenter="iconHovered = true; setActive()"
-            @mouseleave="iconHovered = false; clearActive()">
-          <a href="{{ route('dashboard') }}" 
-             :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
-             class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 {{ (request()->routeIs('dashboard') || request()->routeIs('stocks.low')) ? 'bg-gray-100 text-blue-600' : 'text-gray-600' }}"
-             x-bind:class="($store.activeTooltip.current === 'dashboard') ? 'bg-gray-200 text-blue-600' : ''">
+          }"
+          x-init="$watch('stockMenuOpen', value => localStorage.setItem('stockMenuOpen', value))"
+          class="relative group"
+          @mouseenter="iconHovered = true; setActive()"
+          @mouseleave="iconHovered = false; clearActive()">
+        <!-- Parent Button -->
+        <button @click="if(sidebarOpen){ stockMenuOpen = !stockMenuOpen }"
+                :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
+                class="flex items-center justify-between w-full p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 {{ (request()->routeIs('stocks.overview') || request()->routeIs('stocks.byCategory') || request()->routeIs('stocks.transactions') || request()->routeIs('stocks.management') || request()->routeIs('stocks.transactions.in')) ? 'bg-gray-100 text-blue-600' : 'text-gray-600' }}"
+                x-bind:class="($store.activeTooltip.current === 'stockInventory') ? 'bg-gray-200 text-blue-600' : ''">
+          <div class="flex items-center">
             <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center group-hover:text-blue-600">
-              <i class="fas fa-home text-lg"></i>
+              <i class="fas fa-boxes text-lg"></i>
             </div>
             <span x-show="sidebarOpen" x-cloak class="ml-3 text-sm font-medium whitespace-nowrap transition-all duration-150">
-              Dashboard
+              Stock Inventory
+            </span>
+          </div>
+          <span x-show="sidebarOpen" x-cloak class="transition-transform duration-150">
+            <i :class="{'fa-chevron-down': !stockMenuOpen, 'fa-chevron-up': stockMenuOpen}" class="fas"></i>
+          </span>
+        </button>
+        <!-- Tooltip Dropdown when Sidebar is Collapsed -->
+        <template x-if="!sidebarOpen">
+          <div x-show="$store.activeTooltip.current === id" 
+                x-cloak 
+                class="absolute left-full ml-0 top-0 transition duration-150 z-50"
+                @mouseenter="tooltipHovered = true; setActive()"
+                @mouseleave="tooltipHovered = false; clearActive()">
+            <div class="relative">
+              <div class="bg-gray-200 text-gray-600 flex flex-col rounded-r-lg rounded-l-none p-3 text-sm font-medium space-y-1">
+                <a href="{{ route('stocks.overview') }}"
+                    class="block h-12 flex items-center rounded hover:bg-gray-200 hover:text-blue-600 hover:scale-105 px-2 whitespace-nowrap {{ request()->routeIs('stocks.overview', 'stocks.byCategory') ? 'text-blue-600' : 'text-gray-600' }}"
+                    x-bind:class="($store.activeTooltip.current === 'stockInventory') ? 'bg-gray-200 text-blue-600' : ''">
+                  Stock Overview
+                </a>
+                <a href="{{ route('stocks.transactions') }}"
+                    class="block h-12 flex items-center rounded hover:bg-gray-200 hover:text-blue-600 hover:scale-105 px-2 whitespace-nowrap {{ request()->routeIs('stocks.transactions') ? 'text-blue-600' : 'text-gray-600' }}"
+                    x-bind:class="($store.activeTooltip.current === 'stockInventory') ? 'bg-gray-200 text-blue-600' : ''">
+                  Stock Transaction
+                </a>
+                <a href="{{ route('stocks.management') }}"
+                    class="block h-12 flex items-center rounded hover:bg-gray-200 hover:text-blue-600 hover:scale-105 px-2 whitespace-nowrap {{ request()->routeIs('stocks.management') ? 'text-blue-600' : 'text-gray-600' }}"
+                    x-bind:class="($store.activeTooltip.current === 'stockInventory') ? 'bg-gray-200 text-blue-600' : ''">
+                  Stock Management
+                </a>
+              </div>
+              <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
+                <svg class="w-3 h-3 fill-current text-gray-200" viewBox="0 0 10 10">
+                  <polygon points="0,0 10,0 5,5"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </template>
+        <!-- Inline Submenu when Sidebar is Expanded -->
+        <div x-show="sidebarOpen && stockMenuOpen" x-cloak class="ml-8 mt-2 space-y-1">
+          <a href="{{ route('stocks.overview') }}"
+              class="block p-2 rounded-lg hover:bg-gray-200 hover:text-blue-600 transition-colors transform hover:scale-105 duration-150 whitespace-nowrap {{ request()->routeIs('stocks.overview', 'stocks.byCategory') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
+            Stock Overview
+          </a>
+          <a href="{{ route('stocks.transactions') }}"
+              class="block p-2 rounded-lg hover:bg-gray-200 hover:text-blue-600 transition-colors transform hover:scale-105 duration-150 whitespace-nowrap {{ request()->routeIs('stocks.transactions') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
+            Stock Transaction
+          </a>
+          <a href="{{ route('stocks.management') }}"
+              class="block p-2 rounded-lg hover:bg-gray-200 hover:text-blue-600 transition-colors transform hover:scale-105 duration-150 whitespace-nowrap {{ request()->routeIs('stocks.management') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
+            Stock Management
+          </a>
+        </div>
+      </div>
+      
+      <!-- Super Admin-only Link -->
+      @if(auth()->check() && auth()->user()->role === 'Super Admin')
+        <div x-data="{ id: 'userManager' }"
+            @mouseenter="$store.activeTooltip.set(id)"
+            @mouseleave="setTimeout(() => { $store.activeTooltip.clear(id) }, 0)"
+            class="relative group">
+            <a href="{{ route('users.index') }}" 
+              :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
+              class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 {{ request()->routeIs('users*') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}"
+              x-bind:class="($store.activeTooltip.current === 'userManager') ? 'bg-gray-200 text-blue-600' : ''">
+              <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center group-hover:text-blue-600">
+                  <i class="fas fa-users text-lg"></i>
+              </div>
+              <span x-show="sidebarOpen" x-cloak class="ml-3 text-sm font-medium whitespace-nowrap transition-all duration-150">
+                  Manage Users
+              </span>
+            </a>
+              <template x-if="!sidebarOpen">
+                  <div x-show="$store.activeTooltip.current === id" x-cloak class="absolute left-full ml-0 top-1/2  -translate-y-1/2 transition duration-150 z-50 pointer-events-none">
+                    <div class="relative">
+                        <div class="bg-gray-200 text-blue-600 flex items-center h-14 rounded-r-lg rounded-l-none p-4 text-sm font-medium whitespace-nowrap">
+                          Manage Users
+                        </div>
+                        <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
+                          <svg class="w-3 h-3 fill-current text-gray-200" viewBox="0 0 10 10">
+                            <polygon points="0,0 10,0 5,5"/>
+                          </svg>
+                        </div>
+                    </div>
+                  </div>
+              </template>
+        </div>
+
+          <!-- Products Link (New) -->
+          <div x-data="{ id: 'products' }"
+              class="relative group"
+              @mouseenter="$store.activeTooltip.set(id)"
+              @mouseleave="setTimeout(() => { $store.activeTooltip.clear(id) }, 0)">
+          <a href="{{ route('products.index') }}"
+              :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
+              class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 {{ request()->routeIs('products*') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}"
+              x-bind:class="($store.activeTooltip.current === 'products') ? 'bg-gray-200 text-blue-600' : ''">
+            <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center">
+              <i class="fas fa-box text-lg"></i>
+            </div>
+            <span x-show="sidebarOpen" x-cloak class="ml-3 text-sm font-medium whitespace-nowrap transition-all duration-150">
+              Products
             </span>
           </a>
           <template x-if="!sidebarOpen">
-            <div x-show="$store.activeTooltip.current === id" 
-                 x-cloak 
-                 class="absolute left-full ml-0 top-1/2 -translate-y-1/2 transition duration-150 z-50"
-                 @mouseenter="tooltipHovered = true; setActive()"
-                 @mouseleave="tooltipHovered = false; clearActive()">
+            <div x-show="$store.activeTooltip.current === id" x-cloak class="absolute left-full ml-0 top-1/2 -translate-y-1/2 transition duration-150 z-50">
               <div class="relative">
-                <div class="bg-gray-200 text-blue-600 flex items-center h-14 rounded-r-lg rounded-l-none p-4 text-sm font-medium">
-                  Dashboard
+                <div class="bg-gray-200 text-blue-600 flex items-center h-14 rounded-r-lg rounded-l-none p-4 text-sm font-medium whitespace-nowrap">
+                  Products
                 </div>
                 <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
                   <svg class="w-3 h-3 fill-current text-gray-200" viewBox="0 0 10 10">
@@ -116,238 +262,96 @@
           </template>
         </div>
 
-        <!-- Stock Inventory Link -->
-        <div x-data="{
-                id: 'stockInventory',
-                stockMenuOpen: localStorage.getItem('stockMenuOpen') === 'true',
-                iconHovered: false,
-                tooltipHovered: false,
-                setActive() { $store.activeTooltip.set(this.id) },
-                clearActive() { if(!this.iconHovered && !this.tooltipHovered){ $store.activeTooltip.clear(this.id) } }
-            }"
-            x-init="$watch('stockMenuOpen', value => localStorage.setItem('stockMenuOpen', value))"
-            class="relative group"
-            @mouseenter="iconHovered = true; setActive()"
-            @mouseleave="iconHovered = false; clearActive()">
-          <!-- Parent Button -->
-          <button @click="if(sidebarOpen){ stockMenuOpen = !stockMenuOpen }"
-                  :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
-                  class="flex items-center justify-between w-full p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 {{ (request()->routeIs('stocks.overview') || request()->routeIs('stocks.byCategory') || request()->routeIs('stocks.transactions') || request()->routeIs('stocks.management') || request()->routeIs('stocks.transactions.in')) ? 'bg-gray-100 text-blue-600' : 'text-gray-600' }}"
-                  x-bind:class="($store.activeTooltip.current === 'stockInventory') ? 'bg-gray-200 text-blue-600' : ''">
-            <div class="flex items-center">
-              <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center group-hover:text-blue-600">
-                <i class="fas fa-boxes text-lg"></i>
+      @endif
+      
+      <!-- Profile Settings Link -->
+      <div x-data="{ id: 'profileSettings' }"
+            @mouseenter="$store.activeTooltip.set(id)"
+            @mouseleave="setTimeout(() => { $store.activeTooltip.clear(id) }, 0)"
+            class="relative group">
+        <a href="{{ route('profile.edit') }}" 
+            :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
+            class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 {{ request()->routeIs('profile.edit') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}"
+            x-bind:class="($store.activeTooltip.current === 'profileSettings') ? 'bg-gray-200 text-blue-600' : ''">
+          <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center group-hover:text-blue-600">
+            <i class="fas fa-user-cog text-lg"></i>
+          </div>
+          <span x-show="sidebarOpen" x-cloak class="ml-3 text-sm font-medium whitespace-nowrap transition-all duration-150">
+            Profile Settings
+          </span>
+        </a>
+        <template x-if="!sidebarOpen">
+          <div x-show="$store.activeTooltip.current === id" x-cloak class="absolute left-full ml-0 top-1/2 -translate-y-1/2 transition duration-150 z-50">
+            <div class="relative">
+              <div class="bg-gray-200 text-blue-600 flex items-center h-14 rounded-r-lg rounded-l-none p-4 text-sm font-medium whitespace-nowrap">
+                Profile Settings
               </div>
-              <span x-show="sidebarOpen" x-cloak class="ml-3 text-sm font-medium whitespace-nowrap transition-all duration-150">
-                Stock Inventory
-              </span>
+              <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
+                <svg class="w-3 h-3 fill-current text-gray-200" viewBox="0 0 10 10">
+                  <polygon points="0,0 10,0 5,5"/>
+                </svg>
+              </div>
             </div>
-            <span x-show="sidebarOpen" x-cloak class="transition-transform duration-150">
-              <i :class="{'fa-chevron-down': !stockMenuOpen, 'fa-chevron-up': stockMenuOpen}" class="fas"></i>
+          </div>
+        </template>
+      </div>
+      
+      <!-- Logout Link -->
+      <div x-data="{ id: 'logout' }"
+            @mouseenter="$store.activeTooltip.set(id)"
+            @mouseleave="setTimeout(() => { $store.activeTooltip.clear(id) }, 0)"
+            class="relative group">
+        <form method="POST" action="{{ route('logout') }}">
+          @csrf
+          <button type="submit" 
+                  :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
+                  class="flex items-center w-full p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 text-gray-600"
+                  x-bind:class="($store.activeTooltip.current === 'logout') ? 'bg-gray-200 text-blue-600' : ''">
+            <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center group-hover:text-blue-600">
+              <i class="fas fa-sign-out-alt text-lg"></i>
+            </div>
+            <span x-show="sidebarOpen" x-cloak class="ml-3 text-sm font-medium whitespace-nowrap transition-all duration-150">
+              Logout
             </span>
           </button>
-          <!-- Tooltip Dropdown when Sidebar is Collapsed -->
-          <template x-if="!sidebarOpen">
-            <div x-show="$store.activeTooltip.current === id" 
-                 x-cloak 
-                 class="absolute left-full ml-0 top-0 transition duration-150 z-50"
-                 @mouseenter="tooltipHovered = true; setActive()"
-                 @mouseleave="tooltipHovered = false; clearActive()">
-              <div class="relative">
-                <div class="bg-gray-200 text-gray-600 flex flex-col rounded-r-lg rounded-l-none p-3 text-sm font-medium space-y-1">
-                  <a href="{{ route('stocks.overview') }}"
-                     class="block h-12 flex items-center rounded hover:bg-gray-200 hover:text-blue-600 hover:scale-105 px-2 whitespace-nowrap {{ request()->routeIs('stocks.overview', 'stocks.byCategory') ? 'text-blue-600' : 'text-gray-600' }}"
-                     x-bind:class="($store.activeTooltip.current === 'stockInventory') ? 'bg-gray-200 text-blue-600' : ''">
-                    Stock Overview
-                  </a>
-                  <a href="{{ route('stocks.transactions') }}"
-                     class="block h-12 flex items-center rounded hover:bg-gray-200 hover:text-blue-600 hover:scale-105 px-2 whitespace-nowrap {{ request()->routeIs('stocks.transactions') ? 'text-blue-600' : 'text-gray-600' }}"
-                     x-bind:class="($store.activeTooltip.current === 'stockInventory') ? 'bg-gray-200 text-blue-600' : ''">
-                    Stock Transaction
-                  </a>
-                  <a href="{{ route('stocks.management') }}"
-                     class="block h-12 flex items-center rounded hover:bg-gray-200 hover:text-blue-600 hover:scale-105 px-2 whitespace-nowrap {{ request()->routeIs('stocks.management') ? 'text-blue-600' : 'text-gray-600' }}"
-                     x-bind:class="($store.activeTooltip.current === 'stockInventory') ? 'bg-gray-200 text-blue-600' : ''">
-                    Stock Management
-                  </a>
-                </div>
-                <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
-                  <svg class="w-3 h-3 fill-current text-gray-200" viewBox="0 0 10 10">
-                    <polygon points="0,0 10,0 5,5"/>
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </template>
-          <!-- Inline Submenu when Sidebar is Expanded -->
-          <div x-show="sidebarOpen && stockMenuOpen" x-cloak class="ml-8 mt-2 space-y-1">
-            <a href="{{ route('stocks.overview') }}"
-               class="block p-2 rounded-lg hover:bg-gray-200 hover:text-blue-600 transition-colors transform hover:scale-105 duration-150 whitespace-nowrap {{ request()->routeIs('stocks.overview', 'stocks.byCategory') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
-              Stock Overview
-            </a>
-            <a href="{{ route('stocks.transactions') }}"
-               class="block p-2 rounded-lg hover:bg-gray-200 hover:text-blue-600 transition-colors transform hover:scale-105 duration-150 whitespace-nowrap {{ request()->routeIs('stocks.transactions') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
-              Stock Transaction
-            </a>
-            <a href="{{ route('stocks.management') }}"
-               class="block p-2 rounded-lg hover:bg-gray-200 hover:text-blue-600 transition-colors transform hover:scale-105 duration-150 whitespace-nowrap {{ request()->routeIs('stocks.management') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
-              Stock Management
-            </a>
-          </div>
-        </div>
-        
-        <!-- Super Admin-only Link -->
-        @if(auth()->user()->role === 'Super Admin')
-          <div x-data="{ id: 'userManager' }"
-              @mouseenter="$store.activeTooltip.set(id)"
-              @mouseleave="setTimeout(() => { $store.activeTooltip.clear(id) }, 0)"
-              class="relative group">
-              <a href="{{ route('users.index') }}" 
-                :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
-                class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 {{ request()->routeIs('users*') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}"
-                x-bind:class="($store.activeTooltip.current === 'userManager') ? 'bg-gray-200 text-blue-600' : ''">
-                <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center group-hover:text-blue-600">
-                    <i class="fas fa-users text-lg"></i>
-                </div>
-                <span x-show="sidebarOpen" x-cloak class="ml-3 text-sm font-medium whitespace-nowrap transition-all duration-150">
-                    Manage Users
-                </span>
-              </a>
-                <template x-if="!sidebarOpen">
-                    <div x-show="$store.activeTooltip.current === id" x-cloak class="absolute left-full ml-0 top-1/2  -translate-y-1/2 transition duration-150 z-50 pointer-events-none">
-                      <div class="relative">
-                          <div class="bg-gray-200 text-blue-600 flex items-center h-14 rounded-r-lg rounded-l-none p-4 text-sm font-medium whitespace-nowrap">
-                            Manage Users
-                          </div>
-                          <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
-                            <svg class="w-3 h-3 fill-current text-gray-200" viewBox="0 0 10 10">
-                              <polygon points="0,0 10,0 5,5"/>
-                            </svg>
-                          </div>
-                      </div>
-                    </div>
-                </template>
-          </div>
-
-            <!-- Products Link (New) -->
-            <div x-data="{ id: 'products' }"
-                class="relative group"
-                @mouseenter="$store.activeTooltip.set(id)"
-                @mouseleave="setTimeout(() => { $store.activeTooltip.clear(id) }, 0)">
-            <a href="{{ route('products.index') }}"
-                :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
-                class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 {{ request()->routeIs('products*') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}"
-                x-bind:class="($store.activeTooltip.current === 'products') ? 'bg-gray-200 text-blue-600' : ''">
-              <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center">
-                <i class="fas fa-box text-lg"></i>
-              </div>
-              <span x-show="sidebarOpen" x-cloak class="ml-3 text-sm font-medium whitespace-nowrap transition-all duration-150">
-                Products
-              </span>
-            </a>
-            <template x-if="!sidebarOpen">
-              <div x-show="$store.activeTooltip.current === id" x-cloak class="absolute left-full ml-0 top-1/2 -translate-y-1/2 transition duration-150 z-50">
-                <div class="relative">
-                  <div class="bg-gray-200 text-blue-600 flex items-center h-14 rounded-r-lg rounded-l-none p-4 text-sm font-medium whitespace-nowrap">
-                    Products
-                  </div>
-                  <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
-                    <svg class="w-3 h-3 fill-current text-gray-200" viewBox="0 0 10 10">
-                      <polygon points="0,0 10,0 5,5"/>
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            </template>
-          </div>
-
-        @endif
-        
-        <!-- Profile Settings Link -->
-        <div x-data="{ id: 'profileSettings' }"
-             @mouseenter="$store.activeTooltip.set(id)"
-             @mouseleave="setTimeout(() => { $store.activeTooltip.clear(id) }, 0)"
-             class="relative group">
-          <a href="{{ route('profile.edit') }}" 
-             :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
-             class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 {{ request()->routeIs('profile.edit') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}"
-             x-bind:class="($store.activeTooltip.current === 'profileSettings') ? 'bg-gray-200 text-blue-600' : ''">
-            <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center group-hover:text-blue-600">
-              <i class="fas fa-user-cog text-lg"></i>
-            </div>
-            <span x-show="sidebarOpen" x-cloak class="ml-3 text-sm font-medium whitespace-nowrap transition-all duration-150">
-              Profile Settings
-            </span>
-          </a>
-          <template x-if="!sidebarOpen">
-            <div x-show="$store.activeTooltip.current === id" x-cloak class="absolute left-full ml-0 top-1/2 -translate-y-1/2 transition duration-150 z-50">
-              <div class="relative">
-                <div class="bg-gray-200 text-blue-600 flex items-center h-14 rounded-r-lg rounded-l-none p-4 text-sm font-medium whitespace-nowrap">
-                  Profile Settings
-                </div>
-                <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
-                  <svg class="w-3 h-3 fill-current text-gray-200" viewBox="0 0 10 10">
-                    <polygon points="0,0 10,0 5,5"/>
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </template>
-        </div>
-        
-        <!-- Logout Link -->
-        <div x-data="{ id: 'logout' }"
-             @mouseenter="$store.activeTooltip.set(id)"
-             @mouseleave="setTimeout(() => { $store.activeTooltip.clear(id) }, 0)"
-             class="relative group">
-          <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button type="submit" 
-                    :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
-                    class="flex items-center w-full p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 text-gray-600"
-                    x-bind:class="($store.activeTooltip.current === 'logout') ? 'bg-gray-200 text-blue-600' : ''">
-              <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center group-hover:text-blue-600">
-                <i class="fas fa-sign-out-alt text-lg"></i>
-              </div>
-              <span x-show="sidebarOpen" x-cloak class="ml-3 text-sm font-medium whitespace-nowrap transition-all duration-150">
+        </form>
+        <template x-if="!sidebarOpen">
+          <div x-show="$store.activeTooltip.current === id" x-cloak class="absolute left-full ml-0 top-1/2 -translate-y-1/2 transition duration-150 z-50">
+            <div class="relative">
+              <div class="bg-gray-200 text-blue-600 flex items-center h-14 rounded-r-lg rounded-l-none p-4 text-sm font-medium whitespace-nowrap">
                 Logout
-              </span>
-            </button>
-          </form>
-          <template x-if="!sidebarOpen">
-            <div x-show="$store.activeTooltip.current === id" x-cloak class="absolute left-full ml-0 top-1/2 -translate-y-1/2 transition duration-150 z-50">
-              <div class="relative">
-                <div class="bg-gray-200 text-blue-600 flex items-center h-14 rounded-r-lg rounded-l-none p-4 text-sm font-medium whitespace-nowrap">
-                  Logout
-                </div>
-                <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
-                  <svg class="w-3 h-3 fill-current text-gray-200" viewBox="0 0 10 10">
-                    <polygon points="0,0 10,0 5,5"/>
-                  </svg>
-                </div>
+              </div>
+              <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
+                <svg class="w-3 h-3 fill-current text-gray-200" viewBox="0 0 10 10">
+                  <polygon points="0,0 10,0 5,5"/>
+                </svg>
               </div>
             </div>
-          </template>
-        </div>
+          </div>
+        </template>
+      </div>
       </nav>
-      
+
       <!-- Edge Hover Zone -->
       <div class="absolute right-0 top-0 bottom-0 w-2 cursor-pointer hover:bg-gray-200/50"
-           @click="sidebarOpen = !sidebarOpen"
-           x-show="sidebarOpen">
+          @click="sidebarOpen = !sidebarOpen"
+          x-show="sidebarOpen">
       </div>
 
       <!-- Bottom Toggle -->
       <div class="mt-auto border-t border-gray-100 p-2">
-        <button @click="sidebarOpen = !sidebarOpen" 
-                class="w-full flex items-center justify-center p-3 text-gray-600 hover:bg-gray-100 rounded-lg gap-2">
-          <i class="fas fa-chevron-left text-lg transform transition-transform"
-             :class="{ 'rotate-180': !sidebarOpen }"></i>
-          <span x-show="sidebarOpen" class="text-sm">Collapse Menu</span>
-        </button>
+      <button @click="sidebarOpen = !sidebarOpen" 
+              class="w-full flex items-center justify-center p-3 text-gray-600 hover:bg-gray-100 rounded-lg gap-2">
+        <i class="fas fa-chevron-left text-lg transform transition-transform"
+            :class="{ 'rotate-180': !sidebarOpen }"></i>
+        <span x-show="sidebarOpen" class="text-sm">Collapse Menu</span>
+      </button>
       </div>
-    </div>
-  </aside>
+      </div>
+      </aside>
+  @endif
+
+
 
   <!-- Main Content -->
   <main class="min-h-screen transition-[margin] duration-300 ease-in-out"
@@ -361,6 +365,18 @@
       <!-- Global Modals -->
       @include('components.success-modal')
       @include('components.delete-confirmation-modal')
+      @include('components.reset-password-modal')
+
+      {{-- Global Delete Form (for DELETE requests) --}}
+      <form id="globalDeleteForm" method="POST" style="display: none;">
+        @csrf
+        @method('DELETE')
+      </form>
+
+      {{-- Global Status Form (for POST activate/deactivate) --}}
+      <form id="globalStatusForm" method="POST" style="display: none;">
+          @csrf
+      </form>
       
       <!-- Custom JS to handle modals -->
       <script>
@@ -386,6 +402,18 @@
               defaultMessage = resource ? `The ${resource} has been deleted from the system.` : 'Operation completed successfully.';
               headerClass = 'deleted';
               iconClass = 'fa-trash-alt';
+              break;
+            case 'activated':
+              title          = 'User Activated';
+              defaultMessage = `The ${resource} has been activated successfully.`;
+              headerClass    = 'created';       // or a custom .activate class
+              iconClass      = 'fa-user-check';
+              break;
+            case 'deactivated':
+              title          = 'User Deactivated';
+              defaultMessage = `The ${resource} has been deactivated.`;
+              headerClass    = 'deleted';       // or a custom .deactivate class
+              iconClass      = 'fa-user-slash';
               break;
             case 'loan':
               title = resource ? `${capitalize(resource)} Loaned` : 'Loan Successful!';
@@ -428,19 +456,102 @@
         function capitalize(str) {
           return str.charAt(0).toUpperCase() + str.slice(1);
         }
-        
-        // Delete Confirmation Modal Function
-        function showDeleteConfirmationModal(itemType, confirmCallback) {
-          var message = "Are you sure you want to delete this " + itemType + "?";
-          $('#deleteConfirmationMessage').html(message);
-          
-          $('#globalDeleteModal').modal('show');
-    
-          $('#confirmDeleteButton').off('click').on('click', function() {
-              confirmCallback(itemType);
+
+        function showActionConfirmationModal(actionType, itemType, onConfirm) {
+          // 1) Determine header class, title, button style, icon
+          let title, headerClass, btnClass;
+          switch (actionType) {
+            case 'delete':
+              title       = 'Confirm Delete';
+              headerClass = 'delete-confirm';
+              btnClass    = 'btn-danger';
+              break;
+            case 'activate':
+              title       = 'Confirm Activation';
+              headerClass = 'activate-confirm';
+              btnClass    = 'btn-success';
+              break;
+            case 'deactivate':
+              title       = 'Confirm Deactivation';
+              headerClass = 'deactivate-confirm';
+              btnClass    = 'btn-warning';
+              break;
+            default:
+              title       = 'Confirm';
+              headerClass = '';
+              btnClass    = 'btn-primary';
+          }
+
+          // Compute the button label
+          let btnText = actionType === 'delete'
+              ? 'Delete'
+              : actionType.charAt(0).toUpperCase() + actionType.slice(1);
+
+          // 2) Update modal header text & styling
+          $('#globalDeleteModalLabel').text(title);
+          let $modalHeader = $('#globalDeleteModal .modal-header');
+          $modalHeader
+            .removeClass('delete-confirm activate-confirm deactivate-confirm')
+            .addClass(headerClass);
+
+          // 3) Update message
+          $('#deleteConfirmationMessage').text(
+            `Are you sure you want to ${actionType} this ${itemType}?`
+          );
+
+          // 4) Update confirm button text & style
+          $('#confirmDeleteButton')
+            .off('click')
+            .text(btnText)     // e.g. 'Delete', 'Activate'
+            .removeClass('btn-danger btn-success btn-warning')
+            .addClass(btnClass)
+            .on('click', function() {
+              onConfirm();
               $('#globalDeleteModal').modal('hide');
-          });
+            });
+
+          // 5) Show the modal
+          $('#globalDeleteModal').modal('show');
         }
+
+        // When the modal is fully hidden, reset it back to delete defaults
+        $('#globalDeleteModal').on('hidden.bs.modal', function() {
+          const $header = $('#globalDeleteModal .modal-header');
+
+          // Reset header text, classes
+          $('#globalDeleteModalLabel').text('Confirm Delete');
+          $header
+            .removeClass('activate-confirm deactivate-confirm')
+            .addClass('delete-confirm');
+
+          // Reset confirm button text & classes
+          $('#confirmDeleteButton')
+            .text('Delete')
+            .removeClass('btn-success btn-warning')
+            .addClass('btn-danger');
+        });
+
+        // Deletion handler
+        $(document).on('click', '.delete-button', function(e) {
+          e.preventDefault();
+          const action   = $(this).data('action');
+          const itemType = $(this).data('type');
+          showActionConfirmationModal('delete', itemType, function() {
+            $('#globalDeleteForm').attr('action', action).submit();
+          });
+        });
+
+        // Activate / Deactivate handler
+        $(document).on('click', '.status-button', function(e) {
+          e.preventDefault();
+          const actionType = $(this).data('action-label');   // 'activate' or 'deactivate'
+          const action     = $(this).data('action');
+          const itemType   = $(this).data('type');
+
+          showActionConfirmationModal(actionType, itemType, function() {
+            $('#globalStatusForm').attr('action', action).submit();
+          });
+        });
       </script>
 
       @if(session('success'))
@@ -471,17 +582,6 @@
       @endif
     </div>
   </main>
-
-  <script>
-    $(document).on('click', '.delete-button', function(e) {
-        e.preventDefault();
-        var action = $(this).data('action');
-        var itemType = $(this).data('type');
-        showDeleteConfirmationModal(itemType, function(returnedType) {
-            $('#globalDeleteForm').attr('action', action).submit();
-        });
-    });
-  </script>
 
   @yield('scripts')
   
