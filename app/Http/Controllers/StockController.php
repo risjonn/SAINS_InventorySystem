@@ -96,7 +96,7 @@ class StockController extends Controller
                                 ? $adminThresholds->get($category)->critical_threshold
                                 : $defaultCriticalThreshold;
     
-                            if ($ct < $lowThr) {
+                            if ($ct <= $lowThr) {
                                 $ct <= $critThr ? $criticalCount++ : $lowCount++;
                             }
                         });

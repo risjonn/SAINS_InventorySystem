@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class LoginController extends Controller
 {
@@ -57,6 +59,9 @@ class LoginController extends Controller
         }
 
         if (Auth::attempt($request->only('username', 'password'))) {
+            // Mark password reset notifications as read
+            $this->markPasswordResetNotificationsAsRead(Auth::user());
+            
             return redirect()->intended($this->redirectTo);
         }
 
@@ -89,5 +94,30 @@ class LoginController extends Controller
     public function username()
     {
         return 'username'; // Use "username" for login instead of "email"
+    }
+    
+    /**
+     * Mark any unread password reset notifications as read
+     *
+     * @param \App\Models\User $user
+     * @return void
+     */
+    protected function markPasswordResetNotificationsAsRead($user)
+    {
+        try {
+            // Find all unread password reset notifications with direct DB query
+            $updatedCount = DB::table('notifications')
+                ->where('notifiable_id', $user->id)
+                ->where('notifiable_type', get_class($user))
+                ->where('type', 'App\Notifications\PasswordResetNotice')
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
+            
+            if ($updatedCount > 0) {
+                Log::info("Marked {$updatedCount} password reset notifications as read for user {$user->username}");
+            }
+        } catch (\Exception $e) {
+            Log::error("Error clearing password reset notifications: " . $e->getMessage());
+        }
     }
 }

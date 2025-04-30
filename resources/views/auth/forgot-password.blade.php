@@ -42,27 +42,6 @@
         <div id="statusResult" class="mt-6 hidden">
             <!-- Results will be loaded here via AJAX -->
         </div>
-
-        <!-- If username was submitted and not using AJAX, show old password reset details -->
-        @if(old('username') && !request()->ajax())
-            @php
-                $user = \App\Models\User::where('username', old('username'))->first();
-                $note = $user
-                    ? $user->notifications()
-                        ->where('type', \App\Notifications\PasswordResetNotice::class)
-                        ->latest()
-                        ->first()
-                    : null;
-            @endphp
-
-            @if($note)
-                <div class="mt-6 p-4 bg-yellow-100 text-yellow-800 rounded">
-                    <p><strong>Password reset on:</strong> {{ $note->data['resetAt'] }}</p>
-                    <p><strong>Your new password:</strong> <code>{{ $note->data['newPassword'] }}</code></p>
-                    <p>Please log in and change it immediately.</p>
-                </div>
-            @endif
-        @endif
     </div>
 @endsection
 
@@ -163,7 +142,16 @@
                     // Password reset is pending
                     statusResult.innerHTML = `
                         <div class="p-4 bg-blue-100 text-blue-800 rounded">
-                            <p>Your password reset request is pending. Please wait for an administrator to process it.</p>
+                            <p>Your password reset request is pending. It was submitted on ${data.requestedAt}.</p>
+                            <p>Please wait for an administrator to process it.</p>
+                        </div>
+                    `;
+                } else if (data.status === 'logged_in') {
+                    // User is already logged in
+                    statusResult.innerHTML = `
+                        <div class="p-4 bg-green-100 text-green-800 rounded">
+                            <p>${data.message}</p>
+                            <p>If you need to reset your password, use the profile settings.</p>
                         </div>
                     `;
                 } else {

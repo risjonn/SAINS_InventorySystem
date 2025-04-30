@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\ProfileController;
 use \App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\StockController;
@@ -30,6 +31,58 @@ Route::get('forgot-password/status',[PasswordResetLinkController::class, 'status
      ->name('password.forgot.status');
 
 Route::get('/password/check-status', [PasswordRequestController::class, 'checkStatus'])->name('password.check.status');
+
+Route::get('/debug-notifications/{username}', function ($username) {
+    // Only allow this in local environment
+    if (!app()->environment('local', 'development')) {
+        abort(404);
+    }
+    
+    $user = \App\Models\User::where('username', $username)->first();
+    
+    if (!$user) {
+        return response()->json(['error' => 'User not found']);
+    }
+    
+    // Get all notifications for this user
+    $notifications = DB::table('notifications')
+        ->where('notifiable_id', $user->id)
+        ->where('notifiable_type', get_class($user))
+        ->orderBy('created_at', 'desc')
+        ->get();
+    
+    $result = [];
+    
+    foreach ($notifications as $notification) {
+        $data = json_decode($notification->data);
+        
+        $result[] = [
+            'id' => $notification->id,
+            'type' => $notification->type,
+            'created_at' => $notification->created_at,
+            'read_at' => $notification->read_at,
+            'data' => $data
+        ];
+    }
+    
+    // Get any password reset requests
+    $resetRequests = \App\Models\PasswordResetRequest::where('user_id', $user->id)
+        ->get()
+        ->map(function($request) {
+            return [
+                'id' => $request->id,
+                'created_at' => $request->created_at,
+                'completed' => $request->completed
+            ];
+        });
+    
+    return response()->json([
+        'user_id' => $user->id,
+        'username' => $user->username,
+        'notifications' => $result,
+        'reset_requests' => $resetRequests
+    ]);
+});
 
 // Dashboard and related API endpoints (unchanged)
 Route::get('/dashboard', [DashboardController::class, 'index'])

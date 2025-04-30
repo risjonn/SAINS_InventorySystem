@@ -187,7 +187,7 @@
                 @endphp
             
                     {{-- Only display the row if stock total is less than the current low threshold --}}
-                    @if($stockGroup->total < $lowThreshold)
+                    @if($stockGroup->total <= $lowThreshold)
                     <tr class="border-b odd:bg-white even:bg-gray-50 hover:bg-gray-100 transition-all duration-150 relative group">
                         <td class="p-3 border-b">{{ $stockGroup->category }}</td>
                         <td class="p-3 border-b text-left">
@@ -210,7 +210,7 @@
                                         <span class="inline-flex items-center bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-semibold shadow">
                                             <i class="fas fa-exclamation-triangle mr-1"></i> Critical
                                         </span>
-                                    @elseif($stockGroup->total < $lowThreshold)
+                                    @elseif($stockGroup->total <= $lowThreshold)
                                         <span class="inline-flex items-center bg-amber-100 text-amber-700 px-2 py-1 rounded-full text-xs font-semibold shadow">
                                             <i class="fas fa-exclamation-circle mr-1"></i> Low
                                         </span>
@@ -372,7 +372,7 @@
               low:   lowThr[i],
               crit:  critThr[i]
             }))
-            .filter(x => x.value < x.low);
+            .filter(x => x.value <= x.low);
         
           const labels       = filtered.map(x => x.label);
           const dataValues   = filtered.map(x => x.value);
