@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Division;
+use App\Models\PasswordRecoverRequest;
+use Illuminate\Http\RedirectResponse; 
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\PasswordResetRequest;
+use App\Notifications\PasswordRecoverNotice; 
 
 class UserManagementController extends Controller
 {
@@ -37,7 +40,12 @@ class UserManagementController extends Controller
     
         $users = $query->orderBy('name')->paginate(10);
 
-        $resetRequests = PasswordResetRequest::with('user')
+        $resetRequests = PasswordResetRequest::where('type', 'reset')
+        ->where('completed', 'Incomplete')
+        ->latest()
+        ->get();
+
+        $recoverRequests = PasswordResetRequest::where('type', 'recover')
         ->where('completed', 'Incomplete')
         ->latest()
         ->get();
@@ -50,7 +58,7 @@ class UserManagementController extends Controller
         // Also pass divisions for the filter dropdown
         $divisions = Division::all();
     
-        return view('users.index', compact('users', 'divisions', 'resetRequests'));
+        return view('users.index', compact('users', 'divisions', 'resetRequests', 'recoverRequests'));
     }
 
     // Show the form to create a new user

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class LoginController extends Controller
 {
@@ -49,22 +50,54 @@ class LoginController extends Controller
             'username' => 'required|string',
             'password' => 'required|string',
         ]);
-
-        $user = \App\Models\User::where('username',$request->username)->first();
-
+    
+        $user = \App\Models\User::where('username', $request->username)->first();
+    
         if ($user && $user->status === 'Inactive') {
             return back()->withErrors([
                 'username' => 'Your account is deactivated. Please contact your Super Admin.',
             ]);
         }
-
-        if (Auth::attempt($request->only('username', 'password'))) {
-            // Mark password reset notifications as read
-            $this->markPasswordResetNotificationsAsRead(Auth::user());
-            
-            return redirect()->intended($this->redirectTo);
+    
+        // Check if the user exists and handle password verification
+        if ($user) {
+            // Check if password is AES encrypted
+            if ($this->isPasswordEncryptedWithAES($user->password)) {
+                // If AES-encrypted password, decrypt and compare
+                if (decrypt($user->password) === $request->password) {
+                    // Password matches, log in the user
+                    Auth::login($user);
+                    // Mark password reset notifications as read
+                    $this->markPasswordResetNotificationsAsRead($user);
+    
+                    // Log the user and attempt to mark status as viewed
+                    Log::info("Attempting to mark status as viewed for user: {$user->username}");
+    
+                    // Mark the reset/recover request as viewed
+                    $this->markStatusAsViewed($user);  // New method to mark as viewed
+    
+                    return redirect()->intended($this->redirectTo); // Redirect to intended route
+                }
+            } else {
+                // Otherwise, use bcrypt to validate password
+                if (Hash::check($request->password, $user->password)) {
+                    // Password matches, log in the user
+                    Auth::login($user);
+                    // Mark password reset notifications as read
+                    $this->markPasswordResetNotificationsAsRead($user);
+    
+                    // Log the user and attempt to mark status as viewed
+                    Log::info("Attempting to mark status as viewed for user: {$user->username}");
+    
+                    // Mark the reset/recover request as viewed
+                    $this->markStatusAsViewed($user);  // New method to mark as viewed
+    
+                    return redirect()->intended($this->redirectTo); // Redirect to intended route
+                }
+            }
         }
-
+    
+        // If authentication fails
         return back()->withErrors([
             'username' => 'Invalid login credentials.',
         ]);
@@ -119,5 +152,39 @@ class LoginController extends Controller
         } catch (\Exception $e) {
             Log::error("Error clearing password reset notifications: " . $e->getMessage());
         }
+    }
+
+    protected function markStatusAsViewed($user)
+    {
+        // Find the most recent reset/recover request and mark it as viewed
+        $latestRequest = \App\Models\PasswordResetRequest::where('user_id', $user->id)
+                                                         ->whereIn('type', ['reset', 'recover'])
+                                                         ->latest('created_at')
+                                                         ->first();
+    
+        if ($latestRequest) {
+            // Log the current status before updating
+            Log::info("Marking request as viewed for user: {$user->username}, Request ID: {$latestRequest->id}, Current status_viewed: {$latestRequest->status_viewed}");
+    
+            // Update the status_viewed field
+            $latestRequest->update(['status_viewed' => true]);
+    
+            // Log the update
+            Log::info("Successfully marked status as viewed for request ID: {$latestRequest->id}");
+        } else {
+            Log::warning("No reset/recover request found for user: {$user->username}");
+        }
+    }
+
+    /**
+     * Check if the password is encrypted using AES encryption.
+     *
+     * @param string $password
+     * @return bool
+     */
+    private function isPasswordEncryptedWithAES($password)
+    {
+        // Check if password starts with the AES encryption identifier
+        return (strpos($password, 'eyJpdiI6') === 0);  // Typical starting string for AES-encrypted data
     }
 }

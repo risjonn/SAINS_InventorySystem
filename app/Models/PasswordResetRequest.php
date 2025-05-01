@@ -8,7 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class PasswordResetRequest extends Model
 {
-    protected $fillable = ['user_id', 'completed'];
+    protected $fillable = [
+        'user_id',
+        'completed',
+        'type',
+        'status_viewed',
+    ];
 
     /**
      * The user who requested the password reset.

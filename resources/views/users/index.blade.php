@@ -92,12 +92,23 @@
                 class="px-4 py-2 border-b-2 font-medium">
             All Users
         </button>
-        <button @click="switchTab('requests')"
-                :class="activeTab==='requests' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-600'"
+        <button @click="switchTab('resetRequests')"
+                :class="activeTab==='resetRequests' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-600'"
                 class="px-4 py-2 border-b-2 font-medium">
             Password Reset Requests
         </button>
+        <button @click="activeTab = 'recoverRequests'"
+            :class="activeTab==='recoverRequests' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-600'"
+            class="px-4 py-2 border-b-2 font-medium">
+            Password Recover Requests
+        </button>
     </nav>
+
+    @if(session('status'))
+        <div id="toastMessage" class="p-4 bg-green-100 text-green-800 rounded-t-lg">
+            {{ session('status') }}
+        </div>
+    @endif
 
     <!-- All Users Tab -->
     <div x-show="activeTab==='users'" x-cloak>
@@ -141,7 +152,7 @@
     </div>
 
     <!-- Password Reset Requests Tab -->
-    <div x-show="activeTab==='requests'" x-cloak class="space-y-4">
+    <div x-show="activeTab==='resetRequests'" x-cloak class="space-y-4">
         <h3 class="text-xl font-semibold mb-2">Pending Password Reset Requests</h3>
         <table class="min-w-full bg-white rounded-lg shadow overflow-hidden">
             <thead class="bg-gray-200 text-left">
@@ -176,6 +187,41 @@
         </table>
     </div>
 
+    <!-- Password Recover Requests -->
+    <div x-show="activeTab === 'recoverRequests'" x-cloak class="space-y-4">
+        <h3 class="text-xl font-semibold mb-2">Pending Password Recover Requests</h3>
+        <table class="min-w-full bg-white rounded-lg shadow overflow-hidden">
+            <thead class="bg-gray-200 text-left">
+                <tr>
+                    <th class="p-3">Username</th>
+                    <th class="p-3">Requested At</th>
+                    <th class="p-3">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($recoverRequests as $request)
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-3">{{ $request->user->username }}</td>
+                        <td class="p-3">{{ $request->created_at->format('Y-m-d H:i') }}</td>
+                        <td class="p-3">
+                            <form method="POST" action="{{ route('admin.password.requests.updateRecover', $request->id) }}">
+                                @csrf
+                                <input type="hidden" name="request_id" value="{{ $request->id }}">
+                                <button type="submit" class="btn btn-sm btn-primary">Recover</button>
+                            </form>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="3" class="p-4 text-center text-gray-500">
+                            No pending requests.
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
     <script>
         $(document).on('click', '.reset-button', function() {
             const reqId  = $(this).data('request');
@@ -186,6 +232,17 @@
             $('#reset-username').val(usernm);
             $('#new_password, #new_password_confirmation').val('');
             $('#resetPasswordModal').modal('show');
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const toastMessage = document.getElementById('toastMessage');
+
+            if (toastMessage) {
+                // Set a timeout to hide the toast message after 5 seconds
+                setTimeout(function() {
+                    toastMessage.style.display = 'none';
+                }, 3000);
+            }
         });
     </script>
 

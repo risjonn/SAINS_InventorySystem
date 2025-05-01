@@ -6,6 +6,7 @@ use App\Models\PasswordResetRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Notifications\PasswordResetNotice;
+use App\Notifications\PasswordRecoverNotice;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -23,7 +24,7 @@ class PasswordRequestController extends Controller
                         ->latest()
                         ->get();
 
-        return view('admin.password_requests.index', compact('requests'));
+        return view('users.index', compact('requests'));
     }
 
     /**
@@ -32,22 +33,49 @@ class PasswordRequestController extends Controller
     public function update(Request $r)
     {
         $r->validate([
-          'request_id'                 => 'required|exists:password_reset_requests,id',
-          'new_password'               => 'required|min:6|confirmed',
+            'request_id' => 'required|exists:password_reset_requests,id',
+            'new_password' => 'required|min:6|confirmed',
         ]);
     
         $pr = PasswordResetRequest::findOrFail($r->request_id);
         $user = $pr->user;
-        $user->password = bcrypt($r->new_password);
+        $user->password = encrypt($r->new_password);  // Encrypt the new password
         $user->save();
     
-        $pr->update(['completed'=>'Complete']);
+        // Mark the request as completed
+        $pr->update(['completed' => 'Complete']);  // Ensure this is updated to 'Complete'
+    
+        // Send the notification about the reset
         $user->notify(new PasswordResetNotice($r->new_password));
     
-        return redirect()->route('users.index')->with([
-            'success' => 'Password reset successfully and user notified.',
-            'resources' => 'user'
+        return redirect()->route('users.index')->with('status', 'Password has been successfully updated and user notified.');
+    }
+
+    /**
+     * Handle the password recover action (for Super Admin).
+    */
+    public function updateRecover(Request $r)
+    {
+        $r->validate([
+            'request_id' => 'required|exists:password_reset_requests,id',
         ]);
+
+        // Find the recover request
+        $pr = PasswordResetRequest::findOrFail($r->request_id);
+
+        // Ensure it's of type 'recover'
+        if ($pr->type !== 'recover') {
+            return redirect()->route('users.index')->with('error', 'This is not a valid recover request.');
+        }
+
+        // Mark the request as completed
+        $pr->update(['completed' => 'Complete']);  // Ensure this is updated to 'Complete'
+
+        // Notify the user that their password was recovered
+        $user = $pr->user;
+        $user->notify(new PasswordRecoverNotice($user->password));  // You may adjust the logic for notification
+
+        return redirect()->route('users.index')->with('status', 'Password recovery request processed and user notified.');
     }
 
     /**
@@ -56,7 +84,7 @@ class PasswordRequestController extends Controller
     public function checkStatus(Request $request)
     {
         $request->validate([
-            'username' => 'required'
+            'username' => 'required|string'
         ]);
     
         $user = User::where('username', $request->username)->first();
@@ -67,7 +95,7 @@ class PasswordRequestController extends Controller
                 'message' => 'User not found'
             ]);
         }
-        
+    
         // Check if the current logged-in user is the same as the one being checked
         if (Auth::check() && Auth::id() === $user->id) {
             return response()->json([
@@ -76,71 +104,43 @@ class PasswordRequestController extends Controller
             ]);
         }
     
-        // First check for pending request
-        $pendingRequest = PasswordResetRequest::where('user_id', $user->id)
-            ->where('completed', 'Incomplete')
-            ->latest()
-            ->first();
+        // Fetch the latest request (either reset or recover)
+        $latestRequest = PasswordResetRequest::where('user_id', $user->id)
+                                            ->whereIn('type', ['reset', 'recover'])
+                                            ->latest('created_at')
+                                            ->first();
     
-        if ($pendingRequest) {
+        // Check if the request has already been viewed
+        if ($latestRequest && $latestRequest->status_viewed) {
             return response()->json([
-                'status' => 'pending',
-                'requestedAt' => $pendingRequest->created_at->format('Y-m-d H:i:s'),
-                'message' => 'Your password reset request is pending'
+                'status' => 'viewed',
+                'message' => 'You have already viewed your reset/recover request status.'
             ]);
         }
     
-        // Log the search for notifications
-        Log::info("Checking for reset notifications for user: {$user->username} (ID: {$user->id})");
-        
-        // Simplified approach: Check for ANY notifications of reset type within 30 days
-        $completedReset = DB::table('notifications')
-            ->where('notifiable_id', $user->id)
-            ->where('notifiable_type', get_class($user))
-            ->where('type', 'App\Notifications\PasswordResetNotice')
-            ->where('created_at', '>', Carbon::now()->subDays(30))
-            ->latest('created_at')
-            ->first();
-        
-        if ($completedReset) {
-            Log::info("Found reset notification for user: {$user->username}", [
-                'notification_id' => $completedReset->id,
-                'created_at' => $completedReset->created_at,
-                'read_at' => $completedReset->read_at
+        if (!$latestRequest) {
+            return response()->json([
+                'status' => 'none',
+                'message' => 'No password reset or recovery request found'
             ]);
-            
-            $data = json_decode($completedReset->data);
-            
-            // Log the decoded data
-            Log::info("Notification data for user: {$user->username}", [
-                'data' => $data
-            ]);
-            
-            // Check if user has already logged in after reset
-            $hasLoggedIn = false;
-            
-            // If read_at is set, user has already seen this notification
-            if ($completedReset->read_at) {
-                Log::info("User {$user->username} has already read this notification");
-                $hasLoggedIn = true;
-            }
-            
-            // If not logged in, show the reset details
-            if (!$hasLoggedIn) {
-                return response()->json([
-                    'status' => 'reset',
-                    'resetAt' => $data->resetAt ?? $completedReset->created_at,
-                    'newPassword' => $data->newPassword ?? 'Password data not available',
-                    'message' => 'Your password has been reset'
-                ]);
-            }
-        } else {
-            Log::info("No reset notifications found for user: {$user->username}");
         }
+    
+        // Decrypt the password if the request is completed
+        $password = null;
+        if ($latestRequest->completed === 'Complete') {
+            $password = decrypt($latestRequest->user->password);  // Decrypt the password
+        }
+    
+        // Prepare the status message
+        $statusMessage = $latestRequest->completed === 'Complete'
+                         ? ($latestRequest->type === 'reset' ? 'Your password has been reset' : 'Your password has been recovered')
+                         : ($latestRequest->type === 'reset' ? 'Your password reset request is pending' : 'Your password recovery request is pending');
     
         return response()->json([
-            'status' => 'none',
-            'message' => 'No password reset request found'
+            'status' => $statusMessage,
+            'requestedAt' => $latestRequest->created_at->format('Y-m-d H:i:s'),
+            'password' => $password,
+            'message' => $statusMessage
         ]);
-    }
+    }     
 }
