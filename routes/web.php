@@ -1,6 +1,8 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\ProfileController;
+use \App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductController;
@@ -10,11 +12,81 @@ use App\Http\Controllers\ThresholdController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
+use \App\Http\Controllers\PasswordRequestController;
 
 // Public route
 Route::get('/', function () {
     return view('welcome');
 });
+
+// Public "Forgot Password" routes (no authentication required)
+Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
+     ->name('password.forgot');
+
+Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
+     ->name('password.forgot.handle');
+
+Route::get('forgot-password/status',[PasswordResetLinkController::class, 'status'])
+     ->name('password.forgot.status');
+
+Route::post('forgot-password/recover', [PasswordResetLinkController::class, 'recover'])
+     ->middleware('guest')
+     ->name('password.recover');
+
+Route::get('/password/check-status', [PasswordRequestController::class, 'checkStatus'])->name('password.check.status');
+
+// Route::get('/debug-notifications/{username}', function ($username) {
+//     // Only allow this in local environment
+//     if (!app()->environment('local', 'development')) {
+//         abort(404);
+//     }
+    
+//     $user = \App\Models\User::where('username', $username)->first();
+    
+//     if (!$user) {
+//         return response()->json(['error' => 'User not found']);
+//     }
+    
+//     // Get all notifications for this user
+//     $notifications = DB::table('notifications')
+//         ->where('notifiable_id', $user->id)
+//         ->where('notifiable_type', get_class($user))
+//         ->orderBy('created_at', 'desc')
+//         ->get();
+    
+//     $result = [];
+    
+//     foreach ($notifications as $notification) {
+//         $data = json_decode($notification->data);
+        
+//         $result[] = [
+//             'id' => $notification->id,
+//             'type' => $notification->type,
+//             'created_at' => $notification->created_at,
+//             'read_at' => $notification->read_at,
+//             'data' => $data
+//         ];
+//     }
+    
+//     // Get any password reset requests
+//     $resetRequests = \App\Models\PasswordResetRequest::where('user_id', $user->id)
+//         ->get()
+//         ->map(function($request) {
+//             return [
+//                 'id' => $request->id,
+//                 'created_at' => $request->created_at,
+//                 'completed' => $request->completed
+//             ];
+//         });
+    
+//     return response()->json([
+//         'user_id' => $user->id,
+//         'username' => $user->username,
+//         'notifications' => $result,
+//         'reset_requests' => $resetRequests
+//     ]);
+// });
 
 // Dashboard and related API endpoints (unchanged)
 Route::get('/dashboard', [DashboardController::class, 'index'])
@@ -65,12 +137,38 @@ Route::middleware(['auth', 'role:Admin|Super Admin'])->group(function () {
 
 // Super Admin routes
 Route::middleware(['auth', 'role:Super Admin'])->group(function () {
-    Route::get('/users', [\App\Http\Controllers\UserManagementController::class, 'index'])->name('users.index');
-    Route::get('/users/create', [\App\Http\Controllers\UserManagementController::class, 'create'])->name('users.create');
-    Route::post('/users', [\App\Http\Controllers\UserManagementController::class, 'store'])->name('users.store');
-    Route::get('/users/{user}/edit', [\App\Http\Controllers\UserManagementController::class, 'edit'])->name('users.edit');
-    Route::put('/users/{user}', [\App\Http\Controllers\UserManagementController::class, 'update'])->name('users.update');
-    Route::delete('/users/{user}', [\App\Http\Controllers\UserManagementController::class, 'destroy'])->name('users.destroy');
+    Route::get('/users', [UserManagementController::class, 'index'])
+        ->name('users.index');
+    Route::get('/users/create', [UserManagementController::class, 'create'])
+        ->name('users.create');
+    Route::post('/users', [UserManagementController::class, 'store'])
+        ->name('users.store');
+    Route::get('/users/{user}/edit', [UserManagementController::class, 'edit'])
+        ->name('users.edit');
+    Route::put('/users/{user}', [UserManagementController::class, 'update'])
+        ->name('users.update');
+    Route::delete('/users/{user}', [UserManagementController::class, 'destroy'])
+        ->name('users.destroy');
+    Route::post('/users/{user}/deactivate', [UserManagementController::class,'deactivate'])
+        ->name('users.deactivate');
+    Route::post('/users/{user}/activate',   [UserManagementController::class,'activate'])
+        ->name('users.activate');
+    Route::post('/users/{user}/restore',    [UserManagementController::class,'restore'])
+        ->name('users.restore');
+
+    // List password reset requests for Super Admin
+    Route::get('password-requests', [PasswordRequestController::class, 'index'])
+    ->name('admin.password.requests');
+
+    Route::post('password-requests/reset', [PasswordRequestController::class, 'update'])
+    ->name('admin.password.requests.reset');
+
+    // Process the reset password action
+    Route::post('password-requests/reset', [PasswordRequestController::class, 'update'])
+    ->name('admin.password.requests.update');
+
+    Route::post('password-requests/recover', [PasswordRequestController::class, 'updateRecover'])
+    ->name('admin.password.requests.updateRecover');
 
     Route::resource('products', ProductController::class);
 
@@ -127,6 +225,7 @@ Route::post('/logout', function (Request $request) {
     Auth::logout();
     return redirect('/')->with('status', 'logged-out');
 })->name('logout');
+
 
 // Auth routes (register, login, etc.)
 require __DIR__.'/auth.php';
