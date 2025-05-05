@@ -16,10 +16,8 @@
            <div class="mb-3">
              <label for="category" class="form-label">Category</label>
              <select class="form-select" id="category" name="category" required>
-                @foreach($allCategories as $category)
-                    <option value="{{ $category->name }}">{{ $category->name }}</option>
-                @endforeach
-            </select>
+                <option value="">Loading categories...</option>
+             </select>
            </div>
            <div class="mb-3">
              <label for="brand" class="form-label">Brand</label>
@@ -45,3 +43,19 @@
     </div>
   </div>
 </div>
+
+<script>
+  // Add event listener for the create modal
+  document.addEventListener('DOMContentLoaded', function() {
+    const createProductModal = document.getElementById('createProductModal');
+    
+    if (createProductModal) {
+      createProductModal.addEventListener('show.bs.modal', function() {
+        // Reload categories and update the dropdown when the modal is shown
+        loadCategories().then(() => {
+          populateCategoryDropdown('category');
+        });
+      });
+    }
+  });
+</script>

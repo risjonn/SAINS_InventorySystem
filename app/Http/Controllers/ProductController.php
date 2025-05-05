@@ -10,14 +10,16 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $products = Product::where('status', 'active')->paginate(10);
+        $products = Product::paginate(10);
         $productCategories = Product::where('status', 'active')->distinct()->pluck('category');
-        $activeCategories = collect($productCategories)->map(function($cat) {
-            return (object)['name' => $cat];
-        });
+        // $activeCategories = collect($productCategories)->map(function($cat) {
+        //     return (object)['name' => $cat];
+        // });
     
         // Fetch all categories from the categories table as well.
         $allCategories = Category::all();
+
+        $activeCategories = Category::where('active', '1')->paginate(10);
     
         return view('products.index', compact('products', 'activeCategories', 'allCategories'));
     }
@@ -61,9 +63,15 @@ class ProductController extends Controller
             'model'        => 'required',
             'status'       => 'required|in:active,inactive',
         ]);
-
-        $product->update($request->all());
-
+    
+        $product->update([
+            'product_code' => $request->product_code,
+            'category'     => $request->category,
+            'brand'        => $request->brand,
+            'model'        => $request->model,
+            'status'       => $request->status,
+        ]);
+    
         return redirect()->route('products.index')->with('success', 'Product updated successfully.');
     }
 

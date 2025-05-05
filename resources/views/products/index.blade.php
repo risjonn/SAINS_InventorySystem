@@ -70,6 +70,82 @@
     @method('DELETE')
 </form>
 
+<script>
+    // Global categories cache to be used by all modals
+    let categoriesCache = [];
+    
+    // Flag to check if categories have been loaded
+    let categoriesLoaded = false;
+    
+    // Function to load categories via AJAX
+    function loadCategories() {
+        if (categoriesLoaded && categoriesCache.length > 0) {
+            return Promise.resolve(categoriesCache);
+        }
+        
+        return fetch('{{ route("api.categories.active") }}')
+            .then(response => response.json())
+            .then(data => {
+                categoriesCache = data;
+                categoriesLoaded = true;
+                console.log('Categories loaded:', categoriesCache.length);
+                return categoriesCache;
+            })
+            .catch(error => {
+                console.error('Error loading categories:', error);
+                // Fallback to hardcoded categories if available
+                categoriesCache = [
+                    @foreach(App\Models\Category::where('active', '1')->get() as $category)
+                        { id: {{ $category->id }}, name: "{{ $category->name }}" },
+                    @endforeach
+                ];
+                categoriesLoaded = true;
+                return categoriesCache;
+            });
+    }
+    
+    // Function to populate any category dropdown
+    function populateCategoryDropdown(selectElementId, selectedCategory = null) {
+        const categorySelect = document.getElementById(selectElementId);
+        
+        if (!categorySelect) {
+            console.error('Category select element not found:', selectElementId);
+            return;
+        }
+        
+        categorySelect.innerHTML = '';
+        
+        categoriesCache.forEach(function(category) {
+            const option = document.createElement('option');
+            option.value = category.name;
+            option.textContent = category.name;
+            
+            if (selectedCategory && category.name === selectedCategory) {
+                option.selected = true;
+            }
+            
+            categorySelect.appendChild(option);
+        });
+    }
+    
+    // Load categories when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        loadCategories().then(() => {
+            // Populate any dropdowns that are visible on page load
+            const createCategorySelect = document.getElementById('category');
+            const editCategorySelect = document.getElementById('editCategory');
+            
+            if (createCategorySelect) {
+                populateCategoryDropdown('category');
+            }
+            
+            if (editCategorySelect) {
+                populateCategoryDropdown('editCategory');
+            }
+        });
+    });
+</script>
+
 <!-- Include the Create and Edit modals -->
 @include('products.partials.create_modal')
 @include('products.partials.edit_modal')
