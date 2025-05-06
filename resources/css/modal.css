@@ -38,9 +38,19 @@
   color: #fff;
 }
 
+.modal-header.activated {
+  background-color: #28a745; /* Green color for activation */
+  color: white;
+}
+
 /* yellow header for deactivation */
 .modal-header.deactivate-confirm {
   background-color: #ffc107; 
+  color: #212529;
+}
+
+.modal-header.deactivated {
+  background-color: #ffc107; /* Yellow/orange color for deactivation */
   color: #212529;
 }
 

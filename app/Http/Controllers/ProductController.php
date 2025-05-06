@@ -72,7 +72,10 @@ class ProductController extends Controller
             'status'       => $request->status,
         ]);
     
-        return redirect()->route('products.index')->with('success', 'Product updated successfully.');
+        return redirect()->route('products.index')->with([
+            'success' => 'Product Updated Successfully', 
+            'resource' => 'product'
+        ]);
     }
 
     // Remove the specified product from storage.

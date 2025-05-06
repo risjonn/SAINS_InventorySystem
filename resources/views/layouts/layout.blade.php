@@ -247,7 +247,7 @@
           </template>
       </div>
 
-          <!-- Products Link (New) -->
+          <!-- Products Link -->
           <div x-data="{ id: 'products' }"
               class="relative group"
               @mouseenter="$store.activeTooltip.set(id)"
@@ -421,16 +421,16 @@
               iconClass = 'fa-trash-alt';
               break;
             case 'activated':
-              title          = 'User Activated';
-              defaultMessage = `The ${resource} has been activated successfully.`;
-              headerClass    = 'created';       // or a custom .activate class
-              iconClass      = 'fa-user-check';
+              title = resource ? `${capitalize(resource)} Activated` : 'Activation Successful!';
+              defaultMessage = resource ? `The ${resource} has been activated.` : 'Operation completed successfully';
+              headerClass = 'activated';
+              iconClass = 'fa-user-check';
               break;
             case 'deactivated':
-              title          = 'User Deactivated';
-              defaultMessage = `The ${resource} has been deactivated.`;
-              headerClass    = 'deleted';       // or a custom .deactivate class
-              iconClass      = 'fa-user-slash';
+              title = resource ? `${capitalize(resource)} Deactivated` : 'Deactivation Successful!';
+              defaultMessage = resource ? `The ${resource} has been deactivated.` : 'Operation completed successfully';
+              headerClass = 'deactivated';
+              iconClass = 'fa-user-slash';
               break;
             case 'loan':
               title = resource ? `${capitalize(resource)} Loaned` : 'Loan Successful!';
@@ -575,21 +575,26 @@
         <script>
           $(document).ready(function(){
             let message = {!! json_encode(session('success')) !!};
-            let type = 'created';
+            let type = 'created'; // Default type
             let lowerMsg = message.toLowerCase();
             
-            if(lowerMsg.indexOf('created') !== -1) {
+            // Be more specific with the checks and use the proper order
+            if(lowerMsg.indexOf('deactivated') !== -1) {
+              type = 'deactivated';
+            } else if(lowerMsg.indexOf('activated') !== -1) {
+              type = 'activated';
+            } else if(lowerMsg.indexOf('created') !== -1) {
               type = 'created';
             } else if(lowerMsg.indexOf('updated') !== -1) {
               type = 'updated';
+            } else if(lowerMsg.indexOf('deleted') !== -1 || lowerMsg.indexOf('removed') !== -1) {
+              type = 'deleted';
             } else if(lowerMsg.indexOf('loan') !== -1) {
               type = 'loan';
             } else if(lowerMsg.indexOf('returned') !== -1) {
               type = 'returned';
             } else if(lowerMsg.indexOf('out') !== -1) {
               type = 'out';
-            } else if(lowerMsg.indexOf('deleted') !== -1 || lowerMsg.indexOf('removed') !== -1) {
-              type = 'deleted';
             }
             
             let resource = {!! json_encode(session('resource') ?? 'resource') !!};
