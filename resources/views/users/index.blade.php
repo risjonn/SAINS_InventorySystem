@@ -94,13 +94,23 @@
         </button>
         <button @click="switchTab('resetRequests')"
                 :class="activeTab==='resetRequests' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-600'"
-                class="px-4 py-2 border-b-2 font-medium">
+                class="px-4 py-2 border-b-2 font-medium relative">
             Password Reset Requests
+            @if(count($resetRequests) > 0)
+                <span class="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {{ count($resetRequests) }}
+                </span>
+            @endif
         </button>
         <button @click="activeTab = 'recoverRequests'"
             :class="activeTab==='recoverRequests' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-600'"
-            class="px-4 py-2 border-b-2 font-medium">
+            class="px-4 py-2 border-b-2 font-medium relative">
             Password Recover Requests
+            @if(count($recoverRequests) > 0)
+                <span class="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {{ count($recoverRequests) }}
+                </span>
+            @endif
         </button>
     </nav>
 
@@ -166,10 +176,10 @@
                 @forelse($resetRequests as $req)
                     <tr class="border-b hover:bg-gray-50">
                         <td class="p-3">{{ $req->user->username }}</td>
-                        <td class="p-3">{{ $req->created_at->format('Y-m-d H:i') }}</td>
+                        <td class="p-3">{{ $req->created_at->format('j F, Y g:i') }}</td>
                         <td class="p-3">
                             <button
-                                class="reset-button text-yellow-600 hover:text-yellow-800"
+                                class="reset-button btn btn-sm btn-primary"
                                 data-request="{{ $req->id }}"
                                 data-username="{{ $req->user->username }}">
                                 Reset Password

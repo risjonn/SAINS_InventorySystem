@@ -20,10 +20,10 @@ class PasswordResetLinkController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'username' => ['required', 'string'],  // Use username instead of email
+            'username' => ['required', 'string'],
         ]);
     
-        $user = User::where('username', $request->username)->first();  // Look for the user by username
+        $user = User::where('username', $request->username)->first();
     
         // Always respond with a generic message
         $statusMessage = 'If that username exists, your request has been sent to Super Admin.';

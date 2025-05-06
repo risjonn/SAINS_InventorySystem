@@ -76,7 +76,7 @@ class DashboardController extends Controller
                     $criticalThreshold = $thresholdsForAggregation->has($category)
                         ? $thresholdsForAggregation->get($category)->critical_threshold
                         : $defaultCriticalThreshold;
-                    if ($group->count() < $lowThreshold) {
+                    if ($group->count() <= $lowThreshold) {
                         if ($group->count() <= $criticalThreshold) {
                             $criticalCount++;
                         } else {
@@ -121,7 +121,7 @@ class DashboardController extends Controller
                     $criticalThreshold = $thresholdsForAggregation->has($category)
                         ? $thresholdsForAggregation->get($category)->critical_threshold
                         : $defaultCriticalThreshold;
-                    if ($group->count() < $lowThreshold) {
+                    if ($group->count() <= $lowThreshold) {
                         if ($group->count() <= $criticalThreshold) {
                             $criticalCount++;
                         } else {
@@ -173,7 +173,7 @@ class DashboardController extends Controller
                 $criticalThreshold = $thresholdsForAggregation->has($category)
                     ? $thresholdsForAggregation->get($category)->critical_threshold
                     : $defaultCriticalThreshold;
-                if ($group->count() < $lowThreshold) {
+                if ($group->count() <= $lowThreshold) {
                     if ($group->count() <= $criticalThreshold) {
                         $criticalCount++;
                     } else {

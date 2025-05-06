@@ -199,36 +199,53 @@
       
       <!-- Super Admin-only Link -->
       @if(auth()->check() && auth()->user()->role === 'Super Admin')
-        <div x-data="{ id: 'userManager' }"
-            @mouseenter="$store.activeTooltip.set(id)"
-            @mouseleave="setTimeout(() => { $store.activeTooltip.clear(id) }, 0)"
-            class="relative group">
-            <a href="{{ route('users.index') }}" 
-              :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
-              class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 {{ request()->routeIs('users*') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}"
-              x-bind:class="($store.activeTooltip.current === 'userManager') ? 'bg-gray-200 text-blue-600' : ''">
-              <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center group-hover:text-blue-600">
-                  <i class="fas fa-users text-lg"></i>
-              </div>
-              <span x-show="sidebarOpen" x-cloak class="ml-3 text-sm font-medium whitespace-nowrap transition-all duration-150">
-                  Manage Users
-              </span>
-            </a>
-              <template x-if="!sidebarOpen">
-                  <div x-show="$store.activeTooltip.current === id" x-cloak class="absolute left-full ml-0 top-1/2  -translate-y-1/2 transition duration-150 z-50 pointer-events-none">
-                    <div class="relative">
-                        <div class="bg-gray-200 text-blue-600 flex items-center h-14 rounded-r-lg rounded-l-none p-4 text-sm font-medium whitespace-nowrap">
-                          Manage Users
-                        </div>
-                        <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
-                          <svg class="w-3 h-3 fill-current text-gray-200" viewBox="0 0 10 10">
-                            <polygon points="0,0 10,0 5,5"/>
-                          </svg>
-                        </div>
+      <div x-data="{ id: 'userManager' }"
+          @mouseenter="$store.activeTooltip.set(id)"
+          @mouseleave="setTimeout(() => { $store.activeTooltip.clear(id) }, 0)"
+          class="relative group">
+          <a href="{{ route('users.index') }}" 
+            :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
+            class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 {{ request()->routeIs('users*') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}"
+            x-bind:class="($store.activeTooltip.current === 'userManager') ? 'bg-gray-200 text-blue-600' : ''">
+            <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center group-hover:text-blue-600 relative">
+                <i class="fas fa-users text-lg"></i>
+                
+                @if(isset($totalRequestsCount) && $totalRequestsCount > 0)
+                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-bounce">
+                        {{ $totalRequestsCount }}
+                    </span>
+                @endif
+            </div>
+            <span x-show="sidebarOpen" x-cloak class="ml-3 text-sm font-medium whitespace-nowrap transition-all duration-150">
+                Manage Users
+            </span>
+            
+            {{-- @if(isset($totalRequestsCount) && $totalRequestsCount > 0)
+                <span x-show="sidebarOpen" x-cloak class="ml-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {{ $totalRequestsCount }}
+                </span>
+            @endif --}}
+          </a>
+          <template x-if="!sidebarOpen">
+              <div x-show="$store.activeTooltip.current === id" x-cloak class="absolute left-full ml-0 top-1/2  -translate-y-1/2 transition duration-150 z-50 pointer-events-none">
+                <div class="relative">
+                    <div class="bg-gray-200 text-blue-600 flex items-center h-14 rounded-r-lg rounded-l-none p-4 text-sm font-medium whitespace-nowrap">
+                      Manage Users
+                      {{-- @if(isset($totalRequestsCount) && $totalRequestsCount > 0)
+                          <span class="ml-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                              {{ $totalRequestsCount }}
+                          </span>
+                      @endif --}}
                     </div>
-                  </div>
-              </template>
-        </div>
+                    <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
+                      <svg class="w-3 h-3 fill-current text-gray-200" viewBox="0 0 10 10">
+                        <polygon points="0,0 10,0 5,5"/>
+                      </svg>
+                    </div>
+                </div>
+              </div>
+          </template>
+      </div>
 
           <!-- Products Link (New) -->
           <div x-data="{ id: 'products' }"
