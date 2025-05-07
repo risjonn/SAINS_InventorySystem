@@ -199,45 +199,62 @@
       
       <!-- Super Admin-only Link -->
       @if(auth()->check() && auth()->user()->role === 'Super Admin')
-        <div x-data="{ id: 'userManager' }"
-            @mouseenter="$store.activeTooltip.set(id)"
-            @mouseleave="setTimeout(() => { $store.activeTooltip.clear(id) }, 0)"
-            class="relative group">
-            <a href="{{ route('users.index') }}" 
-              :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
-              class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 {{ request()->routeIs('users*') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}"
-              x-bind:class="($store.activeTooltip.current === 'userManager') ? 'bg-gray-200 text-blue-600' : ''">
-              <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center group-hover:text-blue-600">
-                  <i class="fas fa-users text-lg"></i>
-              </div>
-              <span x-show="sidebarOpen" x-cloak class="ml-3 text-sm font-medium whitespace-nowrap transition-all duration-150">
-                  Manage Users
-              </span>
-            </a>
-              <template x-if="!sidebarOpen">
-                  <div x-show="$store.activeTooltip.current === id" x-cloak class="absolute left-full ml-0 top-1/2  -translate-y-1/2 transition duration-150 z-50 pointer-events-none">
-                    <div class="relative">
-                        <div class="bg-gray-200 text-blue-600 flex items-center h-14 rounded-r-lg rounded-l-none p-4 text-sm font-medium whitespace-nowrap">
-                          Manage Users
-                        </div>
-                        <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
-                          <svg class="w-3 h-3 fill-current text-gray-200" viewBox="0 0 10 10">
-                            <polygon points="0,0 10,0 5,5"/>
-                          </svg>
-                        </div>
+      <div x-data="{ id: 'userManager' }"
+          @mouseenter="$store.activeTooltip.set(id)"
+          @mouseleave="setTimeout(() => { $store.activeTooltip.clear(id) }, 0)"
+          class="relative group">
+          <a href="{{ route('users.index') }}" 
+            :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
+            class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 {{ request()->routeIs('users*') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}"
+            x-bind:class="($store.activeTooltip.current === 'userManager') ? 'bg-gray-200 text-blue-600' : ''">
+            <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center group-hover:text-blue-600 relative">
+                <i class="fas fa-users text-lg"></i>
+                
+                @if(isset($totalRequestsCount) && $totalRequestsCount > 0)
+                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-bounce">
+                        {{ $totalRequestsCount }}
+                    </span>
+                @endif
+            </div>
+            <span x-show="sidebarOpen" x-cloak class="ml-3 text-sm font-medium whitespace-nowrap transition-all duration-150">
+                Manage Users
+            </span>
+            
+            {{-- @if(isset($totalRequestsCount) && $totalRequestsCount > 0)
+                <span x-show="sidebarOpen" x-cloak class="ml-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {{ $totalRequestsCount }}
+                </span>
+            @endif --}}
+          </a>
+          <template x-if="!sidebarOpen">
+              <div x-show="$store.activeTooltip.current === id" x-cloak class="absolute left-full ml-0 top-1/2  -translate-y-1/2 transition duration-150 z-50 pointer-events-none">
+                <div class="relative">
+                    <div class="bg-gray-200 text-blue-600 flex items-center h-14 rounded-r-lg rounded-l-none p-4 text-sm font-medium whitespace-nowrap">
+                      Manage Users
+                      {{-- @if(isset($totalRequestsCount) && $totalRequestsCount > 0)
+                          <span class="ml-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                              {{ $totalRequestsCount }}
+                          </span>
+                      @endif --}}
                     </div>
-                  </div>
-              </template>
-        </div>
+                    <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
+                      <svg class="w-3 h-3 fill-current text-gray-200" viewBox="0 0 10 10">
+                        <polygon points="0,0 10,0 5,5"/>
+                      </svg>
+                    </div>
+                </div>
+              </div>
+          </template>
+      </div>
 
-          <!-- Products Link (New) -->
+          <!-- Products Link -->
           <div x-data="{ id: 'products' }"
               class="relative group"
               @mouseenter="$store.activeTooltip.set(id)"
               @mouseleave="setTimeout(() => { $store.activeTooltip.clear(id) }, 0)">
           <a href="{{ route('products.index') }}"
               :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
-              class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 {{ request()->routeIs('products*') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}"
+              class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 {{ request()->routeIs('products*') || request()->routeIs('category*') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}"
               x-bind:class="($store.activeTooltip.current === 'products') ? 'bg-gray-200 text-blue-600' : ''">
             <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center">
               <i class="fas fa-box text-lg"></i>
@@ -404,16 +421,16 @@
               iconClass = 'fa-trash-alt';
               break;
             case 'activated':
-              title          = 'User Activated';
-              defaultMessage = `The ${resource} has been activated successfully.`;
-              headerClass    = 'created';       // or a custom .activate class
-              iconClass      = 'fa-user-check';
+              title = resource ? `${capitalize(resource)} Activated` : 'Activation Successful!';
+              defaultMessage = resource ? `The ${resource} has been activated.` : 'Operation completed successfully';
+              headerClass = 'activated';
+              iconClass = 'fa-user-check';
               break;
             case 'deactivated':
-              title          = 'User Deactivated';
-              defaultMessage = `The ${resource} has been deactivated.`;
-              headerClass    = 'deleted';       // or a custom .deactivate class
-              iconClass      = 'fa-user-slash';
+              title = resource ? `${capitalize(resource)} Deactivated` : 'Deactivation Successful!';
+              defaultMessage = resource ? `The ${resource} has been deactivated.` : 'Operation completed successfully';
+              headerClass = 'deactivated';
+              iconClass = 'fa-user-slash';
               break;
             case 'loan':
               title = resource ? `${capitalize(resource)} Loaned` : 'Loan Successful!';
@@ -558,21 +575,26 @@
         <script>
           $(document).ready(function(){
             let message = {!! json_encode(session('success')) !!};
-            let type = 'created';
+            let type = 'created'; // Default type
             let lowerMsg = message.toLowerCase();
             
-            if(lowerMsg.indexOf('created') !== -1) {
+            // Be more specific with the checks and use the proper order
+            if(lowerMsg.indexOf('deactivated') !== -1) {
+              type = 'deactivated';
+            } else if(lowerMsg.indexOf('activated') !== -1) {
+              type = 'activated';
+            } else if(lowerMsg.indexOf('created') !== -1) {
               type = 'created';
             } else if(lowerMsg.indexOf('updated') !== -1) {
               type = 'updated';
+            } else if(lowerMsg.indexOf('deleted') !== -1 || lowerMsg.indexOf('removed') !== -1) {
+              type = 'deleted';
             } else if(lowerMsg.indexOf('loan') !== -1) {
               type = 'loan';
             } else if(lowerMsg.indexOf('returned') !== -1) {
               type = 'returned';
             } else if(lowerMsg.indexOf('out') !== -1) {
               type = 'out';
-            } else if(lowerMsg.indexOf('deleted') !== -1 || lowerMsg.indexOf('removed') !== -1) {
-              type = 'deleted';
             }
             
             let resource = {!! json_encode(session('resource') ?? 'resource') !!};

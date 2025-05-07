@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\ProfileController;
 use \App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\StockController;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\DivisionController;
 use \App\Http\Controllers\PasswordRequestController;
 
 // Public route
@@ -156,6 +158,14 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::post('/users/{user}/restore',    [UserManagementController::class,'restore'])
         ->name('users.restore');
 
+    Route::resource('division', DivisionController::class);
+
+    Route::get('/divisions/active', function () {
+        // Get all active divisions
+        $divisions = App\Models\Division::where('active', '1')->get();
+        return response()->json($divisions);
+    })->name('api.divisions.active');
+
     // List password reset requests for Super Admin
     Route::get('password-requests', [PasswordRequestController::class, 'index'])
     ->name('admin.password.requests');
@@ -172,6 +182,9 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
 
     Route::resource('products', ProductController::class);
 
+    Route::put('products/{product}', [ProductController::class, 'update'])
+    ->name('products.update');
+
     Route::get('/brands', [BrandController::class, 'index'])->name('brands.index');
     Route::get('/brands/create', [BrandController::class, 'create'])->name('brands.create');
     Route::post('/brands', [BrandController::class, 'store'])->name('brands.store');
@@ -181,6 +194,11 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     
     // Super Admin routes for Categories
     Route::get('/category', [CategoryController::class, 'index'])->name('category.index');
+    Route::get('/categories/active', function () {
+        // Get all active categories
+        $categories = App\Models\Category::where('active', '1')->get();
+        return response()->json($categories);
+    })->name('api.categories.active');
     Route::get('/category/create', [CategoryController::class, 'create'])->name('category.create');
     Route::post('/category', [CategoryController::class, 'store'])->name('category.store');
     Route::get('/category/{category}/edit', [CategoryController::class, 'edit'])->name('category.edit');

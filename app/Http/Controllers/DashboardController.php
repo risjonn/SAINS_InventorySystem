@@ -39,7 +39,7 @@ class DashboardController extends Controller
     
         if ($selectedDivision === 'all') {
             // For each division, aggregate stocks using thresholds.
-            $lowStockItems = $stocks->groupBy('division_id')->map(function ($divisionStocks, $divisionId) use ($user) {
+            $lowStockSummary = $stocks->groupBy('division_id')->map(function ($divisionStocks, $divisionId) use ($user) {
                 if ($user->role === 'Super Admin') {
                     $selectedAdmin = User::where('division_id', $divisionId)
                         ->where('role', 'Admin')
@@ -76,7 +76,7 @@ class DashboardController extends Controller
                     $criticalThreshold = $thresholdsForAggregation->has($category)
                         ? $thresholdsForAggregation->get($category)->critical_threshold
                         : $defaultCriticalThreshold;
-                    if ($group->count() < $lowThreshold) {
+                    if ($group->count() <= $lowThreshold) {
                         if ($group->count() <= $criticalThreshold) {
                             $criticalCount++;
                         } else {
@@ -84,8 +84,16 @@ class DashboardController extends Controller
                         }
                     }
                 }
-                return $lowCount + $criticalCount;
-            })->sum();
+                return [
+                    'lowCount' => $lowCount,
+                    'criticalCount' => $criticalCount,
+                    'totalLow' => $lowCount + $criticalCount
+                ];
+            });
+            
+            $lowCount = $lowStockSummary->sum('lowCount');
+            $criticalCount = $lowStockSummary->sum('criticalCount');
+            $lowStockItems = $lowCount + $criticalCount;
     
             // Build a breakdown per division.
             $divisionsSummary = $stocks->groupBy('division_id')->map(function ($divisionStocks, $divisionId) use ($user) {
@@ -121,7 +129,7 @@ class DashboardController extends Controller
                     $criticalThreshold = $thresholdsForAggregation->has($category)
                         ? $thresholdsForAggregation->get($category)->critical_threshold
                         : $defaultCriticalThreshold;
-                    if ($group->count() < $lowThreshold) {
+                    if ($group->count() <= $lowThreshold) {
                         if ($group->count() <= $criticalThreshold) {
                             $criticalCount++;
                         } else {
@@ -173,7 +181,7 @@ class DashboardController extends Controller
                 $criticalThreshold = $thresholdsForAggregation->has($category)
                     ? $thresholdsForAggregation->get($category)->critical_threshold
                     : $defaultCriticalThreshold;
-                if ($group->count() < $lowThreshold) {
+                if ($group->count() <= $lowThreshold) {
                     if ($group->count() <= $criticalThreshold) {
                         $criticalCount++;
                     } else {
@@ -218,6 +226,8 @@ class DashboardController extends Controller
             'selectedDivision',
             'totalStocks',
             'lowStockItems',
+            'lowCount',        // Added separate lowCount
+            'criticalCount',   // Added separate criticalCount
             'userCount',
             'stockSummary',
             'recentTransactions',

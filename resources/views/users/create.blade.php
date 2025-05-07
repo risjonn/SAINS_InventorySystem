@@ -129,12 +129,12 @@
                    class="mt-1 block w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                    required>
           </div>
-          <div class="md:col-span-2 field-container">
+          {{-- <div class="md:col-span-2 field-container">
             <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
             <input type="email" name="email" id="email" value="{{ old('email') }}"
                    class="mt-1 block w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                    required>
-          </div>
+          </div> --}}
         </div>
         <!-- Navigation: Next Button -->
         <div class="flex justify-end items-center mt-8">
@@ -158,14 +158,9 @@
           <div class="field-container">
             <label for="division_id" class="block text-sm font-medium text-gray-700">Division</label>
             <select name="division_id" id="division_id"
-                    class="mt-1 block w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    required>
-              <option value="">Select Division</option>
-              @foreach($divisions as $division)
-                <option value="{{ $division->id }}" {{ old('division_id') == $division->id ? 'selected' : '' }}>
-                  {{ $division->name }}
-                </option>
-              @endforeach
+            class="mt-1 block w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            required>
+                <option value="">Loading divisions...</option>
             </select>
           </div>
           <div class="field-container">
@@ -272,13 +267,13 @@ function tabForm() {
           }
         });
         // For the email field, check format on blur.
-        if (el.id === 'email') {
-          el.addEventListener('blur', () => {
-            if (el.value.trim() !== "" && !this.isValidEmail(el.value.trim())) {
-              this.triggerFieldError(el, "Please enter a valid email address.");
-            }
-          });
-        }
+        // if (el.id === 'email') {
+        //   el.addEventListener('blur', () => {
+        //     if (el.value.trim() !== "" && !this.isValidEmail(el.value.trim())) {
+        //       this.triggerFieldError(el, "Please enter a valid email address.");
+        //     }
+        //   });
+        // }
       });
     },
 
@@ -325,10 +320,10 @@ function tabForm() {
     },
 
     // Basic regex check for valid email format.
-    isValidEmail(emailValue) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      return emailRegex.test(emailValue);
-    },
+    // isValidEmail(emailValue) {
+    //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    //   return emailRegex.test(emailValue);
+    // },
 
     // Password must be at least 8 characters long, contain at least one uppercase letter,
     // one lowercase letter, one digit, and one special character from the set @$!%*?&.
@@ -342,7 +337,7 @@ function tabForm() {
       if (tabName === 'personal') {
         const username = document.getElementById('username');
         const name = document.getElementById('name');
-        const email = document.getElementById('email');
+        // const email = document.getElementById('email');
 
         if (!username.value.trim()) {
           this.triggerFieldError(username, "Please fill in your username.");
@@ -352,14 +347,14 @@ function tabForm() {
           this.triggerFieldError(name, "Please fill in your name.");
           return false;
         }
-        if (!email.value.trim()) {
-          this.triggerFieldError(email, "Please fill in your email.");
-          return false;
-        }
-        if (!this.isValidEmail(email.value.trim())) {
-          this.triggerFieldError(email, "Please enter a valid email address.");
-          return false;
-        }
+        // if (!email.value.trim()) {
+        //   this.triggerFieldError(email, "Please fill in your email.");
+        //   return false;
+        // }
+        // if (!this.isValidEmail(email.value.trim())) {
+        //   this.triggerFieldError(email, "Please enter a valid email address.");
+        //   return false;
+        // }
       }
 
       if (tabName === 'org') {
@@ -416,5 +411,63 @@ function tabForm() {
     }
   }
 }
+</script>
+
+<script>
+  // Global divisions cache to be used
+  let divisionsCache = [];
+  let divisionsLoaded = false;
+  
+  // Function to load divisions via AJAX
+  function loadDivisions() {
+      if (divisionsLoaded && divisionsCache.length > 0) {
+          return Promise.resolve(divisionsCache);
+      }
+      
+      return fetch('{{ route("api.divisions.active") }}')
+          .then(response => response.json())
+          .then(data => {
+              divisionsCache = data;
+              divisionsLoaded = true;
+              return divisionsCache;
+          })
+          .catch(error => {
+              console.error('Error loading divisions:', error);
+              // Fallback to hardcoded divisions
+              divisionsCache = [
+                  @foreach(App\Models\Division::where('active', '1')->get() as $division)
+                      { id: {{ $division->id }}, name: "{{ $division->name }}" },
+                  @endforeach
+              ];
+              divisionsLoaded = true;
+              return divisionsCache;
+          });
+  }
+  
+  // Function to populate division dropdown
+  function populateDivisionDropdown() {
+      const divisionSelect = document.getElementById('division_id');
+      
+      if (!divisionSelect) {
+          console.error('Division select element not found');
+          return;
+      }
+      
+      divisionSelect.innerHTML = '<option value="">Select Division</option>';
+      
+      divisionsCache.forEach(function(division) {
+          const option = document.createElement('option');
+          option.value = division.id;
+          option.textContent = division.name;
+          divisionSelect.appendChild(option);
+      });
+  }
+  
+  // Load divisions when the page loads
+  document.addEventListener('DOMContentLoaded', function() {
+      loadDivisions().then(() => {
+          populateDivisionDropdown();
+      });
+  });
 </script>
 @endsection

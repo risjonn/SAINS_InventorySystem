@@ -138,7 +138,7 @@ class PasswordRequestController extends Controller
     
         return response()->json([
             'status' => $statusMessage,
-            'requestedAt' => $latestRequest->created_at->format('Y-m-d H:i:s'),
+            'requestedAt' => $latestRequest->created_at->format('l, j F Y - g:i a'),
             'password' => $password,
             'message' => $statusMessage
         ]);
