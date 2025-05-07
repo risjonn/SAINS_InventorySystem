@@ -32,7 +32,7 @@ class CategoryController extends Controller
         $categories = $query->orderBy($sortBy, $sortDirection)->paginate(10);
     
         if ($request->ajax()) {
-            return view('category.partials.category_table_body', compact('categories'))->render();
+           return view('category.partials.category_table_body', compact('categories'))->render();
         }
     
         return view('category.index', compact('categories'));

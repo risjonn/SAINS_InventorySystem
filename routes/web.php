@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\DivisionController;
 use \App\Http\Controllers\PasswordRequestController;
 
 // Public route
@@ -156,6 +157,14 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
         ->name('users.activate');
     Route::post('/users/{user}/restore',    [UserManagementController::class,'restore'])
         ->name('users.restore');
+
+    Route::resource('division', DivisionController::class);
+
+    Route::get('/divisions/active', function () {
+        // Get all active divisions
+        $divisions = App\Models\Division::where('active', '1')->get();
+        return response()->json($divisions);
+    })->name('api.divisions.active');
 
     // List password reset requests for Super Admin
     Route::get('password-requests', [PasswordRequestController::class, 'index'])

@@ -41,21 +41,18 @@
                                class="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" 
                                x-model="currentUser.name" required>
                     </div>
-                    <div>
+                    {{-- <div>
                         <label for="edit_email" class="block text-sm font-medium text-gray-700">Email</label>
                         <input type="email" name="email" id="edit_email" 
                                class="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" 
                                x-model="currentUser.email" required>
-                    </div>
+                    </div> --}}
                     <div>
                         <label for="edit_division" class="block text-sm font-medium text-gray-700">Division</label>
                         <select name="division_id" id="edit_division" 
                                 class="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" 
                                 x-model="currentUser.division_id" required>
-                            <option value="">Select Division</option>
-                            @foreach($divisions as $division)
-                                <option value="{{ $division->id }}">{{ $division->name }}</option>
-                            @endforeach
+                            <option value="">Loading divisions...</option>
                         </select>
                     </div>
                     <div>
@@ -84,4 +81,20 @@
             </form>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const editProductModal = document.getElementById('editProductModal');
+            
+            if (editProductModal) {
+                Alpine.data('showEditModal', () => ({
+                    afterShow() {
+                        loadDivisions().then(() => {
+                            populateDivisionDropdown('edit_division', this.currentUser.division_id);
+                        });
+                    }
+                }));
+            }
+        });
+    </script>
 </div>

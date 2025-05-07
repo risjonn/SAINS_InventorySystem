@@ -57,10 +57,16 @@
              });
          },
 
-         openModal(userData) {
-             this.currentUser = userData;
-             this.showEditModal = true;
-         },
+        openModal(userData) {
+            this.currentUser = userData;
+            this.showEditModal = true;
+            // Load divisions when opening the modal
+            this.$nextTick(() => {
+                loadDivisions().then(() => {
+                    populateDivisionDropdown('edit_division', userData.division_id);
+                });
+            });
+        },
          closeModal() {
              this.showEditModal = false;
          },
@@ -79,10 +85,16 @@
     <!-- Header & Add-User Button -->
     <div class="flex flex-col sm:flex-row items-center justify-between mb-6">
         <h2 class="text-2xl font-bold text-gray-800">Manage Users</h2>
-        <a href="{{ route('users.create') }}"
-           class="bg-green-500 hover:bg-green-600 transition-colors text-white px-5 py-3 rounded-md shadow">
-            <i class="fas fa-user-plus mr-2"></i> Add New User
-        </a>
+        <div class="flex gap-3">
+            <a href="{{ route('division.index') }}"
+               class="bg-indigo-500 hover:bg-indigo-600 transition-colors text-white px-5 py-3 rounded-md shadow">
+                <i class="fas fa-building mr-2"></i> Manage Divisions
+            </a>
+            <a href="{{ route('users.create') }}"
+               class="bg-green-500 hover:bg-green-600 transition-colors text-white px-5 py-3 rounded-md shadow">
+                <i class="fas fa-user-plus mr-2"></i> Add New User
+            </a>
+        </div>
     </div>
 
     <!-- Tab Navigation -->
@@ -132,13 +144,11 @@
                        class="w-full sm:w-1/3 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400">
 
                 <select x-model="divisionFilter"
-                        @change="fetchUsers()"
-                        class="w-full sm:w-1/4 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                    <option value="">All Divisions</option>
-                    @foreach($divisions as $division)
-                        <option value="{{ $division->id }}">{{ $division->name }}</option>
-                    @endforeach
-                </select>
+                    @change="fetchUsers()"
+                    id="divisionFilter"
+                    class="w-full sm:w-1/4 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                    <option value="">Loading divisions...</option>
+               </select>
 
                 <select x-model="roleFilter"
                         @change="fetchUsers()"
@@ -253,6 +263,73 @@
                     toastMessage.style.display = 'none';
                 }, 3000);
             }
+        });
+    </script>
+
+    <script>
+        // Global divisions cache to be used by all dropdowns
+        let divisionsCache = [];
+        
+        // Flag to check if divisions have been loaded
+        let divisionsLoaded = false;
+        
+        // Function to load divisions via AJAX
+        function loadDivisions() {
+            if (divisionsLoaded && divisionsCache.length > 0) {
+                return Promise.resolve(divisionsCache);
+            }
+            
+            return fetch('{{ route("api.divisions.active") }}')
+                .then(response => response.json())
+                .then(data => {
+                    divisionsCache = data;
+                    divisionsLoaded = true;
+                    console.log('Divisions loaded:', divisionsCache.length);
+                    return divisionsCache;
+                })
+                .catch(error => {
+                    console.error('Error loading divisions:', error);
+                    // Fallback to hardcoded divisions if available
+                    divisionsCache = [
+                        @foreach(App\Models\Division::where('active', '1')->get() as $division)
+                            { id: {{ $division->id }}, name: "{{ $division->name }}" },
+                        @endforeach
+                    ];
+                    divisionsLoaded = true;
+                    return divisionsCache;
+                });
+        }
+        
+        // Function to populate any division dropdown
+        function populateDivisionDropdown(selectElementId, selectedDivision = null) {
+            const divisionSelect = document.getElementById(selectElementId);
+            
+            if (!divisionSelect) {
+                console.error('Division select element not found:', selectElementId);
+                return;
+            }
+            
+            divisionSelect.innerHTML = '<option value="">All Divisions</option>';
+            
+            divisionsCache.forEach(function(division) {
+                const option = document.createElement('option');
+                option.value = division.id;
+                option.textContent = division.name;
+                
+                if (selectedDivision && division.id == selectedDivision) {
+                    option.selected = true;
+                }
+                
+                divisionSelect.appendChild(option);
+            });
+        }
+
+        // Load divisions when the page loads 
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDivisions().then(() => {
+                // Populate the filter dropdown on page load
+                populateDivisionDropdown('divisionFilter');
+            });
         });
     </script>
 

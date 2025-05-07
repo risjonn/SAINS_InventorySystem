@@ -14,7 +14,7 @@ class User extends Authenticatable
     protected $fillable = [
         'username',
         'name',
-        'email',
+        // 'email',
         'password',
         'division_id',
         'role',
@@ -25,9 +25,9 @@ class User extends Authenticatable
         'password', 'remember_token',
     ];
 
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
+    // protected $casts = [
+    //     'email_verified_at' => 'datetime',
+    // ];
 
     public function division()
     {

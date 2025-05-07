@@ -74,7 +74,7 @@ class UserManagementController extends Controller
         $request->validate([
             'username'   => 'required|unique:users,username',
             'name'       => 'required',
-            'email'      => 'required|email|unique:users,email',
+            // 'email'      => 'required|email|unique:users,email',
             'password'   => 'required|min:6|confirmed',
             'division_id'=> 'required|exists:divisions,id',
             'role'       => 'required|in:Admin,Super Admin',
@@ -83,7 +83,7 @@ class UserManagementController extends Controller
         User::create([
             'username'   => $request->username,
             'name'       => $request->name,
-            'email'      => $request->email,
+            // 'email'      => $request->email,
             'password'   => Hash::make($request->password),
             'division_id'=> $request->division_id,
             'role'       => $request->role,
@@ -108,12 +108,12 @@ class UserManagementController extends Controller
         $request->validate([
             'username'   => 'required|unique:users,username,' . $user->id,
             'name'       => 'required',
-            'email'      => 'required|email|unique:users,email,' . $user->id,
+            // 'email'      => 'required|email|unique:users,email,' . $user->id,
             'division_id'=> 'required|exists:divisions,id',
-            'role'       => 'required|in:Admin,Super Admin',
+            'role'       => 'required|in:Admin,Super Admin', 
         ]);
 
-        $user->update($request->only('username', 'name', 'email', 'division_id', 'role'));
+        $user->update($request->only('username', 'name', /*'email',*/ 'division_id', 'role'));
 
         return redirect()->route('users.index')->with([
             'success' => 'User Updated Successfully',
