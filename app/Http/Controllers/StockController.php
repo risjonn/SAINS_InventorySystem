@@ -122,10 +122,12 @@ class StockController extends Controller
             $transactionsQuery = StockTransaction::leftJoin('stocks', 'stock_transactions.serial_number', '=', 'stocks.serial_number')
                 ->leftJoin('users', 'stock_transactions.handled_by', '=', 'users.id')
                 ->leftJoin('products', 'stock_transactions.product_id', '=', 'products.id')
+                ->leftJoin('divisions', 'stocks.division_id', '=', 'divisions.id')
                 ->select(
                     'stock_transactions.*',
                     'users.name as handled_by_name',
                     'stocks.division_id',
+                    'divisions.name as division_name',
                     'products.category as product_category',
                     'products.brand as product_brand',
                     'products.model as product_model'
@@ -136,11 +138,13 @@ class StockController extends Controller
             $transactionsQuery = StockTransaction::leftJoin('stocks', 'stock_transactions.serial_number', '=', 'stocks.serial_number')
                 ->leftJoin('users', 'stock_transactions.handled_by', '=', 'users.id')
                 ->leftJoin('products', 'stock_transactions.product_id', '=', 'products.id')
+                ->leftJoin('divisions', 'stocks.division_id', '=', 'divisions.id')
                 ->where('stocks.division_id', $selectedDivision)
                 ->select(
                     'stock_transactions.*',
                     'users.name as handled_by_name',
                     'stocks.division_id',
+                    'divisions.name as division_name',
                     'products.category as product_category',
                     'products.brand as product_brand',
                     'products.model as product_model'
@@ -167,14 +171,11 @@ class StockController extends Controller
                   ->orWhere('stock_transactions.requisition_no', 'LIKE', "%{$search}%")
                   ->orWhere('products.category', 'LIKE', "%{$search}%")
                   ->orWhere('products.model', 'LIKE', "%{$search}%");
-            
+    
                 if ($selectedDivision === 'all') {
-                    $q->orWhereHas('stock.division', function ($q2) use ($search) {
-                        $q2->where('name', 'LIKE', $search.'%');
-                    });
+                    $q->orWhere('divisions.name', 'LIKE', $search.'%');
                 }
             });
-            
         }
     
         $transactionsQuery->orderBy($sortBy, $sortOrder);
@@ -182,77 +183,90 @@ class StockController extends Controller
     
         return view('stocks.transactions', compact('transactions', 'division'));
     }
+    
 
     public function management(Request $request)
-    {
-        // Check if this is a POST request to return a loaned item
-        if ($request->isMethod('post') && $request->input('force_operation_type') === 'RETURN') {
-            $stockId = $request->input('stock_id');
-            $stock = Stock::findOrFail($stockId);
-    
-            // Verify that the stock is currently on loan
-            if ($stock->status !== 'LOAN') {
-                return redirect()->route('stocks.management')->with('error', 'This item is not on loan.');
-            }
-    
-            $validated = $request->validate([
-                'remarks' => 'required|string',
-            ]);
-    
-            // Create a transaction record of type "RETURN" using product details
-            StockTransaction::create([
-                'serial_number'    => $stock->serial_number,
-                'stock_model'      => optional($stock->product)->model,
-                'category'         => optional($stock->product)->category,
-                'brand'            => optional($stock->product)->brand,
-                'product_code'     => optional($stock->product)->product_code,
-                'product_id'       => $stock->product_id,
-                'type'             => 'RETURN',
-                'handled_by'       => auth()->id(),
-                'remarks'          => $validated['remarks'],
-                'transaction_date' => now(),
-            ]);
-    
-            // Update the stock status back to "IN" (or available)
-            $stock->status = 'IN';
-            $stock->save();
-    
-            return redirect()->route('stocks.management')->with('success', 'Stock returned successfully.');
+{
+    // ←– NEW: read ?division=… or fallback, then persist
+    $selectedDivision = $request->query(
+        'division',
+        session('selectedDivision', auth()->user()->division_id)
+    );
+    session(['selectedDivision' => $selectedDivision]);
+    // –––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+
+    // --- RETURN logic (unchanged) ---
+    if ($request->isMethod('post') && $request->input('force_operation_type') === 'RETURN') {
+        $stock = Stock::findOrFail($request->input('stock_id'));
+
+        if ($stock->status !== 'LOAN') {
+            return redirect()->route('stocks.management')
+                             ->with('error', 'This item is not on loan.');
         }
-    
-        // Process GET request to display the management page.
-        $selectedDivision = session('selectedDivision', auth()->user()->division_id);
-        $division = Division::find($selectedDivision);
-        $search = $request->query('search');
-    
-        // Retrieve available stocks (with related product and division)
-        $availableStocks = Stock::with(['division', 'product'])
-            ->where('division_id', $selectedDivision)
-            ->where('status', 'available')
-            ->when($search, function ($query, $search) {
-                return $query->where('serial_number', 'LIKE', "%{$search}%")
-                             ->orWhereHas('product', function ($q) use ($search) {
-                                 $q->where('model', 'LIKE', "%{$search}%");
-                             });
-            })
-            ->orderBy('updated_at', 'desc')
-            ->paginate(10, ['*'], 'available_page');
-    
-        // Retrieve loaned stocks (with related product and division)
-        $loanedStocks = Stock::with(['division', 'product'])
-            ->where('division_id', $selectedDivision)
-            ->where('status', 'LOAN')
-            ->when($search, function ($query, $search) {
-                return $query->where('serial_number', 'LIKE', "%{$search}%")
-                             ->orWhereHas('product', function ($q) use ($search) {
-                                 $q->where('model', 'LIKE', "%{$search}%");
-                             });
-            })
-            ->paginate(10, ['*'], 'loan_page');
-    
-        return view('stocks.management', compact('availableStocks', 'loanedStocks', 'division'));
+
+        $validated = $request->validate([
+            'remarks' => 'required|string',
+        ]);
+
+        StockTransaction::create([
+            'serial_number'    => $stock->serial_number,
+            'stock_model'      => optional($stock->product)->model,
+            'category'         => optional($stock->product)->category,
+            'brand'            => optional($stock->product)->brand,
+            'product_code'     => optional($stock->product)->product_code,
+            'product_id'       => $stock->product_id,
+            'type'             => 'RETURN',
+            'handled_by'       => auth()->id(),
+            'remarks'          => $validated['remarks'],
+            'transaction_date' => now(),
+        ]);
+
+        $stock->status = 'IN';
+        $stock->save();
+
+        return redirect()->route('stocks.management')
+                         ->with('success', 'Stock returned successfully.');
     }
 
+    // --- GET: build the page ---
+    $division    = Division::find($selectedDivision);
+    $search      = $request->query('search', '');
+
+    // Available
+    $availableStocks = Stock::with('product')
+        ->where('division_id', $selectedDivision)
+        ->where('status','available')
+        ->when($search, fn($q) => $q->where('serial_number','LIKE',"%{$search}%")
+                                     ->orWhereHas('product', fn($p) => $p->where('model','LIKE',"%{$search}%")))
+        ->orderBy('updated_at','desc')
+        ->paginate(10, ['*'], 'available_page');
+
+    // Loaned
+    $loanedStocks = Stock::with('product')
+        ->where('division_id', $selectedDivision)
+        ->where('status','LOAN')
+        ->when($search, fn($q) => $q->where('serial_number','LIKE',"%{$search}%")
+                                     ->orWhereHas('product', fn($p) => $p->where('model','LIKE',"%{$search}%")))
+        ->paginate(10, ['*'], 'loan_page');
+
+    // Compute only this division’s overdue loans
+    $overdueLoans = collect($loanedStocks->items())->filter(function($stock) {
+        $start     = $stock->loan_start_date ?? $stock->updated_at;
+        $period    = $stock->loan_period   ?? 90;
+        $dueDate   = \Carbon\Carbon::parse($start)->addDays($period);
+        return $dueDate->isPast();
+    });
+    $overdueCount = $overdueLoans->count();
+
+    return view('stocks.management', [
+        'division'        => $division,
+        'availableStocks' => $availableStocks,
+        'loanedStocks'    => $loanedStocks,
+        'overdueLoans'    => $overdueLoans,
+        'overdueCount'    => $overdueCount,
+    ]);
+}
+    
     public function createTransactionIn()
     {
         $selectedDivision = session('selectedDivision', auth()->user()->division_id);
@@ -283,6 +297,7 @@ class StockController extends Controller
             'category'        => 'required|string',
             'remarks'         => 'nullable|string',
             'sla_category'    => 'nullable|string',
+            'sla'            => 'nullable|string', // <-- if you're adding SLA
         ]);
     
         // Look up the product based on the provided product_code.
@@ -310,6 +325,7 @@ class StockController extends Controller
                 'updated_at'      => now(),
                 'product_id'      => $product->id, // Set the related product_id here.
                 'sla_category'    => $validated['sla_category'] ?? null,
+                'sla'             => $validated['sla'] ?? null,      
             ]
         );
     
@@ -352,67 +368,63 @@ class StockController extends Controller
 
     public function show(Request $request, $category)
     {
-        $divisionId = $request->query('division', 'all');  // Get division from query
-        $search     = $request->query('search');           // Get search parameter
-        // Use the default value if sort is not provided
-        $sort = $request->query('sort', 'updated_at_desc');
+        $divisionId = $request->query('division', 'all'); 
+        $search     = $request->query('search'); 
+        $sort       = $request->query('sort', 'updated_at_desc');
     
-        // Determine the Division model or null if 'all'
-        if ($divisionId !== 'all') {
-            $division = Division::find($divisionId);
-        } else {
-            $division = null;
-        }
+        $division = ($divisionId !== 'all') ? Division::find($divisionId) : null;
     
-        // Build the query to filter stocks by category, division, and search
-        // Added: ->with('division') to allow searching division name
-        $stocksQuery = Stock::with('division')
-            ->where('category', $category)
-            ->where('status', 'available')  // Only available stocks
-            ->when($divisionId !== 'all', function ($query) use ($divisionId) {
-                return $query->where('division_id', $divisionId);
+        $stocksQuery = Stock::with(['division', 'product'])
+            ->whereHas('product', function ($query) use ($category) {
+                $query->where('category', $category);
             })
-            ->when($search, function ($query, $search) {
-                return $query->where(function ($q) use ($search) {
-                    $q->where('serial_number', 'LIKE', "%{$search}%")
-                      ->orWhere('model', 'LIKE', "%{$search}%")
-                      ->orWhere('category', 'LIKE', "%{$search}%")
-                      ->orWhere('requisition_no', 'LIKE', "%{$search}%")
-                      // NEW: Search by division name as well
-                      ->orWhereHas('division', function($q2) use ($search) {
-                          $q2->where('name', 'LIKE', "%{$search}%");
+            ->where('stocks.status', 'available')  // ← FIX applied here
+            ->when($divisionId !== 'all', function ($query) use ($divisionId) {
+                $query->where('stocks.division_id', $divisionId);
+            })
+            ->when($search, function ($query, $search) use ($divisionId) {
+                $query->where(function ($q) use ($search, $divisionId) {
+                    $q->where('stocks.serial_number', 'LIKE', "%{$search}%")
+                      ->orWhere('stocks.requisition_no', 'LIKE', "%{$search}%")
+                      ->orWhereHas('product', function ($q2) use ($search) {
+                          $q2->where('products.model', 'LIKE', "%{$search}%")
+                             ->orWhere('products.category', 'LIKE', "%{$search}%");
                       });
+    
+                    if ($divisionId === 'all') {
+                        $q->orWhereHas('division', function($q3) use ($search) {
+                            $q3->where('divisions.name', 'LIKE', "%{$search}%");
+                        });
+                    }
                 });
             });
     
-        // Apply sorting based on the $sort value
         switch ($sort) {
             case 'model_asc':
-                $stocksQuery->orderBy('model', 'asc');
+                $stocksQuery->join('products', 'stocks.product_id', '=', 'products.id')
+                            ->orderBy('products.model', 'asc');
                 break;
             case 'model_desc':
-                $stocksQuery->orderBy('model', 'desc');
+                $stocksQuery->join('products', 'stocks.product_id', '=', 'products.id')
+                            ->orderBy('products.model', 'desc');
                 break;
             case 'updated_at_asc':
-                // Secondary sort by 'id' for stability
-                $stocksQuery->orderBy('updated_at', 'asc')->orderBy('id', 'asc');
+                $stocksQuery->orderBy('stocks.updated_at', 'asc')->orderBy('stocks.id', 'asc');
                 break;
             case 'updated_at_desc':
             default:
-                $stocksQuery->orderBy('updated_at', 'desc')->orderBy('id', 'desc');
+                $stocksQuery->orderBy('stocks.updated_at', 'desc')->orderBy('stocks.id', 'desc');
                 break;
         }
     
-        // Paginate the results
-        $stocks = $stocksQuery->paginate(10);
+        $stocks = $stocksQuery->select('stocks.*')->paginate(10);
     
-        // Set division name for display
         $divisionName = $division ? $division->name : 'All Divisions';
     
-        // Pass the sort value to the view as well (if needed)
         return view('stocks.show', compact('stocks', 'category', 'division', 'divisionName'))
                ->with('sort', $sort);
-    }    
+    }
+    
     
     public function overview(Request $request)
     {
@@ -545,150 +557,160 @@ class StockController extends Controller
     }
 
     public function storeOutLoanReturn(Request $request)
-    {
-        $selectedDivision = session('selectedDivision', auth()->user()->division_id);
-        $stockId = $request->input('stock_id');
-        $stock = Stock::findOrFail($stockId);
-    
-        // Ensure the stock belongs to the selected division
-        if ($stock->division_id != $selectedDivision) {
-            return redirect()->back()->with('error', 'This stock does not belong to the selected division.');
-        }
-    
-        // Check if this is a forced RETURN
-        $forceOperationType = $request->input('force_operation_type');
-    
-        // Common validation for remarks
-        $validated = $request->validate([
-            'remarks' => 'required|string',
-        ]);
-    
-        // If forced to RETURN
-        if ($forceOperationType === 'RETURN') {
-            // ALLOW returning if stock is either LOAN or OUT
-            if (! in_array($stock->status, ['LOAN', 'OUT'])) {
-                return redirect()->route('stocks.management')
-                    ->with('error', 'This item is neither on loan nor out.');
-            }
-    
-            // Record transaction as "IN" to avoid DB error if type is an ENUM
-            StockTransaction::create([
-                'serial_number'    => $stock->serial_number,
-                'stock_model'      => $stock->model,
-                'brand'            => $stock->brand,
-                'product_code'     => $stock->product_code,
-                'requisition_no'   => $stock->requisition_no,
-                'category'         => $stock->category,
-                'type'             => 'IN', // Using "IN" instead of "RETURN"
-                'handled_by'       => auth()->id(),
-                'remarks'          => $validated['remarks'] . ' (Returned to inventory)',
-                'transaction_date' => now(),
-                'product_id'       => $stock->product_id,
-            ]);
-    
-            // Update stock status and remarks
-            $stock->status  = 'available';
-            $stock->remarks = $validated['remarks'];
-            $stock->save();
-    
-            return redirect()->route('stocks.management')->with([
-                'success'  => 'Stock returned successfully.',
-                'resource' => 'stock'
-            ]);
-        }
-    
-        // Otherwise, handle normal OUT or LOAN operation
-        $operationType = $request->input('operation_type');
-    
-        if ($operationType === 'LOAN') {
-            // ADD: validate "manual_date" for the loan start date
-            $loanData = $request->validate([
-                'taken_by'      => 'required|string',
-                'loan_period'   => 'required|integer|min:1|max:90',
-                'manual_date'   => 'required|date', // <--- ADDED
-            ]);
-    
-            // Combine "taken_by" info in remarks so you can see who physically took it
-            $extendedRemarks = $validated['remarks'] . ' (Taken by: ' . $request->input('taken_by') . ')';
-    
-            // Parse the user-chosen manual_date as the loan start date
-            $loanStartDate = \Carbon\Carbon::parse($loanData['manual_date']);
-    
-            // Calculate due date as manual_date + loan_period days
-            $dueDate = $loanStartDate->copy()->addDays($loanData['loan_period']);
-    
-            // Create LOAN transaction including due_date and loan_start_date
-            StockTransaction::create([
-                'serial_number'    => $stock->serial_number,
-                'stock_model'      => $stock->model,
-                'brand'            => $stock->brand,
-                'product_code'     => $stock->product_code,
-                'requisition_no'   => $stock->requisition_no,
-                'category'         => $stock->category,
-                'type'             => 'LOAN',
-                'handled_by'       => auth()->id(),
-                'remarks'          => $extendedRemarks,
-                // Keep the existing line for transaction_date:
-                'transaction_date' => now(),
-                // ADD: store the user-chosen loan start date as a separate field (requires DB column)
-                'loan_start_date'  => $loanStartDate,
-                'due_date'         => $dueDate,
-                'loan_period'      => $loanData['loan_period'], // Store the user-entered loan period
-                'product_id'       => $stock->product_id,
-            ]);
-    
-            // Update stock status to LOAN and update remarks
-            // Also store loan_period & loan_start_date in the stock record
-            $stock->status        = 'LOAN';
-            $stock->remarks       = $extendedRemarks;
-            $stock->loan_period   = $loanData['loan_period']; // existing line
-            $stock->loan_start_date = $loanStartDate;         // <--- ADDED
-            $stock->save();
-    
-            return redirect()->route('stocks.management')->with([
-                'success'  => 'Loan transaction recorded and stock marked as loaned.',
-                'resource' => 'stock'
-            ]);
-        } else {
-            // This covers OUT or any other type you may have
-            $request->validate([
-                'taken_by' => 'required|string',
-            ]);
-    
-            // If user typed a 'taken_by', append it to remarks
-            $takenBy = $request->input('taken_by');
-            $extendedRemarks = !empty($takenBy)
-                ? $validated['remarks'] . ' (Taken by: ' . $takenBy . ')'
-                : $validated['remarks'];
-    
-            // Create OUT transaction
-            StockTransaction::create([
-                'serial_number'    => $stock->serial_number,
-                'stock_model'      => $stock->model,
-                'brand'            => $stock->brand,
-                'product_code'     => $stock->product_code,
-                'requisition_no'   => $stock->requisition_no,
-                'category'         => $stock->category,
-                'type'             => 'OUT',
-                'handled_by'       => auth()->id(),
-                'remarks'          => $extendedRemarks,
-                'transaction_date' => now(),
-                'product_id'       => $stock->product_id,
-            ]);
-    
-            // Update stock status to OUT and update remarks
-            $stock->status = 'OUT';
-            $stock->remarks = $extendedRemarks;
-            $stock->save();
-    
-            return redirect()->route('stocks.management')->with([
-                'success'  => 'OUT transaction recorded and stock removed.',
-                'resource' => 'stock'
-            ]);
-        }
+{
+    $selectedDivision = session('selectedDivision', auth()->user()->division_id);
+    $stockId = $request->input('stock_id');
+    $stock = Stock::findOrFail($stockId);
+
+    // Ensure the stock belongs to the selected division
+    if ($stock->division_id != $selectedDivision) {
+        return redirect()->back()->with('error', 'This stock does not belong to the selected division.');
     }
-    
-    
+
+    // Check if this is a forced RETURN
+    $forceOperationType = $request->input('force_operation_type');
+
+    // Common validation for remarks
+    $validated = $request->validate([
+        'remarks' => 'required|string',
+    ]);
+
+    // If forced to RETURN (unchanged code)
+    if ($forceOperationType === 'RETURN') {
+        if (!in_array($stock->status, ['LOAN', 'OUT'])) {
+            return redirect()->route('stocks.management')
+                ->with('error', 'This item is neither on loan nor out.');
+        }
+
+        StockTransaction::create([
+            'serial_number'    => $stock->serial_number,
+            'stock_model'      => $stock->model,
+            'brand'            => $stock->brand,
+            'product_code'     => $stock->product_code,
+            'requisition_no'   => $stock->requisition_no,
+            'category'         => $stock->category,
+            'type'             => 'IN', // Using "IN" instead of "RETURN"
+            'handled_by'       => auth()->id(),
+            'remarks'          => $validated['remarks'] . ' (Returned to inventory)',
+            'transaction_date' => now(),
+            'product_id'       => $stock->product_id,
+            'manual_date'        => $request->input('manual_date'),
+            'delivery_note'      => $request->input('delivery_note'),
+            'document_number'    => $request->input('document_number'),
+            'name'               => $request->input('name'),
+            'ticket_number'      => $request->input('ticket_number'),
+            'manual_requisition' => $request->input('manual_requisition'),
+        ]);
+
+        $stock->status  = 'available';
+        $stock->remarks = $validated['remarks'];
+        $stock->save();
+
+        return redirect()->route('stocks.management')->with([
+            'success'  => 'Stock returned successfully.',
+            'resource' => 'stock'
+        ]);
+    }
+
+    // Otherwise, handle normal OUT or LOAN operation
+    $operationType = $request->input('operation_type');
+
+    if ($operationType === 'LOAN') {
+        // LOAN branch code (unchanged)
+        $loanData = $request->validate([
+            'taken_by'    => 'required|string',
+            'loan_period' => 'required|integer|min:1|max:90',
+            'manual_date' => 'required|date',
+        ]);
+
+        $extendedRemarks = $validated['remarks'] . ' (Taken by: ' . $request->input('taken_by') . ')';
+        $loanStartDate = \Carbon\Carbon::parse($loanData['manual_date']);
+        $dueDate = $loanStartDate->copy()->addDays($loanData['loan_period']);
+
+        StockTransaction::create([
+            'serial_number'    => $stock->serial_number,
+            'stock_model'      => $stock->model,
+            'brand'            => $stock->brand,
+            'product_code'     => $stock->product_code,
+            'requisition_no'   => $stock->requisition_no,
+            'category'         => $stock->category,
+            'type'             => 'LOAN',
+            'handled_by'       => auth()->id(),
+            'remarks'          => $extendedRemarks,
+            'transaction_date' => now(),
+            'loan_start_date'  => $loanStartDate,
+            'due_date'         => $dueDate,
+            'loan_period'      => $loanData['loan_period'],
+            'product_id'       => $stock->product_id,
+            'manual_date'      => $request->input('manual_date'),
+            'delivery_note'    => $request->input('delivery_note'),
+            'document_number'  => $request->input('document_number'),
+            'name'             => $request->input('name'),
+            'taken_by'         => $request->input('taken_by'),
+            'ticket_number'      => $request->input('ticket_number'),
+            'manual_requisition' => $request->input('manual_requisition'),
+        ]);
+
+        $stock->status = 'LOAN';
+        $stock->remarks = $extendedRemarks;
+        $stock->loan_period = $loanData['loan_period'];
+        $stock->loan_start_date = $loanStartDate;
+        $stock->save();
+
+        return redirect()->route('stocks.management')->with([
+            'success'  => 'Loan transaction recorded and stock marked as loaned.',
+            'resource' => 'stock'
+        ]);
+    } else {
+        // Updated OUT branch: validate additional fields
+        $request->validate([
+            'taken_by' => 'required|string',
+            // Set additional fields as optional:
+            'manual_date' => 'nullable|date',
+            'delivery_note' => 'nullable|string',
+            'document_number' => 'nullable|string',
+            'name' => 'nullable|string',
+            'ticket_number' => 'nullable|string',
+            'manual_requisition' => 'nullable|string',
+        ]);
+
+        $takenBy = $request->input('taken_by');
+        $extendedRemarks = !empty($takenBy)
+            ? $validated['remarks'] . ' (Taken by: ' . $takenBy . ')'
+            : $validated['remarks'];
+
+        // Create OUT transaction including extra fields
+        StockTransaction::create([
+            'serial_number'    => $stock->serial_number,
+            'stock_model'      => $stock->model,
+            'brand'            => $stock->brand,
+            'product_code'     => $stock->product_code,
+            'requisition_no'   => $stock->requisition_no,
+            'category'         => $stock->category,
+            'type'             => 'OUT',
+            'handled_by'       => auth()->id(),
+            'remarks'          => $extendedRemarks,
+            'transaction_date' => now(),
+            'product_id'       => $stock->product_id,
+            'manual_date'        => $request->input('manual_date'),
+            'delivery_note'      => $request->input('delivery_note'),
+            'document_number'    => $request->input('document_number'),
+            'name'               => $request->input('name'),
+            'ticket_number'      => $request->input('ticket_number'),
+            'manual_requisition' => $request->input('manual_requisition'),
+        ]);
+
+        // Update stock status to OUT and update remarks
+        $stock->status = 'OUT';
+        $stock->remarks = $extendedRemarks;
+        $stock->save();
+
+        return redirect()->route('stocks.management')->with([
+            'success'  => 'OUT transaction recorded and stock removed.',
+            'resource' => 'stock'
+        ]);
+    }
+}
     
     public function loanedStocks(Request $request)
     {
@@ -730,5 +752,96 @@ class StockController extends Controller
         $stock = Stock::where('serial_number', $serial)->first();
     
         return view('stocks.partials.req_modal', compact('transaction', 'stock', 'history'));
+    }
+
+    public function getStockDetails(Request $request)
+    {
+        $serial = $request->input('serial');
+        if (!$serial) {
+            return response()->json(['error' => 'Invalid parameters.'], 400);
+        }
+        
+        // Get the stock with its product relationship
+        $stock = Stock::with('product')->where('serial_number', $serial)->first();
+        
+        if (!$stock) {
+            return '<div class="alert alert-warning">Stock not found.</div>';
+        }
+        
+        // Get the latest transaction
+        $transaction = StockTransaction::where('serial_number', $serial)
+            ->orderBy('transaction_date', 'desc')
+            ->first();
+        
+        // Use product data as fallback
+        $brand = $transaction->brand ?? $stock->product->brand ?? 'N/A';
+        $model = $transaction->stock_model ?? $stock->product->model ?? 'N/A';
+        $category = $transaction->category ?? $stock->product->category ?? 'N/A';
+        $productCode = $transaction->product_code ?? $stock->product->product_code ?? 'N/A';
+        
+        return view('stocks.partials.stock_details_card', compact('stock', 'transaction', 'brand', 'model', 'category', 'productCode'));
+    }
+
+    public function stockReport(Request $request)
+    {
+        // 1. First, get the report type from the query parameter or default to 'available'
+        $reportType = $request->query('report_type', 'available');
+        
+        // 2. Get the division from the query parameter
+        $divisionFromQuery = $request->query('division');
+        
+        // 3. If division is explicitly specified in the query, use it and update session
+        if ($divisionFromQuery) {
+            $selectedDivision = $divisionFromQuery;
+            session(['selectedReportDivision' => $selectedDivision]);
+        } 
+        // 4. Otherwise, try to get it from session or default to 'all_divisions'
+        else {
+            $selectedDivision = session('selectedReportDivision', 'all_divisions');
+        }
+        
+        // 5. Debug logging to check the selected division
+        \Log::debug('Selected Division in controller: ' . $selectedDivision);
+        \Log::debug('Report Type: ' . $reportType);
+        
+        // 6. Query for available stocks with the selected division
+        $availableStocksQuery = Stock::with(['product', 'division'])
+            ->where('status', 'available');
+    
+        // 7. Query for loaned stocks with the selected division
+        $loanedStocksQuery = Stock::with(['product', 'division', 'latestTransaction'])
+            ->where('status', 'LOAN');
+    
+        // 8. Apply division filter if not "all divisions"
+        if ($selectedDivision !== 'all_divisions') {
+            // Check if the division ID is numeric or a string representation
+            if (is_numeric($selectedDivision)) {
+                $availableStocksQuery->where('division_id', $selectedDivision);
+                $loanedStocksQuery->where('division_id', $selectedDivision);
+            } else {
+                // If not numeric, it might be a division name - look it up first
+                $division = Division::where('name', $selectedDivision)->first();
+                if ($division) {
+                    $availableStocksQuery->where('division_id', $division->id);
+                    $loanedStocksQuery->where('division_id', $division->id);
+                }
+            }
+        }
+    
+        // Execute the queries
+        $availableStocks = $availableStocksQuery->get();
+        $loanedStocks = $loanedStocksQuery->get();
+    
+        // Debug the query results
+        \Log::debug('Available Stocks Count: ' . $availableStocks->count());
+        \Log::debug('Loaned Stocks Count: ' . $loanedStocks->count());
+    
+        // 9. Return the view with all necessary data
+        return view('stocks.stock_report', compact(
+            'availableStocks',
+            'loanedStocks',
+            'selectedDivision',
+            'reportType'
+        ));
     }
 }

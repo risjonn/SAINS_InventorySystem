@@ -89,39 +89,40 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($stocks as $stock)
-                                <tr class="border-bottom">
-                                    <td class="text-center py-2">{{ optional($stock->product)->category ?? 'N/A' }}</td>
-                                    <td class="text-center py-2">{{ optional($stock->product)->brand ?? 'N/A' }}</td>
-                                    <td class="text-center py-2">{{ optional($stock->product)->model ?? 'N/A' }}</td>
-                                    <td class="text-center py-2">{{ $stock->serial_number }}</td>
-                                    @if($selectedDivision === 'all')
-                                        <td class="text-center py-2">{{ $stock->division->name }}</td>
-                                    @endif
-                                    <td class="text-center py-2">
-                                        @if($stock->requisition_no)
-                                            <a href="#" class="req-detail text-decoration-underline"
-                                            data-req="{{ $stock->requisition_no }}"
-                                            data-serial="{{ $stock->serial_number }}">
-                                                {{ $stock->requisition_no }}
-                                            </a>
-                                        @else
-                                            N/A
-                                        @endif
-                                    </td>
-                                    <td class="text-center py-2">{{ $stock->remarks }}</td>
-                                    <td class="text-center py-2">
-                                        {{ \Carbon\Carbon::parse($stock->updated_at)->format('Y-m-d H:i:s') }}
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="{{ $selectedDivision === 'all' ? 8 : 7 }}" class="text-center py-3 text-muted">
-                                        No matching records found
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
+                        <tbody>
+    @forelse($stocks as $stock)
+        <tr class="border-bottom">
+            <td class="text-center py-2">{{ optional($stock->product)->category ?? 'N/A' }}</td>
+            <td class="text-center py-2">{{ optional($stock->product)->brand ?? 'N/A' }}</td>
+            <td class="text-center py-2">{{ optional($stock->product)->model ?? 'N/A' }}</td>
+            <!-- Make Serial Number clickable instead -->
+            <td class="text-center py-2">
+                <a href="#" class="req-detail text-decoration-underline"
+                   data-serial="{{ $stock->serial_number }}">
+                    {{ $stock->serial_number }}
+                </a>
+            </td>
+            @if($selectedDivision === 'all')
+                <td class="text-center py-2">{{ $stock->division->name }}</td>
+            @endif
+            <!-- Requisition No. now displays plain text -->
+            <td class="text-center py-2">
+                {{ $stock->requisition_no ?? 'N/A' }}
+            </td>
+            <td class="text-center py-2">{{ $stock->remarks }}</td>
+            <td class="text-center py-2">
+                {{ \Carbon\Carbon::parse($stock->updated_at)->format('Y-m-d H:i:s') }}
+            </td>
+        </tr>
+    @empty
+        <tr>
+            <td colspan="{{ $selectedDivision === 'all' ? 8 : 7 }}" class="text-center py-3 text-muted">
+                No matching records found
+            </td>
+        </tr>
+    @endforelse
+</tbody>
+
                     </table>
                 </div>
             </div>
