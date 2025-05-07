@@ -92,7 +92,7 @@
             </a>
             <a href="{{ route('users.create') }}"
                class="bg-green-500 hover:bg-green-600 transition-colors text-white px-5 py-3 rounded-md shadow">
-                <i class="fas fa-user-plus mr-2"></i> Add New User
+                <i class="fas fa-plus mr-2"></i> Add New User
             </a>
         </div>
     </div>

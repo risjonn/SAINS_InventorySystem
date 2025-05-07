@@ -2,17 +2,20 @@
 
 @section('content')
 <div class="container mx-auto px-4 my-5">
-    <h2 class="text-2xl font-semibold mb-4">Manage Products</h2>
-    
-    <div class="flex flex-wrap gap-4 mb-4">
-        <!-- Add New Product Button -->
-        <button type="button" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded" data-bs-toggle="modal" data-bs-target="#createProductModal">
-            <i class="fas fa-plus mr-2"></i> Add New Product
-        </button>
-        <!-- Manage Categories Button -->
-        <a href="{{ route('category.index') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition-colors">
-            Manage Categories
-        </a>
+
+    <!-- Header & Add-User Button -->
+    <div class="flex flex-col sm:flex-row items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">Manage Products</h2>
+        <div class="flex gap-3">
+            <a href="{{ route('category.index') }}"
+                   class="bg-indigo-500 hover:bg-indigo-600 transition-colors text-white px-5 py-3 rounded-md shadow">
+                <i class="fas fa-tags mr-2"></i> Manage Categories
+            </a>
+            <button type="button" class="bg-green-500 hover:bg-green-600 transition-colors text-white px-5 py-3 rounded-md shadow" data-bs-toggle="modal" data-bs-target="#createProductModal">
+                <i class="fas fa-plus mr-2"></i>
+                Add New Product
+            </button>
+        </div>
     </div>
     
     <table class="min-w-full border rounded shadow bg-white">
