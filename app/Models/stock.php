@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\StockTransaction;
+
 
 class Stock extends Model
 {
@@ -17,10 +19,18 @@ class Stock extends Model
         'product_code',
         'product_id',
         'requisition_no',
-        'product_code',  // New field for product code
-        'requisition_no', // New field for requisition number
         'erp_number',
-         'sla_category'
+        'sla_category',
+        'manual_date',
+        'delivery_note',
+        'document_number',
+        'name',
+        'ticket_number',
+        'manual_requisition',
+        'loan_period',
+        'loan_start_date',
+        'due_date',
+        'sla'
     ];
 
     public function division()
@@ -36,5 +46,10 @@ class Stock extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+    public function latestTransaction()
+    {
+        return $this->hasOne(StockTransaction::class, 'serial_number', 'serial_number')
+                    ->latestOfMany('transaction_date');
     }
 }

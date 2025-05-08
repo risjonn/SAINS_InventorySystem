@@ -16,6 +16,8 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\DivisionController;
 use \App\Http\Controllers\PasswordRequestController;
+use App\Http\Controllers\ReportController;
+
 
 // Public route
 Route::get('/', function () {
@@ -110,26 +112,23 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// Admin-only stock management routes (now allow both Admin and Super Admin)
+// Admin-only stock management routes (Admin and Super Admin)
 Route::middleware(['auth', 'role:Admin|Super Admin'])->group(function () {
     Route::get('/stocks/create', [StockController::class, 'create'])->name('stocks.create');
-
-    // Route to low stock page
     Route::get('stocks/low', [StockController::class, 'lowStock'])->name('stocks.low')->middleware('auth');
-
-    // Dedicated Stock Management page
     Route::get('stocks/management', [StockController::class, 'management'])->name('stocks.management');
-    
+
     // Stock Transaction IN Operation routes
     Route::get('stocks/transactions/in', [StockController::class, 'createTransactionIn'])
          ->name('stocks.transactions.in');
     Route::post('stocks/transactions/in', [StockController::class, 'storeTransactionIn'])
          ->name('stocks.transactions.storeIn');
 
-        // Inline OUT operation from the management page
-        Route::post('/stocks/transactions/storeOutLoanReturn', [StockController::class, 'storeOutLoanReturn'])->name('stocks.transactions.storeOutLoanReturn');
-        Route::get('stocks/loan', [StockController::class, 'loanedStocks'])->name('stocks.loan');
+    // Inline OUT operation from the management page
+    Route::post('/stocks/transactions/storeOutLoanReturn', [StockController::class, 'storeOutLoanReturn'])
+         ->name('stocks.transactions.storeOutLoanReturn');
 
+    Route::get('stocks/loan', [StockController::class, 'loanedStocks'])->name('stocks.loan');
 
     // Edit and delete stock routes
     Route::get('/stocks/{stock}/edit', [StockController::class, 'edit'])->name('stocks.edit');
@@ -192,7 +191,7 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::put('/brands/{brand}', [BrandController::class, 'update'])->name('brands.update');
     Route::delete('/brands/{brand}', [BrandController::class, 'destroy'])->name('brands.destroy');
     
-    // Super Admin routes for Categories
+    // Categories routes for Super Admin
     Route::get('/category', [CategoryController::class, 'index'])->name('category.index');
     Route::get('/categories/active', function () {
         // Get all active categories
@@ -208,10 +207,8 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
 
 // General stock routes for authenticated users
 Route::middleware(['auth'])->group(function () {
-    // Route for displaying stock details by category – note the "category" prefix!
     Route::get('stocks/by-category/{category}/{division}', [StockController::class, 'showByCategory'])
-    ->name('stocks.byCategory');
-
+         ->name('stocks.byCategory');
     Route::get('stocks/search', [StockController::class, 'search'])->name('stocks.search');
     Route::get('stocks', [StockController::class, 'index'])->name('stocks.index');
     
@@ -220,16 +217,25 @@ Route::middleware(['auth'])->group(function () {
     Route::get('stocks/transactions', [StockController::class, 'transactions'])->name('stocks.transactions');
     Route::get('/stocks/transactions/search', [StockController::class, 'ajaxSearch'])->name('stocks.transactions.search');
     
-    // Route for showing a specific stock. This should come after the category route.
+    // Route for showing a specific stock (after category route)
     Route::get('stocks/show/{category}/{division}', [StockController::class, 'show'])->name('stocks.show');
 
     Route::get('/thresholds/user', [ThresholdController::class, 'getUserThresholds'])->name('thresholds.user');
     Route::post('/thresholds/update', [ThresholdController::class, 'updateThreshold'])->name('thresholds.update');
 
     Route::get('/transactions/details', [StockController::class, 'getTransactionDetails'])
-    ->name('transactions.details');
+         ->name('transactions.details');
 
-    //test route
+    // For regular stock details
+Route::get('/stocks/details', [StockController::class, 'getStockDetails'])->name('stocks.details');
+// For available stock details
+Route::get('/stocks/available-details', [StockController::class, 'getAvailableStockDetails'])->name('stocks.availableDetails');
+Route::get('/reports/stock', [ReportController::class, 'stockReport'])->name('reports.stock');
+Route::get('/reports/stock', [ReportController::class, 'stockReport'])->name('reports.stock');
+Route::get('/reports/stock', [StockController::class, 'stockReport'])->name('reports.stock');
+
+
+    // Test route
     Route::get('/test', function () {
         return view('test');
     });
