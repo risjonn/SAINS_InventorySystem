@@ -626,25 +626,35 @@
         });
         // NEW: hide loan period _only_ when opening via the Return button
         // ------------------------------------------------------------------------
+        // When the modal is shown, check if the operation type is "LOAN" or "OUT"
         $('#operationModal').on('show.bs.modal', function(e){
-        // e.relatedTarget is the button that triggered the modal
-        const isReturn = $(e.relatedTarget).hasClass('btn-return');
-        // show loan-period if NOT return; hide if return
-        $('#loan_period_container').toggle(! isReturn);
+            const isReturn = $(e.relatedTarget).hasClass('btn-return');
+            
+            // Show or hide the loan period based on whether the operation type is "LOAN" or "OUT"
+            if (isReturn) {
+                // If it's a return operation, hide loan-related fields
+                $('#loan_period_container').hide();
+            } else {
+                const operationType = $("input[name='operation_type']:checked").val();
+                if (operationType === "LOAN") {
+                    $('#loan_period_container').show();  // Show the loan period when "LOAN" is selected
+                } else {
+                    $('#loan_period_container').hide();  // Hide the loan period when "OUT" is selected
+                }
+            }
         });
 
-        // Toggle Report Buttons on Tab Change
-        $('#stockTabs button[data-bs-toggle="tab"]').on("shown.bs.tab", function(e) {
-            var targetId = $(e.target).attr("id");
-            if (targetId === "available-tab") {
-                $("#availableReportBtn").removeClass("d-none");
-                $("#loanedReportBtn").addClass("d-none");
-            } else if (targetId === "loaned-tab") {
-                $("#availableReportBtn").addClass("d-none");
-                $("#loanedReportBtn").removeClass("d-none");
-                // Each time the loaned tab is shown, force sort by Due Date descending.
-                sortLoanedTable("due_date", "desc", true);
-            }
+        // When the operation type is changed (either "OUT" or "LOAN")
+        $("input[name='operation_type']").on("change", function() {
+            const operationType = $(this).val();
+
+            if (operationType === "LOAN") {
+                $('#loan_period_container').show();  // Show loan period input for LOAN
+                $('#loan_period').prop("required", true);  // Make it required
+            } else {
+                $('#loan_period_container').hide();  // Hide loan period input for OUT
+                $('#loan_period').prop("required", false);  // Remove required for OUT
+            }
         });
     });
     </script>

@@ -9,6 +9,7 @@ use App\Models\StockTransaction;
 use App\Models\UserProductThreshold;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
+use Illuminate\Support\Facades\Facade;
 
 class StockController extends Controller
 {

@@ -136,23 +136,24 @@
             <!-- Parent Button -->
             <button @click="if(sidebarOpen){ stockMenuOpen = !stockMenuOpen }"
                     :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
-                    class="flex items-center justify-between w-full p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 
+                    class="flex items-center justify-start w-full p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 
                           {{ (request()->routeIs('stocks.overview') || request()->routeIs('stocks.byCategory') || request()->routeIs('stocks.transactions') || request()->routeIs('stocks.management') || request()->routeIs('stocks.transactions.in')) ? 'bg-gray-100 text-blue-600' : 'text-gray-600' }}"
                     x-bind:class="($store.activeTooltip.current === 'stockInventory') ? 'bg-gray-200 text-blue-600' : ''">
               <!-- Icon container with a relative class so we can place a small badge in the corner -->
               <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center group-hover:text-blue-600 relative">
                 <i class="fas fa-boxes text-lg"></i>
-                <!-- Show an icon-level badge even when collapsed -->
-                @if(! request()->routeIs('stocks.management') && isset($overdueCount) && $overdueCount > 0)
-                  <span class="absolute top-0 right-0 inline-block w-4 h-4 text-center text-xs font-semibold leading-none text-white bg-red-600 rounded-full">
-                    {{ $overdueCount }}
-                  </span>
-                @endif
               </div>
+
+              <!-- Show an icon-level badge even when collapsed -->
+              @if(! request()->routeIs('stocks.management') && isset($overdueCount) && $overdueCount > 0)
+                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {{ $overdueCount }}
+                </span>
+              @endif
               <span x-show="sidebarOpen" x-cloak class="ml-3 text-sm font-medium whitespace-nowrap transition-all duration-150">
                 Stock Inventory
               </span>
-              <span x-show="sidebarOpen" x-cloak class="transition-transform duration-150">
+              <span x-show="sidebarOpen" x-cloak class="ml-auto transition-transform duration-150">
                 <i :class="{'fa-chevron-down': !stockMenuOpen, 'fa-chevron-up': stockMenuOpen}" class="fas"></i>
               </span>
             </button>
@@ -178,16 +179,16 @@
                       Stock Transaction
                     </a>
                     <a href="{{ route('stocks.management') }}"
-                      class="block h-12 flex items-center rounded hover:bg-gray-200 hover:text-blue-600 hover:scale-105 px-2 whitespace-nowrap 
+                      class="relative block h-12 flex items-center rounded hover:bg-gray-200 hover:text-blue-600 hover:scale-105 px-2 whitespace-nowrap 
                               {{ request()->routeIs('stocks.management') ? 'text-blue-600' : 'text-gray-600' }}"
                       x-bind:class="($store.activeTooltip.current === 'stockInventory') ? 'bg-gray-200 text-blue-600' : ''">
                       Stock Management
                       <!-- Overdue Alert Badge (inline sublink badge) -->
-@if(! request()->routeIs('stocks.management') && $overdueCount > 0)
-    <span class="ml-2 bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5">
-        {{ $overdueCount }}
-    </span>
-@endif
+                      @if(! request()->routeIs('stocks.management') && $overdueCount > 0)
+                          <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                              {{ $overdueCount }}
+                          </span>
+                      @endif
                     </a>
                   </div>
                   <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
@@ -225,42 +226,52 @@
           
           <!-- Super Admin-only Link -->
           @if(auth()->user()->role === 'Super Admin')
-            <div x-data="{ id: 'userManager' }"
-                @mouseenter="$store.activeTooltip.set(id)"  
-                @mouseleave="setTimeout(() => { $store.activeTooltip.clear(id) }, 0)"
-                class="relative group">
+          <div x-data="{ id: 'userManager' }"
+              @mouseenter="$store.activeTooltip.set(id)"
+              @mouseleave="setTimeout(() => { $store.activeTooltip.clear(id) }, 0)"
+              class="relative group">
               <a href="{{ route('users.index') }}" 
                 :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
                 class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 {{ request()->routeIs('users*') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}"
                 x-bind:class="($store.activeTooltip.current === 'userManager') ? 'bg-gray-200 text-blue-600' : ''">
-                <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center group-hover:text-blue-600">
-                  <i class="fas fa-users text-lg"></i>
+                <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center group-hover:text-blue-600 relative">
+                    <i class="fas fa-users text-lg"></i>
                 </div>
+                @if(isset($totalRequestsCount) && $totalRequestsCount > 0)
+                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                        {{ $totalRequestsCount }}
+                    </span>
+                @endif
                 <span x-show="sidebarOpen" x-cloak class="ml-3 text-sm font-medium whitespace-nowrap transition-all duration-150">
                     Manage Users
                 </span>
-            @endif --}}
-          </a>
-          <template x-if="!sidebarOpen">
-              <div x-show="$store.activeTooltip.current === id" x-cloak class="absolute left-full ml-0 top-1/2  -translate-y-1/2 transition duration-150 z-50 pointer-events-none">
-                <div class="relative">
-                    <div class="bg-gray-200 text-blue-600 flex items-center h-14 rounded-r-lg rounded-l-none p-4 text-sm font-medium whitespace-nowrap">
-                      Manage Users
-                      {{-- @if(isset($totalRequestsCount) && $totalRequestsCount > 0)
-                          <span class="ml-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                              {{ $totalRequestsCount }}
-                          </span>
-                      @endif --}}
+                
+                {{-- @if(isset($totalRequestsCount) && $totalRequestsCount > 0)
+                    <span x-show="sidebarOpen" x-cloak class="ml-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                        {{ $totalRequestsCount }}
+                    </span>
+                @endif --}}
+              </a>
+              <template x-if="!sidebarOpen">
+                  <div x-show="$store.activeTooltip.current === id" x-cloak class="absolute left-full ml-0 top-1/2  -translate-y-1/2 transition duration-150 z-50 pointer-events-none">
+                    <div class="relative">
+                        <div class="bg-gray-200 text-blue-600 flex items-center h-14 rounded-r-lg rounded-l-none p-4 text-sm font-medium whitespace-nowrap">
+                          Manage Users
+                          {{-- @if(isset($totalRequestsCount) && $totalRequestsCount > 0)
+                              <span class="ml-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                                  {{ $totalRequestsCount }}
+                              </span>
+                          @endif --}}
+                        </div>
+                        <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
+                          <svg class="w-3 h-3 fill-current text-gray-200" viewBox="0 0 10 10">
+                            <polygon points="0,0 10,0 5,5"/>
+                          </svg>
+                        </div>
                     </div>
-                    <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
-                      <svg class="w-3 h-3 fill-current text-gray-200" viewBox="0 0 10 10">
-                        <polygon points="0,0 10,0 5,5"/>
-                      </svg>
-                    </div>
-                </div>
-              </div>
-          </template>
-      </div>
+                  </div>
+              </template>
+          </div>
 
           <!-- Products Link -->
           <div x-data="{ id: 'products' }"
@@ -293,8 +304,7 @@
             </div>
           </template>
         </div>
-
-      @endif
+        @endif
       
       <!-- Profile Settings Link -->
       <div x-data="{ id: 'profileSettings' }"
@@ -370,24 +380,24 @@
           x-show="sidebarOpen">
       </div>
 
-        <!-- Bottom Toggle -->
-        <div class="mt-auto border-t border-gray-100 p-2">
-        <button @click="sidebarOpen = !sidebarOpen" 
-                class="w-full flex items-center justify-center p-3 text-gray-600 hover:bg-gray-100 rounded-lg gap-2">
-          <i class="fas fa-chevron-left text-lg transform transition-transform"
-             :class="{ 'rotate-180': !sidebarOpen }"></i>
-          <span x-show="sidebarOpen" class="text-sm">Collapse Menu</span>
-        </button>
+          <!-- Bottom Toggle -->
+          <div class="mt-auto border-t border-gray-100 p-2">
+            <button @click="sidebarOpen = !sidebarOpen" 
+                    class="w-full flex items-center justify-center p-3 text-gray-600 hover:bg-gray-100 rounded-lg gap-2">
+              <i class="fas fa-chevron-left text-lg transform transition-transform"
+                  :class="{ 'rotate-180': !sidebarOpen }"></i>
+              <span x-show="sidebarOpen" class="text-sm">Collapse Menu</span>
+            </button>
+          </div>
         </div>
-        </div>
-        </aside>
+      </aside>
       @endif
 
 
 
     <!-- Main Content -->
     <main class="min-h-screen transition-[margin] duration-300 ease-in-out"
-          :class="sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'">
+    :class="sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'">
 
       <!-- Content Container -->
       <div class="p-6">
@@ -397,6 +407,18 @@
         <!-- Global Modals -->
         @include('components.success-modal')
         @include('components.delete-confirmation-modal')
+        @include('components.reset-password-modal')
+
+        {{-- Global Delete Form (for DELETE requests) --}}
+        <form id="globalDeleteForm" method="POST" style="display: none;">
+          @csrf
+          @method('DELETE')
+        </form>
+
+        {{-- Global Status Form (for POST activate/deactivate) --}}
+        <form id="globalStatusForm" method="POST" style="display: none;">
+            @csrf
+        </form>
         
         <!-- Custom JS to handle modals -->
         <script>
@@ -422,6 +444,18 @@
                 defaultMessage = resource ? `The ${resource} has been deleted from the system.` : 'Operation completed successfully.';
                 headerClass = 'deleted';
                 iconClass = 'fa-trash-alt';
+                break;
+              case 'activated':
+                title = resource ? `${capitalize(resource)} Activated` : 'Activation Successful!';
+                defaultMessage = resource ? `The ${resource} has been activated.` : 'Operation completed successfully';
+                headerClass = 'activated';
+                iconClass = 'fa-user-check';
+                break;
+              case 'deactivated':
+                title = resource ? `${capitalize(resource)} Deactivated` : 'Deactivation Successful!';
+                defaultMessage = resource ? `The ${resource} has been deactivated.` : 'Operation completed successfully';
+                headerClass = 'deactivated';
+                iconClass = 'fa-user-slash';
                 break;
               case 'loan':
                 title = resource ? `${capitalize(resource)} Loaned` : 'Loan Successful!';
@@ -459,45 +493,133 @@
             $('#globalSuccessModalBody').html(message);
             $('#globalSuccessModal').modal('show');
           }
-      
+
           // Utility function to capitalize the first letter:
           function capitalize(str) {
             return str.charAt(0).toUpperCase() + str.slice(1);
           }
-          
-          // Delete Confirmation Modal Function
-          function showDeleteConfirmationModal(itemType, confirmCallback) {
-            var message = "Are you sure you want to delete this " + itemType + "?";
-            $('#deleteConfirmationMessage').html(message);
-            
-            $('#globalDeleteModal').modal('show');
 
-            $('#confirmDeleteButton').off('click').on('click', function() {
-                confirmCallback(itemType);
+          function showActionConfirmationModal(actionType, itemType, onConfirm) {
+            // 1) Determine header class, title, button style, icon
+            let title, headerClass, btnClass;
+            switch (actionType) {
+              case 'delete':
+                title       = 'Confirm Delete';
+                headerClass = 'delete-confirm';
+                btnClass    = 'btn-danger';
+                break;
+              case 'activate':
+                title       = 'Confirm Activation';
+                headerClass = 'activate-confirm';
+                btnClass    = 'btn-success';
+                break;
+              case 'deactivate':
+                title       = 'Confirm Deactivation';
+                headerClass = 'deactivate-confirm';
+                btnClass    = 'btn-warning';
+                break;
+              default:
+                title       = 'Confirm';
+                headerClass = '';
+                btnClass    = 'btn-primary';
+            }
+
+            // Compute the button label
+            let btnText = actionType === 'delete'
+                ? 'Delete'
+                : actionType.charAt(0).toUpperCase() + actionType.slice(1);
+
+            // 2) Update modal header text & styling
+            $('#globalDeleteModalLabel').text(title);
+            let $modalHeader = $('#globalDeleteModal .modal-header');
+            $modalHeader
+              .removeClass('delete-confirm activate-confirm deactivate-confirm')
+              .addClass(headerClass);
+
+            // 3) Update message
+            $('#deleteConfirmationMessage').text(
+              `Are you sure you want to ${actionType} this ${itemType}?`
+            );
+
+            // 4) Update confirm button text & style
+            $('#confirmDeleteButton')
+              .off('click')
+              .text(btnText)     // e.g. 'Delete', 'Activate'
+              .removeClass('btn-danger btn-success btn-warning')
+              .addClass(btnClass)
+              .on('click', function() {
+                onConfirm();
                 $('#globalDeleteModal').modal('hide');
-            });
+              });
+
+            // 5) Show the modal
+            $('#globalDeleteModal').modal('show');
           }
+
+          // When the modal is fully hidden, reset it back to delete defaults
+          $('#globalDeleteModal').on('hidden.bs.modal', function() {
+            const $header = $('#globalDeleteModal .modal-header');
+
+            // Reset header text, classes
+            $('#globalDeleteModalLabel').text('Confirm Delete');
+            $header
+              .removeClass('activate-confirm deactivate-confirm')
+              .addClass('delete-confirm');
+
+            // Reset confirm button text & classes
+            $('#confirmDeleteButton')
+              .text('Delete')
+              .removeClass('btn-success btn-warning')
+              .addClass('btn-danger');
+          });
+
+          // Deletion handler
+          $(document).on('click', '.delete-button', function(e) {
+            e.preventDefault();
+            const action   = $(this).data('action');
+            const itemType = $(this).data('type');
+            showActionConfirmationModal('delete', itemType, function() {
+              $('#globalDeleteForm').attr('action', action).submit();
+            });
+          });
+
+          // Activate / Deactivate handler
+          $(document).on('click', '.status-button', function(e) {
+            e.preventDefault();
+            const actionType = $(this).data('action-label');   // 'activate' or 'deactivate'
+            const action     = $(this).data('action');
+            const itemType   = $(this).data('type');
+
+            showActionConfirmationModal(actionType, itemType, function() {
+              $('#globalStatusForm').attr('action', action).submit();
+            });
+          });
         </script>
 
         @if(session('success'))
           <script>
             $(document).ready(function(){
               let message = {!! json_encode(session('success')) !!};
-              let type = 'created';
+              let type = 'created'; // Default type
               let lowerMsg = message.toLowerCase();
               
-              if(lowerMsg.indexOf('created') !== -1) {
+              // Be more specific with the checks and use the proper order
+              if(lowerMsg.indexOf('deactivated') !== -1) {
+                type = 'deactivated';
+              } else if(lowerMsg.indexOf('activated') !== -1) {
+                type = 'activated';
+              } else if(lowerMsg.indexOf('created') !== -1) {
                 type = 'created';
               } else if(lowerMsg.indexOf('updated') !== -1) {
                 type = 'updated';
+              } else if(lowerMsg.indexOf('deleted') !== -1 || lowerMsg.indexOf('removed') !== -1) {
+                type = 'deleted';
               } else if(lowerMsg.indexOf('loan') !== -1) {
                 type = 'loan';
               } else if(lowerMsg.indexOf('returned') !== -1) {
                 type = 'returned';
               } else if(lowerMsg.indexOf('out') !== -1) {
                 type = 'out';
-              } else if(lowerMsg.indexOf('deleted') !== -1 || lowerMsg.indexOf('removed') !== -1) {
-                type = 'deleted';
               }
               
               let resource = {!! json_encode(session('resource') ?? 'resource') !!};
@@ -507,17 +629,6 @@
         @endif
       </div>
     </main>
-
-    <script>
-      $(document).on('click', '.delete-button', function(e) {
-          e.preventDefault();
-          var action = $(this).data('action');
-          var itemType = $(this).data('type');
-          showDeleteConfirmationModal(itemType, function(returnedType) {
-              $('#globalDeleteForm').attr('action', action).submit();
-          });
-      });
-    </script>
 
     @yield('scripts')
     
