@@ -23,6 +23,16 @@ class StockTransaction extends Model
         'handled_by',
         'remarks',
         'transaction_date',
+        'manual_date',
+        'delivery_note',
+        'document_number',
+        'name',
+        'ticket_number',
+        'manual_requisition',
+        'loan_start_date',
+        'due_date',
+        'loan_period',
+        'taken_by', 
     ];
 
     public function stock()
