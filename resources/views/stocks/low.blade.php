@@ -173,7 +173,7 @@
             <thead>
                 <tr class="bg-gray-200 text-left">
                     <th class="p-3 border-b">Category</th>
-                    <th class="p-3 border-b">Items Available</th>
+                    <th class="p-3 border-b">Products Available</th>
                 </tr>
             </thead>
             <tbody>
