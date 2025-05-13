@@ -74,20 +74,27 @@ class UserManagementController extends Controller
         $request->validate([
             'username'   => 'required|unique:users,username',
             'name'       => 'required',
-            // 'email'      => 'required|email|unique:users,email',
             'password'   => 'required|min:6|confirmed',
             'division_id'=> 'required|exists:divisions,id',
             'role'       => 'required|in:Admin,Super Admin',
         ]);
 
-        User::create([
+        $user = User::create([
             'username'   => $request->username,
             'name'       => $request->name,
-            // 'email'      => $request->email,
             'password'   => Hash::make($request->password),
             'division_id'=> $request->division_id,
             'role'       => $request->role,
+            'status'     => 'Active', // Make sure new users are set to active
         ]);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'User Created Successfully.',
+                'user' => $user
+            ]);
+        }
 
         return redirect()->route('users.index')->with([
             'success'  => 'User Created Successfully.',
