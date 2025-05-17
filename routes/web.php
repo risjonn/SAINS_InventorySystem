@@ -211,6 +211,10 @@ Route::middleware(['auth'])->group(function () {
          ->name('stocks.byCategory');
     Route::get('stocks/search', [StockController::class, 'search'])->name('stocks.search');
     Route::get('stocks', [StockController::class, 'index'])->name('stocks.index');
+
+    Route::get('stocks/low/{division}/category/{category}', 
+    [StockController::class, 'lowByCategory'])
+    ->name('stocks.low.byCategory');
     
     // Place fixed routes before dynamic ones.
     Route::get('stocks/overview', [StockController::class, 'overview'])->name('stocks.overview');
@@ -227,12 +231,12 @@ Route::middleware(['auth'])->group(function () {
          ->name('transactions.details');
 
     // For regular stock details
-Route::get('/stocks/details', [StockController::class, 'getStockDetails'])->name('stocks.details');
-// For available stock details
-Route::get('/stocks/available-details', [StockController::class, 'getAvailableStockDetails'])->name('stocks.availableDetails');
-Route::get('/reports/stock', [ReportController::class, 'stockReport'])->name('reports.stock');
-Route::get('/reports/stock', [ReportController::class, 'stockReport'])->name('reports.stock');
-Route::get('/reports/stock', [StockController::class, 'stockReport'])->name('reports.stock');
+    Route::get('/stocks/details', [StockController::class, 'getStockDetails'])->name('stocks.details');
+    // For available stock details
+    Route::get('/stocks/available-details', [StockController::class, 'getAvailableStockDetails'])->name('stocks.availableDetails');
+    Route::get('/reports/stock', [ReportController::class, 'stockReport'])->name('reports.stock');
+    Route::get('/reports/stock', [ReportController::class, 'stockReport'])->name('reports.stock');
+    Route::get('/reports/stock', [StockController::class, 'stockReport'])->name('reports.stock');
 
 
     // Test route

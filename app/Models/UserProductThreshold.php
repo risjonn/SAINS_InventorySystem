@@ -9,10 +9,15 @@ class UserProductThreshold extends Model
 {
     protected $fillable = [
         'user_id',
-        'category',
+        'product_id',
         'low_threshold',
         'critical_threshold',
     ];
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
 
     public function user()
     {

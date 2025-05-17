@@ -16,6 +16,7 @@ class ThresholdController extends Controller
         
         // If Super Admin and a target user is provided, use that target; xotherwise default to current user's thresholds
         if ($currentUser->role === 'Super Admin' && $request->has('user_id')) {
+            
             $targetUser = $request->input('user_id');
         } else {
             $targetUser = $currentUser->id;
