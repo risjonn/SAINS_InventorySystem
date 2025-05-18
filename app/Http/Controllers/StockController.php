@@ -78,16 +78,49 @@ class StockController extends Controller
                         }
                     }
 
+                    $low  = $lowCount;
+                    $crit = $criticalCount;
+                    $tot  = $low + $crit;
+
+                     $categories = $divisionStocks
+                        ->groupBy(fn($s) => strtolower(trim(optional($s->product)->category ?? 'Unknown')));
+                    $affectedCats = $categories
+                        ->filter(fn($group) => $group
+                            ->groupBy('product_id')
+                            ->filter(fn($skuGroup) => 
+                                $skuGroup->first()->product
+                                    ->statusFlag($skuGroup->count()) !== 'ok'
+                            )->isNotEmpty()
+                        )->count();
+
                     $divisionObj = Division::find($divisionId);
+
                     return [
-                        'id'              => $divisionId,
-                        'name'            => $divisionObj?->name ?? 'Unknown',
-                        'nonCriticalLow'  => $lowCount,
-                        'critical'        => $criticalCount,
+                        'id'                 => $divisionId,
+                        'name'               => $divisionObj?->name ?? 'Unknown',
+                        'categoriesAffected' => $affectedCats,
+                        'nonCriticalLow'     => $low,
+                        'critical'           => $crit,
+                        'total'              => $tot,
                     ];
                 })
                 ->filter(fn($d) => ($d['nonCriticalLow'] + $d['critical']) > 0)
                 ->values();
+
+            // Grab sort parameters (default to “name” and ascending)
+            $sortKey = $request->get('sort', 'name');
+            $sortDir = $request->get('dir', 'asc');
+
+            // Only allow these columns to be sorted
+            $allowed = ['name','categoriesAffected','nonCriticalLow','critical'];
+
+            if (in_array($sortKey, $allowed)) {
+                $divisionsSummary = $sortDir === 'desc'
+                    ? $divisionsSummary->sortByDesc($sortKey)
+                                    ->values()
+                    : $divisionsSummary->sortBy($sortKey)
+                                    ->values();
+            }
 
             return view('stocks.low_summary', compact('divisionsSummary', 'selectedDivision'));
         }
@@ -209,6 +242,7 @@ class StockController extends Controller
             'categories',
             'lowCount',
             'criticalCount',
+            'categoriesSummary'
         ));
     }
 
