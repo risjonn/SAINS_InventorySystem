@@ -226,6 +226,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/thresholds/user', [ThresholdController::class, 'getUserThresholds'])->name('thresholds.user');
     Route::post('/thresholds/update', [ThresholdController::class, 'updateThreshold'])->name('thresholds.update');
+    Route::post('/thresholds/{product}', [ThresholdController::class, 'update'])
+     ->name('thresholds.update');
 
     Route::get('/transactions/details', [StockController::class, 'getTransactionDetails'])
          ->name('transactions.details');

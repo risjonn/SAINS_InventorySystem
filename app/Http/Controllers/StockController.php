@@ -242,7 +242,7 @@ class StockController extends Controller
             'categories',
             'lowCount',
             'criticalCount',
-            'categoriesSummary'
+            'categoriesSummary',
         ));
     }
 
@@ -348,11 +348,11 @@ class StockController extends Controller
 
         // 9) Pass the paginator instead of raw groups
         return view('stocks.low_detail', compact(
-            'paginator',       // rename for clarity
+            'paginator',
             'division',
             'category',
             'thresholdsForUser',
-            // you can still pass chart / summary data if needed
+            'selectedAdmin'
         ));
     }
 
