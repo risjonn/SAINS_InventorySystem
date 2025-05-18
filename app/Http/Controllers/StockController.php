@@ -61,65 +61,80 @@ class StockController extends Controller
         if ($selectedDivision === 'all') {
             $divisionsSummary = $stocks
                 ->groupBy('division_id')
-                ->map(function ($divisionStocks, $divisionId) {
-                    $lowCount = 0;
-                    $criticalCount = 0;
+                ->map(function ($divisionStocks, $divisionId) use ($user) {
+                    // 1) Pick the correct admin thresholds
+                    $selectedAdmin = $user->role === 'Super Admin'
+                        ? User::where('division_id', $divisionId)->where('role', 'Admin')->first() ?: $user
+                        : $user;
 
-                    // Group by SKU
-                    $stocksByProduct = $divisionStocks->groupBy('product_id');
-                    foreach ($stocksByProduct as $group) {
-                        $product = $group->first()->product;
+                    $thresholds = UserProductThreshold::where('user_id', $selectedAdmin->id)
+                        ->get()
+                        ->keyBy('product_id');
+
+                    $defaultLow      = 30;
+                    $defaultCritical = 20;
+                    $lowCount        = 0;
+                    $criticalCount   = 0;
+
+                    // Count low/critical SKUs per product
+                    foreach ($divisionStocks->groupBy('product_id') as $prodId => $group) {
                         $qty = $group->count();
-                        $status = $product->statusFlag($qty);
-                        if ($status === 'critical') {
+                        $thr = $thresholds->get($prodId);
+                        $lowThr  = $thr->low_threshold ?? $defaultLow;
+                        $critThr = $thr->critical_threshold ?? $defaultCritical;
+
+                        if ($qty <= $critThr) {
                             $criticalCount++;
-                        } elseif ($status === 'low') {
+                        } elseif ($qty <= $lowThr) {
                             $lowCount++;
                         }
                     }
 
-                    $low  = $lowCount;
-                    $crit = $criticalCount;
-                    $tot  = $low + $crit;
-
-                     $categories = $divisionStocks
-                        ->groupBy(fn($s) => strtolower(trim(optional($s->product)->category ?? 'Unknown')));
-                    $affectedCats = $categories
-                        ->filter(fn($group) => $group
-                            ->groupBy('product_id')
-                            ->filter(fn($skuGroup) => 
-                                $skuGroup->first()->product
-                                    ->statusFlag($skuGroup->count()) !== 'ok'
-                            )->isNotEmpty()
-                        )->count();
+                    // 2) Count how many categories have at least one flagged SKU
+                    $categoriesAffected = $divisionStocks
+                        ->groupBy(function($s) {
+                            return strtolower(trim(optional($s->product)->category ?? 'Unknown'));
+                        })
+                        // for each category group, see if any product within is low/critical
+                        ->filter(function($group) use ($thresholds, $defaultLow, $defaultCritical) {
+                            return $group->groupBy('product_id')
+                                ->filter(function($stkGrp) use ($thresholds, $defaultLow, $defaultCritical) {
+                                    $stkQty = $stkGrp->count();
+                                    $prodId = $stkGrp->first()->product->id;
+                                    $thr = $thresholds->get($prodId);
+                                    
+                                    return $stkQty <= ($thr ? $thr->critical_threshold : $defaultCritical) ||
+                                        $stkQty <= ($thr ? $thr->low_threshold : $defaultLow);
+                                })->isNotEmpty();
+                        })
+                        ->count();
 
                     $divisionObj = Division::find($divisionId);
 
                     return [
-                        'id'                 => $divisionId,
-                        'name'               => $divisionObj?->name ?? 'Unknown',
-                        'categoriesAffected' => $affectedCats,
-                        'nonCriticalLow'     => $low,
-                        'critical'           => $crit,
-                        'total'              => $tot,
+                        'id'                  => $divisionId,
+                        'name'                => $divisionObj?->name ?? 'Unknown',
+                        'categoriesAffected'  => $categoriesAffected,   // ← new
+                        'nonCriticalLow'      => $lowCount,
+                        'critical'            => $criticalCount,
                     ];
                 })
-                ->filter(fn($d) => ($d['nonCriticalLow'] + $d['critical']) > 0)
+                ->filter(function($d) {
+                    return ($d['nonCriticalLow'] + $d['critical']) > 0;
+                })
                 ->values();
 
-            // Grab sort parameters (default to “name” and ascending)
+            // Grab sort parameters (default to "name" and ascending)
             $sortKey = $request->get('sort', 'name');
             $sortDir = $request->get('dir', 'asc');
 
             // Only allow these columns to be sorted
-            $allowed = ['name','categoriesAffected','nonCriticalLow','critical'];
+            $allowed = ['name', 'categoriesAffected', 'nonCriticalLow', 'critical'];
 
             if (in_array($sortKey, $allowed)) {
                 $divisionsSummary = $sortDir === 'desc'
-                    ? $divisionsSummary->sortByDesc($sortKey)
-                                    ->values()
-                    : $divisionsSummary->sortBy($sortKey)
-                                    ->values();
+                    ? $divisionsSummary->sortByDesc($sortKey)->values()
+                    : $divisionsSummary->sortBy($sortKey)->values();
             }
 
             return view('stocks.low_summary', compact('divisionsSummary', 'selectedDivision'));
@@ -165,20 +180,39 @@ class StockController extends Controller
             ->map(fn($sg) => $thresholdsForUser->get(strtolower($sg->category))->critical_threshold ?? 20)
             ->toArray();
 
-        // Build a simple per-category summary of flagged SKUs
+        // Build per-category counts using the exact per-product thresholds
+        $defaultLow      = 30;
+        $defaultCritical = 20;
+
         $categoriesSummary = $stocks
-            ->groupBy(fn($s) => strtolower(trim($s->product->category ?? 'Unknown')))
-            ->map(fn($group, $category) => [
-                'category'       => ucfirst($category),
-                'low_count'      => $group
-                    ->groupBy('product_id')
-                    ->filter(fn($stk,$pid) => $stk->first()->product->statusFlag($stk->count()) === 'low')
-                    ->count(),
-                'critical_count' => $group
-                    ->groupBy('product_id')
-                    ->filter(fn($stk,$pid) => $stk->first()->product->statusFlag($stk->count()) === 'critical')
-                    ->count(),
-            ])->values();
+            ->groupBy(fn($s) => strtolower(trim(optional($s->product)->category ?? 'Unknown')))
+            ->map(function($group, $rawCategory) use ($thresholdsForUser, $defaultLow, $defaultCritical) {
+                $lowCount      = 0;
+                $criticalCount = 0;
+
+                // for each distinct product in the category…
+                foreach ($group->groupBy('product_id') as $prodId => $stkGroup) {
+                    $qty = $stkGroup->count();
+                    $thr = $thresholdsForUser->get($prodId);
+                    $lowThr  = $thr->low_threshold      ?? $defaultLow;
+                    $critThr = $thr->critical_threshold ?? $defaultCritical;
+
+                    if ($qty <= $critThr) {
+                        $criticalCount++;
+                    } elseif ($qty <= $lowThr) {
+                        $lowCount++;
+                    }
+                }
+
+                return [
+                    'category'       => ucfirst($rawCategory),
+                    'low_count'      => $lowCount,
+                    'critical_count' => $criticalCount,
+                ];
+            })
+            // only show categories with at least one flagged SKU
+            ->filter(fn($c) => $c['low_count'] + $c['critical_count'] > 0)
+            ->values();
 
         // 1. Grab user inputs
         $search = strtolower($request->get('q',''));
@@ -296,8 +330,18 @@ class StockController extends Controller
         foreach ($stocksOfCat->groupBy('product_id') as $productId => $group) {
             $product = $group->first()->product;
             $qty     = $group->count();
-            $status  = $product->statusFlag($qty);
             $thr     = $thresholdsForUser->get($productId);
+            // Determine status using the loaded thresholds for this product
+            $lowThr  = $thr->low_threshold      ?? 30;
+            $critThr = $thr->critical_threshold ?? 20;
+
+            if ($qty <= $critThr) {
+                $status = 'critical';
+            } elseif ($qty <= $lowThr) {
+                $status = 'low';
+            } else {
+                $status = 'ok';
+            }
             $lowThr  = $thr->low_threshold ?? 30;
             $critThr = $thr->critical_threshold ?? 20;
 

@@ -15,9 +15,9 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $divisions = Division::all();
-        $user = auth()->user();
+        $user      = auth()->user();
 
-        // Determine selected division
+        // 0) Determine selected division
         if ($user->role === 'Super Admin') {
             $selectedDivision = $request->query('division', session('selectedDivision', 'all'));
         } else {
@@ -25,69 +25,95 @@ class DashboardController extends Controller
         }
         session(['selectedDivision' => $selectedDivision]);
 
-        // Base queries
-        $baseQuery = Stock::with('product')->where('status','available');
+        // 1) Base stock query
+        $baseQuery = Stock::with('product')->where('status', 'available');
         if ($selectedDivision !== 'all') {
             $baseQuery->where('division_id', $selectedDivision);
         }
         $totalStocks = (clone $baseQuery)->count();
         $stocks      = $baseQuery->get();
 
+        // ───────────────────────────────────────────────────────────
+        // ALL-DIVISIONS VIEW
+        // ───────────────────────────────────────────────────────────
         if ($selectedDivision === 'all') {
-            //
-            // ─── ALL‐DIVISIONS BRANCH ───────────────────────────────────────
-            //
-
-            // 1) Low‐stock summary per division
+            // 2a) Low/critical per division
             $lowStockSummary = $stocks
                 ->groupBy('division_id')
-                ->map(fn($divisionStocks, $divisionId) =>
-                    tap(['lowCount'=>0,'criticalCount'=>0,'totalLow'=>0], function(&$arr) use ($divisionStocks, $user, $divisionId) {
-                        // fetch thresholds keyed by product_id
-                        $selectedAdmin = $user->role==='Super Admin'
-                            ? User::where('division_id',$divisionId)->where('role','Admin')->first()
-                            : null;
-                        $thresholds = $selectedAdmin
-                            ? UserProductThreshold::where('user_id',$selectedAdmin->id)->get()->keyBy('product_id')
-                            : collect();
+                ->map(function($divisionStocks, $divisionId) use ($user) {
+                    // figure out whose thresholds to use
+                    $selectedAdmin = $user->role==='Super Admin'
+                        ? User::where('division_id',$divisionId)->where('role','Admin')->first()
+                        : null;
 
-                        // count each SKU
-                        foreach ($divisionStocks->groupBy('product_id') as $group) {
-                            $p      = $group->first()->product;
-                            $status = $p->statusFlag($group->count());
-                            if ($status==='critical')  $arr['criticalCount']++;
-                            if ($status==='low')       $arr['lowCount']++;
+                    $thresholdsForAggregation = $selectedAdmin
+                        ? UserProductThreshold::where('user_id', $selectedAdmin->id)
+                                            ->get()
+                                            ->keyBy('product_id')
+                        : collect();
+
+                    $defaultLow      = 10;
+                    $defaultCritical = 3;
+                    $lowCount        = 0;
+                    $criticalCount   = 0;
+
+                    foreach ($divisionStocks->groupBy('product_id') as $prodId => $group) {
+                        $qty = $group->count();
+                        $thr = $thresholdsForAggregation->get($prodId);
+                        $lowThr  = $thr->low_threshold      ?? $defaultLow;
+                        $critThr = $thr->critical_threshold ?? $defaultCritical;
+
+                        if ($qty <= $critThr) {
+                            $criticalCount++;
+                        } elseif ($qty <= $lowThr) {
+                            $lowCount++;
                         }
-                        $arr['totalLow'] = $arr['lowCount'] + $arr['criticalCount'];
-                    })
-                );
+                    }
 
-            // 2) Totals across all divisions
-            $lowCount      = $lowStockSummary->sum('lowCount');
-            $criticalCount = $lowStockSummary->sum('criticalCount');
-            $lowStockItems = $lowCount + $criticalCount;
+                    return [
+                        'lowCount'      => $lowCount,
+                        'criticalCount' => $criticalCount,
+                        'totalLow'      => $lowCount + $criticalCount,
+                    ];
+                });
 
-            // 3) Detailed per‐division summary
+            // 2b) Totals across all divisions
+            $lowCount       = $lowStockSummary->sum('lowCount');
+            $criticalCount  = $lowStockSummary->sum('criticalCount');
+            $lowStockItems  = $lowCount + $criticalCount;
+
+            // 3) Detailed per-division summary
             $divisionsSummary = $stocks
                 ->groupBy('division_id')
                 ->map(function($divisionStocks, $divisionId) use ($user) {
                     $selectedAdmin = $user->role==='Super Admin'
                         ? User::where('division_id',$divisionId)->where('role','Admin')->first() ?: $user
                         : $user;
-                    $thresholds = UserProductThreshold::where('user_id',$selectedAdmin->id)
-                        ->get()->keyBy('product_id');
 
-                    $lowCount = $criticalCount = 0;
-                    foreach ($divisionStocks->groupBy('product_id') as $group) {
-                        $p      = $group->first()->product;
-                        $status = $p->statusFlag($group->count());
-                        if ($status==='critical')  $criticalCount++;
-                        if ($status==='low')       $lowCount++;
+                    $thresholdsForAggregation = UserProductThreshold::where('user_id', $selectedAdmin->id)
+                        ->get()
+                        ->keyBy('product_id');
+
+                    $lowCount      = 0;
+                    $criticalCount = 0;
+
+                    foreach ($divisionStocks->groupBy('product_id') as $prodId => $group) {
+                        $qty = $group->count();
+                        $thr = $thresholdsForAggregation->get($prodId);
+                        $lowThr  = $thr->low_threshold      ?? 10;
+                        $critThr = $thr->critical_threshold ?? 3;
+
+                        if ($qty <= $critThr) {
+                            $criticalCount++;
+                        } elseif ($qty <= $lowThr) {
+                            $lowCount++;
+                        }
                     }
-                    $divisionObj = Division::find($divisionId);
+
+                    $div = Division::find($divisionId);
                     return [
                         'id'             => $divisionId,
-                        'name'           => $divisionObj?->name ?? 'Unknown',
+                        'name'           => $div?->name ?? 'Unknown',
                         'nonCriticalLow' => $lowCount,
                         'critical'       => $criticalCount,
                     ];
@@ -95,7 +121,7 @@ class DashboardController extends Controller
                 ->filter(fn($d) => ($d['nonCriticalLow'] + $d['critical']) > 0)
                 ->values();
 
-            // 4) New all‐divisions metrics
+            // 4) All-divisions metrics
             $totalDivisions    = Division::count();
             $affectedDivisions = $divisionsSummary->count();
             $skuCount          = $lowStockItems;
@@ -106,87 +132,101 @@ class DashboardController extends Controller
 
             // 5) Shared view data
             $stockSummary = $stocks
-                ->groupBy(fn($s)=> optional($s->product)->category ?? 'Unknown')
-                ->map(fn($g)=>['category'=>$g->first()->product->category,'quantity'=>$g->count()])
-                ->values();
+                ->groupBy(fn($s) => optional($s->product)->category ?? 'Unknown')
+                ->map(fn($g) => [
+                    'category' => $g->first()->product->category ?? 'Unknown',
+                    'quantity' => $g->count()
+                ])->values();
 
-            $userCount = $selectedDivision==='all'
-                ? User::count()
-                : User::where('division_id',$selectedDivision)->count();
+            $userCount = User::when($selectedDivision!=='all', fn($q) =>
+                $q->where('division_id', $selectedDivision)
+            )->count();
 
             $recentTransactions = StockTransaction::with('stock.product')
-                ->when($selectedDivision!=='all', fn($q)=>
-                    $q->whereHas('stock', fn($qq)=>$qq->where('division_id',$selectedDivision))
+                ->when($selectedDivision!=='all', fn($q) =>
+                    $q->whereHas('stock', fn($qq) =>
+                        $qq->where('division_id', $selectedDivision)
+                    )
                 )
                 ->orderBy('transaction_date','desc')
                 ->take(5)
                 ->get();
 
-            $divisionName = 'All Divisions';
-
             return view('dashboard', compact(
                 'divisions','selectedDivision','totalStocks',
                 'lowStockItems','lowCount','criticalCount',
                 'totalDivisions','affectedDivisions','skuCount','topDivisions',
-                'userCount','stockSummary','recentTransactions','divisionName',
+                'userCount','stockSummary','recentTransactions',
                 'divisionsSummary','user'
-            ));
+            ))
+            ->with('divisionName','All Divisions');
         }
 
-        //
-        // ─── SINGLE‐DIVISION BRANCH ───────────────────────────────────────
-        //
+        // ───────────────────────────────────────────────────────────
+        // SINGLE DIVISION VIEW
+        // ───────────────────────────────────────────────────────────
+
+        // determine whose thresholds to use
         if ($user->role === 'Super Admin') {
             $selectedAdmin = User::where('division_id',$selectedDivision)
-                ->where('role','Admin')->first() ?: $user;
+                                ->where('role','Admin')
+                                ->first() ?: $user;
         } else {
             $selectedAdmin = $user;
         }
-        $thresholds = UserProductThreshold::where('user_id',$selectedAdmin->id)
-            ->get()->keyBy('product_id');
+
+        $thresholdsForAggregation = UserProductThreshold::where('user_id',$selectedAdmin->id)
+            ->get()
+            ->keyBy('product_id');
 
         // SKU‐level flags
-        $lowCount = $criticalCount = 0;
-        foreach ($stocks->groupBy('product_id') as $group) {
-            $p      = $group->first()->product;
-            $status = $p->statusFlag($group->count());
-            if ($status==='critical')  $criticalCount++;
-            if ($status==='low')       $lowCount++;
+        $lowCount      = 0;
+        $criticalCount = 0;
+
+        foreach ($stocks->groupBy('product_id') as $prodId => $group) {
+            $qty = $group->count();
+            $thr = $thresholdsForAggregation->get($prodId);
+            $lowThr  = $thr->low_threshold      ?? 10;
+            $critThr = $thr->critical_threshold ?? 3;
+
+            if ($qty <= $critThr) {
+                $criticalCount++;
+            } elseif ($qty <= $lowThr) {
+                $lowCount++;
+            }
         }
-        $lowStockItems  = $lowCount + $criticalCount;
-        $divisionsSummary = null;  // not used here
+
+        $lowStockItems   = $lowCount + $criticalCount;
+        $divisionsSummary = null;
 
         // Category‐level metrics
-        $catGroups = $stocks
-            ->groupBy(fn($s)=> strtolower(trim($s->product->category ?? 'Unknown')));
-
+        $catGroups = $stocks->groupBy(fn($s) =>
+            strtolower(trim($s->product->category ?? 'Unknown'))
+        );
         $totalCategories    = $catGroups->count();
         $affectedCategories = $catGroups
-            ->filter(fn($g)=> $g
+            ->filter(fn($g) => $g
                 ->groupBy('product_id')
-                ->filter(fn($stk)=> $stk->first()
-                    ->product
-                    ->statusFlag($stk->count())!=='ok')
-                ->isNotEmpty()
+                ->filter(fn($stk) =>
+                    $stk->first()->product->statusFlag($stk->count()) !== 'ok'
+                )->isNotEmpty()
             )->count();
 
         $topCategories = $catGroups
-            ->map(fn($group,$cat)=>[
+            ->map(fn($group,$cat) => [
                 'category'       => ucfirst($cat),
                 'critical_count' => $group
                     ->groupBy('product_id')
-                    ->filter(fn($stk)=> $stk->first()
-                        ->product
-                        ->statusFlag($stk->count())==='critical')
-                    ->count(),
+                    ->filter(fn($stk) =>
+                        $stk->first()->product->statusFlag($stk->count()) === 'critical'
+                    )->count(),
                 'low_count'      => $group
                     ->groupBy('product_id')
-                    ->filter(fn($stk)=> $stk->first()
-                        ->product
-                        ->statusFlag($stk->count())==='low')
-                    ->count(),
+                    ->filter(fn($stk) =>
+                        $stk->first()->product->statusFlag($stk->count()) === 'low'
+                    )->count(),
             ])
-            ->map(fn(array $c)=>[
+            ->map(fn(array $c) => [
                 'category'       => $c['category'],
                 'critical_count' => $c['critical_count'],
                 'low_count'      => $c['low_count'],
@@ -196,14 +236,13 @@ class DashboardController extends Controller
             ->take(3)
             ->values();
 
-        // Align names for compact()
         $categoryCount = $affectedCategories;
         $skuCount      = $lowStockItems;
 
         // Shared view data
         $stockSummary = $stocks
-            ->groupBy(fn($s)=> optional($s->product)->category ?? 'Unknown')
-            ->map(fn($g)=>['category'=>$g->first()->product->category,'quantity'=>$g->count()])
+            ->groupBy(fn($s) => optional($s->product)->category ?? 'Unknown')
+            ->map(fn($g) => ['category'=>$g->first()->product->category,'quantity'=>$g->count()])
             ->values();
 
         $userCount = $user->role==='Super Admin'
@@ -211,8 +250,10 @@ class DashboardController extends Controller
             : User::where('division_id',$selectedDivision)->count();
 
         $recentTransactions = StockTransaction::with('stock.product')
-            ->when($selectedDivision!=='all', fn($q)=>
-                $q->whereHas('stock', fn($qq)=>$qq->where('division_id',$selectedDivision))
+            ->when($selectedDivision!=='all', fn($q) =>
+                $q->whereHas('stock', fn($qq) =>
+                    $qq->where('division_id',$selectedDivision)
+                )
             )
             ->orderBy('transaction_date','desc')
             ->take(5)

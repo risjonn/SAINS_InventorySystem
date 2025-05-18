@@ -113,6 +113,10 @@
                 <span class="inline-flex items-center bg-amber-100 text-amber-700 px-2 py-1 rounded-full text-xs font-semibold">
                   <i class="fas fa-exclamation-circle mr-1"></i> Low
                 </span>
+              @elseif($row['status'] === 'ok')
+                <span class="inline-flex items-center bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-semibold">
+                  <i class="fas fa-check-circle mr-1"></i> Ok
+                </span>
               @endif
             </td>
 
@@ -276,6 +280,20 @@
       }, 300);
     }
 
+    // Check for flash message from localStorage and display it
+    document.addEventListener('DOMContentLoaded', function() {
+      const flashMessage = localStorage.getItem('flashMessage');
+      const flashType = localStorage.getItem('flashType');
+      
+      if (flashMessage) {
+        showToast(flashMessage, flashType || 'success');
+        
+        // Clear the stored message
+        localStorage.removeItem('flashMessage');
+        localStorage.removeItem('flashType');
+      }
+    });
+
     // once and for all, listen to clicks on the table
     document.addEventListener('click', async function(e) {
       // make sure we only react inside our SKU detail table
@@ -333,29 +351,24 @@
           });
           const json = await res.json();
           if (json.success) {
-            // update display and flip back
-            disp.innerHTML = `
-              Low: <strong>${json.threshold.low}</strong>,
-              Crit: <strong>${json.threshold.critical}</strong>
-            `;
-            form.classList.add('hidden');
-            disp.classList.remove('hidden');
-            actions.querySelector('.edit-threshold').classList.remove('hidden');
-            actions.querySelector('.save-threshold').classList.add('hidden');
-            actions.querySelector('.cancel-threshold').classList.add('hidden');
-            
-            // Show success toast
+            // Get product name for the success message
             const product = row.querySelector('td:first-child').textContent.trim();
-            showToast(`Thresholds updated successfully for ${product}`, 'success');
+            
+            // Store message in localStorage to display after refresh
+            localStorage.setItem('flashMessage', `Thresholds updated successfully for ${product}`);
+            localStorage.setItem('flashType', 'success');
+            
+            // Refresh the page
+            window.location.reload();
           } else {
-            // Show error toast instead of alert
+            // Show error toast without page refresh
             showToast('Failed to save thresholds', 'error');
+            btn.disabled = false;
           }
         } catch (err) {
           console.error(err);
-          // Show error toast instead of alert
+          // Show error toast without page refresh
           showToast('Error saving thresholds', 'error');
-        } finally {
           btn.disabled = false;
         }
       }
