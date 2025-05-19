@@ -40,7 +40,7 @@
         });
       });
     </script>
-    @vite(['resources/css/app.css', 'resources/css/modal.css'])
+    @vite(['resources/css/app.css'])
     @yield('styles')
   </head>
   <body class="bg-light" x-data="{
