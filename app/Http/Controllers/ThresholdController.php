@@ -6,64 +6,46 @@ use Illuminate\Http\Request;
 use App\Models\UserProductThreshold;
 use App\Models\Product;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 
 class ThresholdController extends Controller
 {
-    // This method returns the current thresholds for the logged-in user.
-    public function getUserThresholds(Request $request)
+    public function update(Request $request, Product $product)
     {
-        $currentUser = Auth::user();
-        
-        // If Super Admin and a target user is provided, use that target; xotherwise default to current user's thresholds
-        if ($currentUser->role === 'Super Admin' && $request->has('user_id')) {
-            $targetUser = $request->input('user_id');
-        } else {
-            $targetUser = $currentUser->id;
-        }
-    
-        $thresholds = UserProductThreshold::where('user_id', $targetUser)
-                         ->get()
-                         ->keyBy('category');
-    
-        // If no thresholds exist for the user, initialize default thresholds.
-        if ($thresholds->isEmpty()) {
-            $categories = Product::distinct()->pluck('category');
-            foreach ($categories as $category) {
-                $record = UserProductThreshold::create([
-                    'user_id'          => $targetUser,
-                    'category'         => $category,
-                    'low_threshold'    => 10,
-                    'critical_threshold' => 3,
-                ]);
-                $thresholds->put($category, $record);
-            }
-        }
-        return response()->json($thresholds);
-    }
-
-    // This method updates a threshold for a given category for the logged-in user.
-    public function updateThreshold(Request $request)
-    {
-        $request->validate([
-            'category'          => 'required|string',
-            'low_threshold'     => 'required|integer|min:0|max:10',
-            'critical_threshold'=> 'required|integer|min:0|max:3',
-            'user_id'           => 'sometimes|integer|exists:users,id'
+        // 1) Validate with new caps
+        $data = $request->validate([
+            'low'      => 'required|integer|min:0|max:30',
+            'critical' => 'required|integer|min:0|max:20',
+            'user_id'  => 'sometimes|integer|exists:users,id',
         ]);
-    
-        $currentUser = Auth::user();
-        $targetUser = $currentUser->id;
-    
-        // Only Super Admins are allowed to update thresholds for other admins.
-        if ($currentUser->role === 'Super Admin' && $request->has('user_id')) {
-            $targetUser = $request->user_id;
+
+        // 2) Determine target user: if Super Admin and a user_id was passed, use that.
+        $current = Auth::user();
+        if ($current->role === 'Super Admin' && isset($data['user_id'])) {
+            $targetUser = $data['user_id'];
+        } else {
+            $targetUser = $current->id;
         }
-    
+
+        // 3) Update or create the per-product threshold
         $threshold = UserProductThreshold::updateOrCreate(
-            ['user_id' => $targetUser, 'category' => $request->category],
-            ['low_threshold' => $request->low_threshold, 'critical_threshold' => $request->critical_threshold]
+            [
+            'user_id'    => $targetUser,
+            'product_id' => $product->id,
+            ],
+            [
+            'low_threshold'      => $data['low'],
+            'critical_threshold' => $data['critical'],
+            ]
         );
-    
-        return response()->json(['success' => true, 'threshold' => $threshold]);
+
+        // 4) Return JSON
+        return response()->json([
+            'success'   => true,
+            'threshold' => [
+                'low'      => $threshold->low_threshold,
+                'critical' => $threshold->critical_threshold,
+            ],
+        ]);
     }
 }

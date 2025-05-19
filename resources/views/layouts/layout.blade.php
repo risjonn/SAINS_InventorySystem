@@ -12,8 +12,15 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+      // Reset any lingering modal states on page load
+      document.addEventListener('DOMContentLoaded', () => {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      });
+    </script>
     <!-- Alpine.js -->
-    <script defer src="https://unpkg.com/alpinejs@3.10.5/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/alpinejs@3.10.5/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js" defer></script>
     <!-- Include JS -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
@@ -91,7 +98,7 @@
           <a href="{{ route('dashboard') }}" 
              :class="sidebarOpen ? 'rounded-lg' : 'rounded-l-lg rounded-r-none'"
              class="flex items-center p-3 hover:bg-gray-200 hover:text-blue-600 transition duration-150 
-                      {{ (request()->routeIs('dashboard') || request()->routeIs('stocks.low')) ? 'bg-gray-100 text-blue-600' : 'text-gray-600' }}"
+                      {{ (request()->routeIs('dashboard') || request()->routeIs('stocks.low')) || request()->routeIs('stocks.low.byCategory') ? 'bg-gray-100 text-blue-600' : 'text-gray-600' }}"
              x-bind:class="($store.activeTooltip.current === 'dashboard') ? 'bg-gray-200 text-blue-600' : ''">
             <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center group-hover:text-blue-600">
               <i class="fas fa-home text-lg"></i>

@@ -21,7 +21,7 @@ use App\Http\Controllers\ReportController;
 
 // Public route
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 });
 
 // Public "Forgot Password" routes (no authentication required)
@@ -39,58 +39,6 @@ Route::post('forgot-password/recover', [PasswordResetLinkController::class, 'rec
      ->name('password.recover');
 
 Route::get('/password/check-status', [PasswordRequestController::class, 'checkStatus'])->name('password.check.status');
-
-// Route::get('/debug-notifications/{username}', function ($username) {
-//     // Only allow this in local environment
-//     if (!app()->environment('local', 'development')) {
-//         abort(404);
-//     }
-    
-//     $user = \App\Models\User::where('username', $username)->first();
-    
-//     if (!$user) {
-//         return response()->json(['error' => 'User not found']);
-//     }
-    
-//     // Get all notifications for this user
-//     $notifications = DB::table('notifications')
-//         ->where('notifiable_id', $user->id)
-//         ->where('notifiable_type', get_class($user))
-//         ->orderBy('created_at', 'desc')
-//         ->get();
-    
-//     $result = [];
-    
-//     foreach ($notifications as $notification) {
-//         $data = json_decode($notification->data);
-        
-//         $result[] = [
-//             'id' => $notification->id,
-//             'type' => $notification->type,
-//             'created_at' => $notification->created_at,
-//             'read_at' => $notification->read_at,
-//             'data' => $data
-//         ];
-//     }
-    
-//     // Get any password reset requests
-//     $resetRequests = \App\Models\PasswordResetRequest::where('user_id', $user->id)
-//         ->get()
-//         ->map(function($request) {
-//             return [
-//                 'id' => $request->id,
-//                 'created_at' => $request->created_at,
-//                 'completed' => $request->completed
-//             ];
-//         });
-    
-//     return response()->json([
-//         'user_id' => $user->id,
-//         'username' => $user->username,
-//         'notifications' => $result,
-//         'reset_requests' => $resetRequests
-//     ]);
-// });
 
 // Dashboard and related API endpoints (unchanged)
 Route::get('/dashboard', [DashboardController::class, 'index'])
@@ -211,6 +159,10 @@ Route::middleware(['auth'])->group(function () {
          ->name('stocks.byCategory');
     Route::get('stocks/search', [StockController::class, 'search'])->name('stocks.search');
     Route::get('stocks', [StockController::class, 'index'])->name('stocks.index');
+
+    Route::get('stocks/low/{division}/category/{category}', 
+    [StockController::class, 'lowByCategory'])
+    ->name('stocks.low.byCategory');
     
     // Place fixed routes before dynamic ones.
     Route::get('stocks/overview', [StockController::class, 'overview'])->name('stocks.overview');
@@ -222,17 +174,19 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/thresholds/user', [ThresholdController::class, 'getUserThresholds'])->name('thresholds.user');
     Route::post('/thresholds/update', [ThresholdController::class, 'updateThreshold'])->name('thresholds.update');
+    Route::post('/thresholds/{product}', [ThresholdController::class, 'update'])
+     ->name('thresholds.update');
 
     Route::get('/transactions/details', [StockController::class, 'getTransactionDetails'])
          ->name('transactions.details');
 
     // For regular stock details
-Route::get('/stocks/details', [StockController::class, 'getStockDetails'])->name('stocks.details');
-// For available stock details
-Route::get('/stocks/available-details', [StockController::class, 'getAvailableStockDetails'])->name('stocks.availableDetails');
-Route::get('/reports/stock', [ReportController::class, 'stockReport'])->name('reports.stock');
-Route::get('/reports/stock', [ReportController::class, 'stockReport'])->name('reports.stock');
-Route::get('/reports/stock', [StockController::class, 'stockReport'])->name('reports.stock');
+    Route::get('/stocks/details', [StockController::class, 'getStockDetails'])->name('stocks.details');
+    // For available stock details
+    Route::get('/stocks/available-details', [StockController::class, 'getAvailableStockDetails'])->name('stocks.availableDetails');
+    Route::get('/reports/stock', [ReportController::class, 'stockReport'])->name('reports.stock');
+    Route::get('/reports/stock', [ReportController::class, 'stockReport'])->name('reports.stock');
+    Route::get('/reports/stock', [StockController::class, 'stockReport'])->name('reports.stock');
 
 
     // Test route

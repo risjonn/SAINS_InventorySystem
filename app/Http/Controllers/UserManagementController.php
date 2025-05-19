@@ -74,20 +74,29 @@ class UserManagementController extends Controller
         $request->validate([
             'username'   => 'required|unique:users,username',
             'name'       => 'required',
-            // 'email'      => 'required|email|unique:users,email',
-            'password'   => 'required|min:6|confirmed',
+            'password'   => 'required|min:8|confirmed|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/',
             'division_id'=> 'required|exists:divisions,id',
             'role'       => 'required|in:Admin,Super Admin',
+        ], [
+            'password.regex' => 'The password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
         ]);
 
-        User::create([
+        $user = User::create([
             'username'   => $request->username,
             'name'       => $request->name,
-            // 'email'      => $request->email,
             'password'   => Hash::make($request->password),
             'division_id'=> $request->division_id,
             'role'       => $request->role,
+            'status'     => 'Active',
         ]);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'User Created Successfully.',
+                'user' => $user
+            ]);
+        }
 
         return redirect()->route('users.index')->with([
             'success'  => 'User Created Successfully.',

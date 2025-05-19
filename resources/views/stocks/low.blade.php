@@ -44,6 +44,10 @@
         overflow-y: auto;
     }
 
+    #category-summary-table {
+        scroll-margin-top: 4rem; /* adjust to match your header height */
+    }
+
     [x-cloak] {
         display: none !important;
     }
@@ -66,11 +70,11 @@
     <!-- Back Button -->
     @if(auth()->user()->role === 'Super Admin')
         <a href="{{ route('stocks.low', ['division' => 'all']) }}" class="inline-flex items-center px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-colors duration-150">
-            <i class="fas fa-arrow-left mr-2"></i> Summary
+            <i class="fas fa-arrow-left mr-2"></i> Summary By Division
         </a>
     @else
         <a href="{{ route('dashboard') }}" class="inline-flex items-center px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-colors duration-150">
-            <i class="fas fa-arrow-left mr-2"></i> Back
+            <i class="fas fa-arrow-left mr-2"></i> Dashboard
         </a>
     @endif
 
@@ -88,372 +92,214 @@
         </div>
     @endif
 
-    <h2 class="text-2xl font-semibold mt-4">Low Stock Items</h2>
+    <h1 class="text-2xl font-bold mt-4 mb-4">SKU Status By Category</h1>
 
-    {{-- @if(auth()->user()->role === 'Super Admin' && isset($admins))
-        <div class="mb-4">
-            <label for="adminSelector" class="block text-sm font-medium text-gray-700">Select Admin:</label>
-            <select id="adminSelector" onchange="changeAdminThresholds(this.value)" class="block w-full mt-1 border rounded p-2">
-                @foreach($admins as $admin)
-                    <option value="{{ $admin->id }}" {{ (isset($selectedAdmin) && $selectedAdmin->id == $admin->id) ? 'selected' : '' }}>{{ $admin->name }}</option>
-                @endforeach
-            </select>
-        </div>
-    @endif --}}
+    <form method="GET" class="flex flex-wrap justify-center items-center gap-4 mb-6">
+        <!-- preserve the division so we stay on this page -->
+        <input type="hidden" name="division" value="{{ $selectedDivision }}">
 
-    <!-- Collapsible Threshold Settings Section -->
-    <div x-data="thresholdSettings()" x-init="init()" class="mb-6 max-w-md mx-auto relative">
-        <!-- Card Title -->
-        <h2 class="text-xl font-bold text-gray-800 mb-2">Set Custom Thresholds per Category</h2>
-        
-        <!-- Toggle Button with Icon -->
-        <button @click="showSettings = !showSettings" class="w-full py-2 bg-indigo-600 text-white font-medium rounded flex justify-between items-center px-3">
-            <span x-text="showSettings ? 'Hide Settings' : 'Edit Settings'"></span>
-            <i :class="showSettings ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
-        </button>
-        
-        <!-- Add extra spacing below the toggle header -->
-        <div x-show="showSettings" x-cloak class="mt-4 p-3 bg-white border rounded shadow" style="max-height: 300px; overflow-y: auto;">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <template x-for="(setting, index) in thresholds" :key="setting.category">
-                    <div class="border p-2 rounded">
-                        <!-- Category Name -->
-                        <div class="mb-1">
-                            <span class="font-semibold text-gray-700" x-text="setting.category"></span>
-                        </div>
-                        <!-- Low Threshold Control -->
-                        <div class="flex items-center mb-1">
-                            <label class="text-xs text-gray-600 w-20" title="Low threshold value">Low:</label>
-                            <select x-model="setting.low_threshold" class="w-14 border rounded text-sm p-1 focus:outline-none">
-                                <template x-for="i in 11" :key="i">
-                                    <option :value="i-1" x-text="i-1"></option>
-                                </template>
-                            </select>
-                        </div>
-                        <!-- Critical Threshold Control -->
-                        <div class="flex items-center">
-                            <label class="text-xs text-gray-600 w-20" title="Critical threshold value">Critical:</label>
-                            <select x-model="setting.critical_threshold" class="w-14 border rounded text-sm p-1 focus:outline-none">
-                                <template x-for="i in 4" :key="i">
-                                    <option :value="i-1" x-text="i-1"></option>
-                                </template>
-                            </select>
-                        </div>
-                    </div>
-                </template>
-            </div>
-            <!-- Save Button -->
-            <div class="mt-4 flex justify-end items-center space-x-2">
-                <div x-show="toastVisible" x-transition.duration.500ms class="p-2 bg-green-500 text-white text-xs rounded shadow">
-                    ✅ Thresholds updated successfully.
-                </div>
-                <button @click="saveAll()" class="py-1 px-3 bg-green-600 hover:bg-green-700 text-white text-sm rounded shadow flex items-center justify-center">
-                    <i class="fas fa-save mr-1"></i>
-                    <span x-text="saveButtonText"></span>
-                </button>
-            </div>
-        </div>
+        <input
+            type="text"
+            name="q"
+            value="{{ request('q') }}"
+            placeholder="Search category…"
+            class="border-gray-300 focus:border-blue-500 focus:ring-blue-200 rounded-md shadow-sm px-3 py-2"
+        >
+        <button
+            type="submit"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md px-4 py-2"
+        >Apply</button>
+    </form>
 
-        <!-- Full-page overlay to indicate reload -->
-
-        <div x-show="isReloading" x-cloak :class="{'hidden': !isReloading}" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-            <div class="text-white text-xl font-semibold">Reloading...</div>
-        </div>
-    </div>
-
-    <!-- Table: Only show categories below threshold (default low threshold: 10) -->
-    <div class="mt-4 bg-white rounded-xl shadow-lg p-6">
-        @if(isset($division))
-            <p class="text-lg text-gray-700 mb-2">Division: {{ $division->name }}</p>
-        @else
-            <p class="text-lg text-gray-700 mb-2">All Divisions</p>
-        @endif
-
-        <table class="w-full mt-4 border-collapse">
+    <!-- Table -->
+    <a id="category-summary-table"></a>
+    <div id="category-summary-table" class="mt-4 bg-white rounded-xl shadow-lg p-6">
+       <h2 class="text-xl font-semibold text-gray-600 mb-4">Division: {{ $division->name }}</h2>
+        <table class="table-auto w-full mb-6">
             <thead>
-                <tr class="bg-gray-200 text-left">
-                    <th class="p-3 border-b">Category</th>
-                    <th class="p-3 border-b">Items Available</th>
+                <tr class="bg-gray-300">
+                    @php
+                    // Determine the opposite direction for toggling
+                    $dirToggle = request('dir', 'asc') === 'asc' ? 'desc' : 'asc';
+
+                    // Base URL for sorting links
+                    $baseUrl = url()->current();
+                    @endphp
+
+                    {{-- Category header --}}
+                    @php
+                    $commonCat = array_merge(request()->all(), [
+                        'sort' => 'category',
+                        'dir'  => $dirToggle,
+                    ]);
+                    $queryCat = http_build_query($commonCat);
+                    @endphp
+
+                    <th class="px-4 py-2 text-left">
+                        <a href="{{ $baseUrl }}?{{ $queryCat }}#category-summary-table" class="inline-flex items-center">
+                            <span>Category</span>
+                            <i class="fas fa-sort{{ request('sort')==='category'
+                                ? (request('dir')==='asc' ? '-up' : '-down')
+                                : '' }} ml-1"></i>
+                        </a>
+                    </th>
+
+                    {{-- Low SKUs header --}}
+                    @php
+                    $commonLow = array_merge(request()->all(), [
+                        'sort' => 'low_count',
+                        'dir'  => $dirToggle,
+                    ]);
+                    $queryLow = http_build_query($commonLow);
+                    @endphp
+
+                    <th class="px-4 py-2 text-center">
+                        <a href="{{ $baseUrl }}?{{ $queryLow }}#category-summary-table" class="inline-flex items-center">
+                            <span>Low SKUs</span>
+                            <i class="fas fa-sort{{ request('sort')==='low_count'
+                                ? (request('dir')==='asc' ? '-up' : '-down')
+                                : '' }} ml-1"></i>
+                        </a>
+                    </th>
+
+                    {{-- Critical SKUs header --}}
+                    @php
+                    $commonCrit = array_merge(request()->all(), [
+                        'sort' => 'critical_count',
+                        'dir'  => $dirToggle,
+                    ]);
+                    $queryCrit = http_build_query($commonCrit);
+                    @endphp
+
+                    <th class="px-4 py-2 text-center">
+                        <a href="{{ $baseUrl }}?{{ $queryCrit }}#category-summary-table" class="inline-flex items-center">
+                            <span>Critical SKUs</span>
+                            <i class="fas fa-sort{{ request('sort')==='critical_count'
+                                ? (request('dir')==='asc' ? '-up' : '-down')
+                                : '' }} ml-1"></i>
+                        </a>
+                    </th>
+
+                    <th class="px-4 py-2">Action</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($aggregatedStocks as $stockGroup)
-                @php
-                    // Normalize the category key to retrieve the threshold settings.
-                    $catKey = strtolower(trim($stockGroup->category));
-                    // Set defaults if not defined.
-                    $lowThreshold = isset($thresholdsForUser[$catKey]) ? $thresholdsForUser[$catKey]->low_threshold : 10;
-                    $criticalThreshold = isset($thresholdsForUser[$catKey]) ? $thresholdsForUser[$catKey]->critical_threshold : 3;
-                @endphp
-            
-                    {{-- Only display the row if stock total is less than the current low threshold --}}
-                    @if($stockGroup->total <= $lowThreshold)
-                    <tr class="border-b odd:bg-white even:bg-gray-50 hover:bg-gray-100 transition-all duration-150 relative group">
-                        <td class="p-3 border-b">{{ $stockGroup->category }}</td>
-                        <td class="p-3 border-b text-left">
-                            <div class="flex items-center space-x-2">
-                                <!-- Display available count -->
-                                <span class="w-8 inline-block font-medium text-amber-600 text-center">
-                                    {{ $stockGroup->total }}
-                                </span>
-                                
-                                <!-- Progress Bar: fill width computed as a percentage of the lowThreshold -->
-                                <div class="w-24 h-3 bg-gray-200 rounded-full overflow-hidden {{ $stockGroup->total <= $criticalThreshold ? 'critical-glow' : '' }}">
-                                    <div class="h-full rounded-full {{ $stockGroup->total <= $criticalThreshold ? 'bg-red-600' : 'bg-amber-500' }} animate-progress"
-                                        style="width: {{ min(($stockGroup->total / $lowThreshold) * 100, 100) }}%;">
-                                    </div>
-                                </div>
-                                
-                                <!-- Status Badge -->
-                                <div>
-                                    @if($stockGroup->total <= $criticalThreshold)
-                                        <span class="inline-flex items-center bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-semibold shadow">
-                                            <i class="fas fa-exclamation-triangle mr-1"></i> Critical
-                                        </span>
-                                    @elseif($stockGroup->total <= $lowThreshold)
-                                        <span class="inline-flex items-center bg-amber-100 text-amber-700 px-2 py-1 rounded-full text-xs font-semibold shadow">
-                                            <i class="fas fa-exclamation-circle mr-1"></i> Low
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                        </td>                   
-                    </tr>
-                    @endif
+                @foreach($categories as $cat)
+                <tr class="bg-white even:bg-gray-100 hover:bg-gray-200">
+                    <td class="px-4 py-2">{{ $cat['category'] }}</td>
+                    <td class="px-4 py-2 text-center">{{ $cat['low_count'] }}</td>
+                    <td class="px-4 py-2 text-center">{{ $cat['critical_count'] }}</td>
+                    <td class="px-4 py-2">
+                    <a href="{{ route('stocks.low.byCategory', [
+                            'division' => $selectedDivision,
+                            'category' => $cat['category']
+                        ]) }}"
+                        class="inline-block px-3 py-1 bg-blue-600 text-white rounded text-sm">
+                        View Products
+                    </a>
+                    </td>
+                </tr>
                 @endforeach
+
+                @if($categories->isEmpty())
+                    <tr><td colspan="4" class="text-center py-4">No categories match your criteria.</td></tr>
+                @endif
+
             </tbody>
+
+            {{-- Pagination --}}
+            <div class="mt-4">
+                {{ $categories->appends(request()->all())->links() }}
+            </div>
+
         </table>
     </div>
 
-    <!-- Enhanced Chart Section: Similar styling as summary page -->
-    <div class="mt-8 bg-white rounded-xl shadow-lg p-6" style="max-width: 600px; margin: auto; height: 400px;">
-        <h3 class="text-xl font-semibold mb-4 text-gray-800 text-center">Low Stock by Category</h3>
-        <canvas id="lowStockChart" width="600" height="400"></canvas>
+    @if(request()->has('sort'))
+        <script>
+            // Give the browser a moment to render the anchor
+            setTimeout(function() {
+            window.location.hash = 'category-summary-table';
+            }, 50);
+        </script>
+    @endif
+
+    <!-- Category Flagged‐SKU Chart -->
+    <div class="mt-8 bg-white rounded-xl shadow-lg p-6" style="max-width: auto; margin: auto; height: 400px;">
+        <canvas id="categoryStackChart" style="width:100%; height:100%;"></canvas>
     </div>
+
 </div>
 @endsection
 
 @section('scripts')
-    <script>
-        function thresholdSettings() {
-            return {
-                showSettings: false,
-                thresholds: [],
-                saveButtonText: "Save Settings",
-                toastVisible: false,
-                isReloading: false,
-                init() {
-                    console.log('Alpine init triggered');
-                    // Build URL with target user if necessary.
-                    let url = '{{ route('thresholds.user') }}';
-                    if (window.editingUser && window.editingUser != {{ auth()->user()->id }}) {
-                        url += '?user_id=' + window.editingUser;
-                    }
-                    fetch(url, { headers: {'X-Requested-With': 'XMLHttpRequest'} })
-                        .then(response => response.json())
-                        .then(data => {
-                            console.log('Fetched thresholds:', data);
-                            let fetched = Object.values(data);
-                            if (window.categories && window.categories.length > 0) {
-                                this.thresholds = window.categories.map(cat => {
-                                    let found = fetched.find(item => {
-                                        return item.category.trim().toLowerCase() === cat.trim().toLowerCase();
-                                    });
-                                    if (found) {
-                                        if (parseInt(found.low_threshold, 10) === 0) {
-                                            found.low_threshold = 10;
-                                        }
-                                        if (parseInt(found.critical_threshold, 10) === 0) {
-                                            found.critical_threshold = 3;
-                                        }
-                                        return found;
-                                    }
-                                    return {
-                                        category: cat,
-                                        low_threshold: 10,
-                                        critical_threshold: 3
-                                    };
-                                });
-                            } else {
-                                this.thresholds = fetched;
-                            }
-                        })
-                        .catch(error => console.error('Error fetching thresholds:', error));
-                },
-                updateThreshold(setting) {
-                    let payload = {
-                        category: setting.category,
-                        low_threshold: setting.low_threshold,
-                        critical_threshold: setting.critical_threshold
-                    };
-                    if (window.editingUser && window.editingUser != {{ auth()->user()->id }}) {
-                        payload.user_id = window.editingUser;
-                    }
-                    fetch('{{ route('thresholds.update') }}', {
-                        method: 'POST',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        },
-                        body: JSON.stringify(payload)
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                console.log('Threshold updated for ' + setting.category);
-                            }
-                        })
-                        .catch(error => console.error('Error updating threshold:', error));
-                },
-                saveAll() {
-                    // Create an array of promises for all fetch requests.
-                    let promises = this.thresholds.map(setting => {
-                        let payload = {
-                            category: setting.category,
-                            low_threshold: setting.low_threshold,
-                            critical_threshold: setting.critical_threshold
-                        };
-                        if (window.editingUser && window.editingUser != {{ auth()->user()->id }}) {
-                            payload.user_id = window.editingUser;
-                        }
-                        return fetch('{{ route('thresholds.update') }}', {
-                            method: 'POST',
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            },
-                            body: JSON.stringify(payload)
-                        }).then(response => response.json());
-                    });
-                    // Set button to "Saving..."
-                    this.saveButtonText = "Saving...";
-                    Promise.all(promises).then(() => {
-                        this.saveButtonText = "Saved!";
-                        this.toastVisible = true;
-                        // Keep the toast visible for 1.5 seconds
-                        setTimeout(() => {
-                            // Fade out the toast over 300ms
-                            this.toastVisible = false;
-                            setTimeout(() => {
-                                // Reset the button text and show the reloading overlay
-                                this.saveButtonText = "Save Settings";
-                                this.isReloading = true;
-                                // Wait 800ms for the reloading overlay to be seen before reloading
-                                setTimeout(() => {
-                                    window.location.reload();
-                                }, 800);
-                            }, 300);
-                        }, 1500);
-                    }).catch(error => {
-                        console.error('Error saving thresholds:', error);
-                        this.saveButtonText = "Save Settings";
-                    });
-                }
-            };
-        }
-    </script> 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Bring your PHP data into JS
+    const catData = @json($categoriesSummary);
+    const labels   = catData.map(c => c.category);
+    const lowData  = catData.map(c => c.low_count);
+    const critData = catData.map(c => c.critical_count);
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-          const allLabels    = @json($categoriesLabels);
-          const allData      = @json($categoriesData);
-          const lowThr       = @json($lowThresholdsJs);
-          const critThr      = @json($criticalThresholdsJs);
-          const divisionName = "{{ $division->name }}";
-        
-          // Filter & color logic remains the same
-          const filtered = allData
-            .map((v,i) => ({
-              label: allLabels[i],
-              value: v,
-              low:   lowThr[i],
-              crit:  critThr[i]
-            }))
-            .filter(x => x.value <= x.low);
-        
-          const labels       = filtered.map(x => x.label);
-          const dataValues   = filtered.map(x => x.value);
-          const bgColors     = filtered.map(x => x.value <= x.crit
-                                ? 'rgba(220,38,38,0.7)'
-                                : 'rgba(251,191,36,0.7)');
-          const borderColors = filtered.map(x => x.value <= x.crit
-                                ? 'rgba(220,38,38,1)'
-                                : 'rgba(251,191,36,1)');
-        
-          const ctx = document.getElementById('lowStockChart').getContext('2d');
-          new Chart(ctx, {
-            type: 'bar',
-            data: {
-              labels,
-              datasets: [{
-                label: 'Stock Count',
-                data: dataValues,
-                backgroundColor: bgColors,
-                borderColor: borderColors,
-                borderWidth: 1,
-                barPercentage: 0.6,
-                categoryPercentage: 0.6
-              }]
+    const ctx = document.getElementById('categoryStackChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+            {
+                label: 'Low',
+                data: lowData,
+                backgroundColor: 'rgba(251, 191, 36, 0.6)',
+                borderColor:     'rgba(251, 191, 36, 1)',
+                borderWidth: 1
             },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-        
-              // *** Better overall padding ***
-              layout: {
-                padding: {
-                  top:    0,  // reduced from 100 so bars don't hug the bottom
-                  right:  20,
-                  bottom: 60,  // keeps long labels visible
-                  left:   20
-                }
-              },
-        
-              scales: {
-                x: {
-                  grid: { display: false },
-                  ticks: {
-                    autoSkip:     false, // show every label
-                    maxRotation:  0,
-                    minRotation:  0,
-                    padding:      10
-                  }
-                },
-                y: {
-                  beginAtZero: true,
-                  ticks: {
-                    stepSize: 1,
-                    callback: v => Number.isInteger(v) ? v : ''
-                  },
-                  grid: { color: 'rgba(0,0,0,0.1)' }
-                }
-              },
-        
-              plugins: {
-                // *** Add spacing below legend via legend.padding ***
-                legend: {
-                  display: true,
-                  position: 'top',
-                  padding: 30, 
-                  labels: {
-                    generateLabels: chart => [
-                      { text: 'Low',      fillStyle: 'rgba(251,191,36,0.7)' },
-                      { text: 'Critical', fillStyle: 'rgba(220,38,38,0.7)' }
-                    ]
-                  }
-                },
-        
-                title: {
-                  display: true,
-                  text: [divisionName],
-                  padding: { bottom: 0 }
-                }
-              }
+            {
+                label: 'Critical',
+                data: critData,
+                backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                borderColor:     'rgba(239, 68, 68, 1)',
+                borderWidth: 1
             }
-          });
-        });
-    </script>
+            ]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+
+            // NEW: stable interaction settings
+            interaction: {
+            mode: 'index',    // group by category (row)
+            axis: 'y',        // use y-axis grouping
+            intersect: true   // only show tooltip when you hover directly on the bar
+            },
+
+            plugins: {
+            legend: { position: 'top' },
+            tooltip: {
+                // remove mode/intersect here; it's handled above
+                callbacks: {
+                title: items => items[0]?.label || '',
+                label: ctx => `${ctx.dataset.label}: ${ctx.parsed.x}`
+                }
+            }
+            },
+
+            scales: {
+            x: {
+                stacked: true,
+                beginAtZero: true,
+                title: {
+                display: true,
+                text: 'SKU Count'
+                }
+            },
+            y: {
+                stacked: true
+            }
+            }
+        }
+    });
+  </script>
 @endsection
