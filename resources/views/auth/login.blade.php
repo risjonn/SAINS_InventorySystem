@@ -217,7 +217,7 @@
         <div class="login-card">
             <div class="login-header">
                 <div class="logo-container">
-                    <img src="/image/SAINS.jpeg" alt="SAINS Logo" class="logo">
+                    <img src="{{ asset('image/sains_logo.png') }}" alt="SAINS Logo" class="logo">
                 </div>
                 <h1 class="text-2xl font-bold">Welcome Back</h1>
                 <p class="text-sm opacity-80 mt-2">Sign in to SAINS Inventory System</p>
