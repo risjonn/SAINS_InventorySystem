@@ -1,8 +1,8 @@
+@import './modal.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import 'sidebar.css';
 
 [x-cloak] {
     display: none !important; 
