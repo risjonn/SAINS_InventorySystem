@@ -158,6 +158,23 @@
         const usernameInput = document.getElementById('username');
         const resetForm = document.getElementById('passwordResetForm');
 
+        // Get CSRF token from meta tag or directly from the form
+        function getCsrfToken() {
+            // Try to get from meta tag first
+            const metaTag = document.querySelector('meta[name="csrf-token"]');
+            if (metaTag) {
+                return metaTag.getAttribute('content');
+            }
+            
+            // Fall back to getting it from the form
+            const tokenInput = document.querySelector('input[name="_token"]');
+            if (tokenInput) {
+                return tokenInput.value;
+            }
+            
+            return null;
+        }
+
         // Add form submission handler
         resetForm.addEventListener('submit', function() {
             const username = usernameInput.value;
