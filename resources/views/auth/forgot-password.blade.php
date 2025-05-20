@@ -202,7 +202,7 @@
             statusResult.classList.remove('hidden');
 
             // Make AJAX request
-            fetch(`/password/check-status?username=${encodeURIComponent(username)}`, {
+            fetch(`{{ url('/password/check-status') }}?username=${encodeURIComponent(username)}`, {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
