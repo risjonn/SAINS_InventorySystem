@@ -37,7 +37,7 @@
         }
         
         .login-header {
-            background: linear-gradient(135deg, #ef3b2d 0%, #c21e19 100%);
+            background: linear-gradient(135deg, #3060fe 0%, #1c19c2 100%);
             padding: 2rem 2rem 3rem;
             color: white;
             text-align: center;
@@ -113,7 +113,7 @@
             display: block;
             width: 100%;
             padding: 0.75rem 1rem;
-            background: linear-gradient(135deg, #ef3b2d 0%, #c21e19 100%);
+            background: linear-gradient(135deg, #3060fe 0%, #1c19c2 100%);
             color: white;
             font-weight: 600;
             border-radius: 0.5rem;
@@ -125,7 +125,7 @@
         }
         
         .login-button:hover {
-            background: linear-gradient(135deg, #d6321d 0%, #a91913 100%);
+            background: linear-gradient(135deg, #000ba0 0%, #000076 100%);
             transform: translateY(-1px);
         }
         
