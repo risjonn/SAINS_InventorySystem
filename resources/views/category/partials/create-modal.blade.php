@@ -22,9 +22,23 @@
                </select>
              </div>
           </div>
+             <!-- ↓ NEW: Bulk-item flag -->
+          <div class="mb-3 form-check">
+            <input 
+              type="checkbox" 
+              class="form-check-input" 
+              id="createCategoryIsBulk" 
+              name="is_bulk" 
+              value="1" 
+            >
+            <label class="form-check-label" for="createCategoryIsBulk">
+              Track as bulk (no serial, use quantity)
+            </label>
+          </div>
+    
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-primary">Save Category</button>
+            <butt on type="submit" class="btn btn-primary">Save Category</button>
           </div>
         </form>
       </div>

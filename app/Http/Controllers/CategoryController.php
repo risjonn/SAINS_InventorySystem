@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use Illuminate\Http\Request;
+use App\Models\Product;
 
 class CategoryController extends Controller
 {
@@ -46,16 +47,19 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|unique:categories,name',
+            'name'    => 'required|unique:categories,name',
+            'active'  => 'required|in:0,1',
+            'is_bulk' => 'sometimes|accepted',
         ]);
 
         Category::create([
-            'name' => $request->name,
-            'active' => $request->input('active') == "1",
+            'name'    => $request->name,
+            'active'  => $request->input('active') == "1",
+            'is_bulk' => $request->has('is_bulk'),
         ]);
 
         return redirect()->route('category.index')->with([
-            'success' => 'Category Created Successfully.',
+            'success'  => 'Category Created Successfully.',
             'resource' => 'category'
         ]);
     }
@@ -68,16 +72,19 @@ class CategoryController extends Controller
     public function update(Request $request, Category $category)
     {
         $request->validate([
-            'name' => 'required|unique:categories,name,' . $category->id,
+            'name'    => 'required|unique:categories,name,' . $category->id,
+            'active'  => 'required|in:0,1',
+            'is_bulk' => 'sometimes|accepted',
         ]);
 
         $category->update([
-            'name' => $request->name,
-            'active' => $request->input('active') == "1",
+            'name'    => $request->name,
+            'active'  => $request->input('active') == "1",
+            'is_bulk' => $request->has('is_bulk'),
         ]);
 
         return redirect()->route('category.index')->with([
-            'success' => 'Category Updated Successfully',
+            'success'  => 'Category Updated Successfully',
             'resource' => 'category'
         ]);
     }
@@ -86,7 +93,7 @@ class CategoryController extends Controller
     {
         $category->delete();
         return redirect()->route('category.index')->with([
-            'success' => 'Category Removed Successfully.',
+            'success'  => 'Category Removed Successfully.',
             'resource' => 'category'
         ]);
     }

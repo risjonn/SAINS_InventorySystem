@@ -146,19 +146,19 @@
             </thead>
             <tbody>
                 @foreach($recentTransactions as $transaction)
-                    <tr class="border-b">
-                        <td class="p-2">{{ $transaction->serial_number }}</td>
-                        <td class="p-2">{{ $transaction->stock->model }}</td>
-                        <td class="p-2 font-bold {{ $transaction->type == 'IN' ? 'text-green-600' : 'text-red-600' }}">
-                            {{ $transaction->type }}
-                        </td>
-                        <td class="p-2">{{ $transaction->user->name }}</td>
-                        <td class="p-2">{{ \Carbon\Carbon::parse($transaction->transaction_date)->format('M d, Y h:i A') }}</td>
-                        @if($selectedDivision === 'all')
-                            <td class="p-2">{{ $transaction->stock->division->name }}</td>
-                        @endif
-                    </tr>
-                @endforeach
+    <tr class="border-b">
+        <td class="p-2">{{ $transaction->serial_number }}</td>
+        <td class="p-2">{{ $transaction->stock ? $transaction->stock->model : 'N/A' }}</td>
+        <td class="p-2 font-bold {{ $transaction->type == 'IN' ? 'text-green-600' : 'text-red-600' }}">
+            {{ $transaction->type }}
+        </td>
+        <td class="p-2">{{ $transaction->user->name }}</td>
+        <td class="p-2">{{ \Carbon\Carbon::parse($transaction->transaction_date)->format('M d, Y h:i A') }}</td>
+        @if($selectedDivision === 'all')
+            <td class="p-2">{{ $transaction->stock ? $transaction->stock->division->name : 'N/A' }}</td>
+        @endif
+    </tr>
+@endforeach
             </tbody>
         </table>
     </div>

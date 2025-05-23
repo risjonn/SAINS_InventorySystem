@@ -19,6 +19,7 @@ use \App\Http\Controllers\PasswordRequestController;
 use App\Http\Controllers\ReportController;
 
 
+
 // Public route
 Route::get('/', function () {
     return view('welcome');
@@ -134,6 +135,26 @@ Route::middleware(['auth', 'role:Admin|Super Admin'])->group(function () {
     Route::get('/stocks/{stock}/edit', [StockController::class, 'edit'])->name('stocks.edit');
     Route::put('stocks/{stock}', [StockController::class, 'update'])->name('stocks.update');
     Route::delete('stocks/{stock}', [StockController::class, 'destroy'])->name('stocks.destroy');
+
+    Route::post('stocks/extend-loan', [StockController::class, 'extendLoan'])
+     ->name('stocks.extendLoan');
+
+     Route::post('stocks/transactions/revert-out', [StockController::class, 'revertOut'])
+     ->name('stocks.revertOut');
+     Route::get('stocks/check-serial', [App\Http\Controllers\StockController::class, 'checkSerial'])
+     ->name('stocks.checkSerial');
+
+    Route::post('/stocks/transactions/store-out-loan-return',  [StockController::class, 'storeOutLoanReturn']
+    )->name('stocks.transactions.storeOutLoanReturn');
+    Route::get('/debug/bulk-loans', [App\Http\Controllers\StockDebugController::class, 'diagnoseBulkLoans'])
+    ->name('debug.bulkLoans');
+Route::get('/debug/fix-bulk-loans', [App\Http\Controllers\StockDebugController::class, 'fixBulkLoans'])
+    ->name('debug.fixBulkLoans');
+    Route::post('stocks/return-bulk-loan', 
+    [StockController::class, 'storeOutLoanReturn']
+)->name('stocks.returnBulkLoan');
+    
+
 });
 
 // Super Admin routes
@@ -156,6 +177,24 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
         ->name('users.activate');
     Route::post('/users/{user}/restore',    [UserManagementController::class,'restore'])
         ->name('users.restore');
+    Route::post('stocks/extend-loan', [StockController::class, 'extendLoan'])
+        ->name('stocks.extendLoan');
+    Route::post('stocks/transactions/revert-out', [StockController::class, 'revertOut'])
+        ->name('stocks.revertOut');
+
+    Route::get('stocks/check-serial', [App\Http\Controllers\StockController::class, 'checkSerial'])
+     ->name('stocks.checkSerial');
+     
+     Route::post('/stocks/transactions/store-out-loan-return',  [StockController::class, 'storeOutLoanReturn']
+)->name('stocks.transactions.storeOutLoanReturn');
+Route::get('/debug/bulk-loans', [App\Http\Controllers\StockDebugController::class, 'diagnoseBulkLoans'])
+    ->name('debug.bulkLoans');
+Route::get('/debug/fix-bulk-loans', [App\Http\Controllers\StockDebugController::class, 'fixBulkLoans'])
+    ->name('debug.fixBulkLoans');
+    Route::post('stocks/return-bulk-loan', 
+    [StockController::class, 'storeOutLoanReturn']
+)->name('stocks.returnBulkLoan');
+
 
     Route::resource('division', DivisionController::class);
 
@@ -233,6 +272,17 @@ Route::get('/stocks/available-details', [StockController::class, 'getAvailableSt
 Route::get('/reports/stock', [ReportController::class, 'stockReport'])->name('reports.stock');
 Route::get('/reports/stock', [ReportController::class, 'stockReport'])->name('reports.stock');
 Route::get('/reports/stock', [StockController::class, 'stockReport'])->name('reports.stock');
+Route::get('/stocks/details', [StockController::class, 'getStockDetails'])->name('stocks.details');
+Route::get('stocks/details', [StockController::class, 'getStockDetails'])->name('stocks.details');
+Route::post('/stocks/transactions/store-out-loan-return',  [StockController::class, 'storeOutLoanReturn']
+)->name('stocks.transactions.storeOutLoanReturn');
+Route::get('/debug/bulk-loans', [App\Http\Controllers\StockDebugController::class, 'diagnoseBulkLoans'])
+    ->name('debug.bulkLoans');
+Route::get('/debug/fix-bulk-loans', [App\Http\Controllers\StockDebugController::class, 'fixBulkLoans'])
+    ->name('debug.fixBulkLoans');
+    Route::post('stocks/return-bulk-loan', 
+    [StockController::class, 'storeOutLoanReturn']
+)->name('stocks.returnBulkLoan');
 
 
     // Test route

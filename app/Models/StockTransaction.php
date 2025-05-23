@@ -33,8 +33,13 @@ class StockTransaction extends Model
         'due_date',
         'loan_period',
         'taken_by', 
+        'collection_note',
+        'quantity',    
+        'bulk_batch_id',
     ];
-
+    protected $casts = [
+        'serial_number' => 'string', // still fine if it's null
+    ];
     public function stock()
     {
         return $this->belongsTo(Stock::class, 'serial_number', 'serial_number');
@@ -49,4 +54,8 @@ class StockTransaction extends Model
     {
         return $this->belongsTo(Product::class);
     }
+    public function bulkBatch()
+{
+    return $this->belongsTo(BulkBatch::class, 'bulk_batch_id');
+}
 }

@@ -30,7 +30,8 @@ class Stock extends Model
         'loan_period',
         'loan_start_date',
         'due_date',
-        'sla'
+        'sla',
+        'quantity'
     ];
 
     public function division()
@@ -52,4 +53,10 @@ class Stock extends Model
         return $this->hasOne(StockTransaction::class, 'serial_number', 'serial_number')
                     ->latestOfMany('transaction_date');
     }
+    public function latestLoan()
+{
+    return $this->hasOne(StockTransaction::class)
+                ->where('type', 'LOAN')
+                ->latest('transaction_date');
+}
 }

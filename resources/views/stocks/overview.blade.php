@@ -3,7 +3,7 @@
 @section('content')
 <div class="container mx-auto px-4 my-5">
     <h3 class="text-lg font-semibold">
-        Stock Summary by Category ({{ $selectedDivision === 'all' ? 'All Divisions' : $divisionName }})
+        Stock Overview by Category ({{ $selectedDivision === 'all' ? 'All Divisions' : $divisionName }})
     </h3>
 
     @if(session('message'))

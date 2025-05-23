@@ -166,19 +166,7 @@
                   @mouseleave="tooltipHovered = false; clearActive()">
                 <div class="relative">
                   <div class="bg-gray-200 text-gray-600 flex flex-col rounded-r-lg rounded-l-none p-3 text-sm font-medium space-y-1">
-                    <a href="{{ route('stocks.overview') }}"
-                      class="block h-12 flex items-center rounded hover:bg-gray-200 hover:text-blue-600 hover:scale-105 px-2 whitespace-nowrap 
-                              {{ request()->routeIs('stocks.overview', 'stocks.byCategory') ? 'text-blue-600' : 'text-gray-600' }}"
-                      x-bind:class="($store.activeTooltip.current === 'stockInventory') ? 'bg-gray-200 text-blue-600' : ''">
-                      Stock Overview
-                    </a>
-                    <a href="{{ route('stocks.transactions') }}"
-                      class="block h-12 flex items-center rounded hover:bg-gray-200 hover:text-blue-600 hover:scale-105 px-2 whitespace-nowrap 
-                              {{ request()->routeIs('stocks.transactions') ? 'text-blue-600' : 'text-gray-600' }}"
-                      x-bind:class="($store.activeTooltip.current === 'stockInventory') ? 'bg-gray-200 text-blue-600' : ''">
-                      Stock Transaction
-                    </a>
-                    <a href="{{ route('stocks.management') }}"
+                  <a href="{{ route('stocks.management') }}"
                       class="relative block h-12 flex items-center rounded hover:bg-gray-200 hover:text-blue-600 hover:scale-105 px-2 whitespace-nowrap 
                               {{ request()->routeIs('stocks.management') ? 'text-blue-600' : 'text-gray-600' }}"
                       x-bind:class="($store.activeTooltip.current === 'stockInventory') ? 'bg-gray-200 text-blue-600' : ''">
@@ -189,6 +177,20 @@
                               {{ $overdueCount }}
                           </span>
                       @endif
+                    </a>
+
+                    <a href="{{ route('stocks.transactions') }}"
+                      class="block h-12 flex items-center rounded hover:bg-gray-200 hover:text-blue-600 hover:scale-105 px-2 whitespace-nowrap 
+                              {{ request()->routeIs('stocks.transactions') ? 'text-blue-600' : 'text-gray-600' }}"
+                      x-bind:class="($store.activeTooltip.current === 'stockInventory') ? 'bg-gray-200 text-blue-600' : ''">
+                      Stock Summary
+                    </a>
+            
+                    <a href="{{ route('stocks.overview') }}"
+                      class="block h-12 flex items-center rounded hover:bg-gray-200 hover:text-blue-600 hover:scale-105 px-2 whitespace-nowrap 
+                              {{ request()->routeIs('stocks.overview', 'stocks.byCategory') ? 'text-blue-600' : 'text-gray-600' }}"
+                      x-bind:class="($store.activeTooltip.current === 'stockInventory') ? 'bg-gray-200 text-blue-600' : ''">
+                      Stock Overview
                     </a>
                   </div>
                   <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-1">
@@ -201,17 +203,7 @@
             </template>
             <!-- Inline Submenu when Sidebar is Expanded -->
             <div x-show="sidebarOpen && stockMenuOpen" x-cloak class="ml-8 mt-2 space-y-1">
-              <a href="{{ route('stocks.overview') }}"
-                class="block p-2 rounded-lg hover:bg-gray-200 hover:text-blue-600 transition-colors transform hover:scale-105 duration-150 whitespace-nowrap 
-                        {{ request()->routeIs('stocks.overview', 'stocks.byCategory') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
-                Stock Overview
-              </a>
-              <a href="{{ route('stocks.transactions') }}"
-                class="block p-2 rounded-lg hover:bg-gray-200 hover:text-blue-600 transition-colors transform hover:scale-105 duration-150 whitespace-nowrap 
-                        {{ request()->routeIs('stocks.transactions') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
-                Stock Transaction
-              </a>
-              <a href="{{ route('stocks.management') }}"
+            <a href="{{ route('stocks.management') }}"
                 class="block p-2 rounded-lg hover:bg-gray-200 hover:text-blue-600 transition-colors transform hover:scale-105 duration-150 whitespace-nowrap 
                         {{ request()->routeIs('stocks.management') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
                 Stock Management
@@ -220,6 +212,18 @@
                     {{ $overdueCount }}
                   </span>
                 @endif
+              </a>
+          
+              <a href="{{ route('stocks.transactions') }}"
+                class="block p-2 rounded-lg hover:bg-gray-200 hover:text-blue-600 transition-colors transform hover:scale-105 duration-150 whitespace-nowrap 
+                        {{ request()->routeIs('stocks.transactions') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
+                Stock Summary
+              </a>
+      
+              <a href="{{ route('stocks.overview') }}"
+                class="block p-2 rounded-lg hover:bg-gray-200 hover:text-blue-600 transition-colors transform hover:scale-105 duration-150 whitespace-nowrap 
+                        {{ request()->routeIs('stocks.overview', 'stocks.byCategory') ? 'bg-gray-50 text-blue-600' : 'text-gray-600' }}">
+                Stock Overview
               </a>
             </div>
           </div>

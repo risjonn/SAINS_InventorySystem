@@ -11,3 +11,4 @@ class Product extends Model
         'product_code', 'category', 'brand', 'model', 'status'
     ];
 }
+
