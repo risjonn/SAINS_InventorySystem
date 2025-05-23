@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Stock;
 use App\Models\StockTransaction;
+use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use Carbon\Carbon;
 
@@ -12,47 +13,45 @@ class StockTransactionSeeder extends Seeder
 {
     public function run()
     {
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        DB::table('stock_transactions')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+
         $remarksOptions = [
-            'Initial stock received',
-            'New shipment arrived',
-            'Delivered to branch office',
-            'Routine restock completed',
-            'Emergency purchase executed',
-            'Stock adjustment after audit',
-            'Manual entry for low stock',
-            'Replenishment confirmed',
-            'Returned from maintenance',
-            'Discrepancy resolved'
+            'Initial stock in',
+            'Loaned to user',
+            'Returned from loan',
+            'Damaged',
+            'Lost',
+            'Maintenance',
+            'Transfer between divisions',
+            'Stock adjustment',
+            'Replacement provided',
+            'Testing',
+            'Audit correction',
+            'Warranty claim',
+            'Received from vendor',
+            'Sent for repair',
+            'Disposed',
+            'Reserved',
+            'Used in project',
+            'In transit',
+            'Stock count correction',
+            'Backordered'
         ];
 
-        $stocks = Stock::all();
+        $userId = \App\Models\User::inRandomOrder()->first()->id; // pick one random user ID
 
-        foreach ($stocks as $stock) {
-            // Find a random admin in the stock's division.
-            $admin = \App\Models\User::where('division_id', $stock->division_id)
-                         ->where('role', 'Admin')
-                         ->inRandomOrder()
-                         ->first();
+        $stockTransactionCount = 100;
 
-            // Fallback to any admin if not found.
-            if (!$admin) {
-                $admin = \App\Models\User::where('role', 'Admin')->first();
-            }
-
-            $remarks = $remarksOptions[array_rand($remarksOptions)] . " - " . $stock->product->model;
-
+        for ($i = 1; $i <= $stockTransactionCount; $i++) {
             StockTransaction::create([
-                'serial_number'    => $stock->serial_number,
-                'type'             => 'IN',
-                'handled_by'       => $admin ? $admin->id : null,
-                'remarks'          => $remarks,
-                'transaction_date' => Carbon::now()->subDays(rand(1, 30)),
-                'product_id'       => $stock->product_id,
-                'product_code'     => $stock->product_code,
-                // Optionally, if you need to store category or brand:
-                // 'category'         => $stock->product ? $stock->product->category : null,
-                // 'brand'            => $stock->product ? $stock->product->brand : null,
-                // 'stock_model'      => $stock->product ? $stock->product->model : $stock->model,
+                'stock_id' => rand(1, 100),
+                'type' => 'IN',
+                'quantity' => rand(1, 5),
+                'transaction_date' => now()->subDays(rand(0, 365)),
+                'remarks' => $remarksOptions[array_rand($remarksOptions)],
+                'handled_by' => $userId,
             ]);
         }
     }

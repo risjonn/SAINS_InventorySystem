@@ -16,20 +16,30 @@ class CategorySeeder extends Seeder
         DB::statement('SET FOREIGN_KEY_CHECKS=1');
 
         $categories = [
-            ['name' => 'Router', 'active' => true],
-            ['name' => 'Switch', 'active' => true],
-            ['name' => 'Modem', 'active' => true],
-            ['name' => 'Firewall', 'active' => true],
-            ['name' => 'Server', 'active' => true],
-            ['name' => 'Laptop', 'active' => true],
-            ['name' => 'Printer', 'active' => true],
-            ['name' => 'Storage', 'active' => true],
-            ['name' => 'Access Point', 'active' => true],
-            ['name' => 'UPS', 'active' => true],
+            'Router',
+            'Switch',
+            'Firewall',
+            'UPS',
+            'PDU',
+            'Access Point',
+            'Server',
+            'Firewall Appliance',
+            'Modem',
+            'Load Balancer',
+            'Network Cable',
+            'Storage Device',
+            'Printer',
+            'Laptop',
+            'Desktop PC',
+            'VoIP Phone',
+            'Security Camera',
+            'Projector',
+            'NAS',
+            'Battery Backup'
         ];
 
-        foreach ($categories as $cat) {
-            Category::create($cat);
+        foreach ($categories as $name) {
+            Category::create(['name' => $name]);
         }
     }
 }

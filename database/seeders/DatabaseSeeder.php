@@ -11,10 +11,16 @@ class DatabaseSeeder extends Seeder
         $this->call([
             DivisionSeeder::class,
             UserSeeder::class,
-            CategorySeeder::class,
-            ProductSeeder::class,
-            StockSeeder::class,
-            StockTransactionSeeder::class,
         ]);
+
+        if (app()->environment('dummy')) {
+            $this->call([
+                CategorySeeder::class,
+                ProductSeeder::class,
+                StockSeeder::class,
+                StockTransactionSeeder::class,
+                UserProductThresholdSeeder::class,
+            ]);
+        }
     }
 }
